@@ -44,7 +44,7 @@ export default function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<Home />} />
+        <Route path="/" element={<HeroPage />} />
         <Route path="/localnews" element={<LocalNews />} />
         <Route path="/community" element={<Community />} />
         <Route path="/jobs" element={<Jobs />} />
