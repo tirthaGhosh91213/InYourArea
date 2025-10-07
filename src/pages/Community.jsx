@@ -109,13 +109,13 @@ export default function Community() {
               <Cloud size={18} />
               <span className="text-sm mt-1">Weather</span>
             </div>
-            <div className="flex flex-col items-center cursor-pointer relative hover:text-green-300 transition">
+            {/* <div className="flex flex-col items-center cursor-pointer relative hover:text-green-300 transition">
               <Car size={18} />
               <span className="text-sm mt-1">Travel</span>
               <span className="absolute -top-2 -right-3 bg-red-500 text-white text-xs rounded-full px-1.5 animate-pulse">
                 9+
               </span>
-            </div>
+            </div> */}
           </div>
         </motion.div>
 

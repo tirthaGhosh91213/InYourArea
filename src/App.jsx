@@ -10,6 +10,8 @@ import Community from "./pages/Community";
 import Jobs from "./pages/Jobs";
 import Events from "./pages/Events";
 import CreatePost from "./pages/CreatePost";
+import Login from "./pages/Login";
+
 
 // ✅ Home component with postcode + navigation
 function Home() {
@@ -47,6 +49,7 @@ export default function App() {
         <Route path="/community" element={<Community />} />
         <Route path="/jobs" element={<Jobs />} />
         <Route path="/events" element={<Events />} />
+        <Route path="/login" element={<Login />} />
         <Route path="/create-post/:type" element={<CreatePost />} />
          <Route path="*" element={<NotFound />} />
       </Routes>

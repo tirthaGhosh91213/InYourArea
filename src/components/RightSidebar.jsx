@@ -1,8 +1,10 @@
-// src/components/RightSidebar.jsx
 import React from "react";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom"; // ✅ import navigate
 
 export default function RightSidebar() {
+  const navigate = useNavigate(); // ✅ initialize navigate
+
   return (
     <div className="w-80 flex flex-col gap-6 px-2 sm:px-0">
       {/* Register Button */}
@@ -15,6 +17,7 @@ export default function RightSidebar() {
         <motion.button
           whileHover={{ scale: 1.05, boxShadow: "0 10px 20px rgba(34,197,94,0.4)" }}
           whileTap={{ scale: 0.95 }}
+          onClick={() => navigate("/login")} // ✅ navigate to login page
           className="bg-gradient-to-r from-green-400 to-green-500 text-white font-semibold rounded-full px-5 py-2 shadow-md transition-all duration-300"
         >
           Register or Sign In

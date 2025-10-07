@@ -60,7 +60,7 @@ export default function CreatePost() {
 
     console.log("Post created:", { type: normalizedType, ...formData });
     alert(`${normalizedType.toUpperCase()} post created successfully!`);
-    navigate(`/${type}`);
+    navigate(`/${type.replace(/\s/g, "").toLowerCase()}`);
   };
 
   const isJobPost = normalizedType === "jobs";
