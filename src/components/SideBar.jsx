@@ -30,14 +30,14 @@ export default function Sidebar() {
 
   return (
     <>
-      <aside className="w-64 bg-gradient-to-b from-white/90 via-white/80 to-white/70 backdrop-blur-lg border-r border-gray-200 shadow-lg flex flex-col justify-between transition-all duration-500 hover:shadow-2xl">
+      <aside className="w-64 px-10 py-5 bg-gradient-to-b from-white/90 via-white/80 to-white/70 backdrop-blur-lg border-r border-gray-200 shadow-lg flex flex-col justify-between transition-all duration-500 hover:shadow-2xl ">
         <div>
           {/* Logo */}
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="flex items-center gap-3 px-6 py-6 border-b border-gray-200"
+            className="flex items-center gap-3 py-6 border-b border-gray-200"
           >
             <span className="text-green-600 text-3xl font-extrabold tracking-tight select-none">
               InYourArea
@@ -49,13 +49,13 @@ export default function Sidebar() {
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.2 }}
-            className="px-6 py-4"
+            className="py-4"
           >
             <PostcodeDropdown initialPostcode="SW1A1AA" />
           </motion.div>
 
           {/* Sidebar Menu */}
-          <nav className="flex flex-col gap-3 px-4 mt-4">
+          <nav className="flex flex-col gap-3 mt-4">
             {menuItems.map((item, index) => {
               const Icon = item.icon;
               const active = isActive(item.path);
@@ -91,7 +91,10 @@ export default function Sidebar() {
             {/* Post Button */}
             <motion.button
               onClick={() => setShowModal(true)}
-              whileHover={{ scale: 1.05, boxShadow: "0 10px 20px rgba(34,197,94,0.4)" }}
+              whileHover={{
+                scale: 1.05,
+                boxShadow: "0 10px 20px rgba(34,197,94,0.4)",
+              }}
               whileTap={{ scale: 0.95 }}
               className="w-full bg-gradient-to-r from-green-400 to-green-500 text-white font-semibold rounded-full py-3 shadow-lg hover:shadow-xl transition-all duration-300"
             >

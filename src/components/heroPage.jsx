@@ -1,150 +1,146 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import mackup from "../assets/neswimage1.png";
-import homes from "../assets/residential.png";
+import { MapPin } from "lucide-react";
+import { motion } from "framer-motion";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
+import Footer from "./Footer.jsx";
+import FeatureRail from "./FeautreRail.jsx";
+import heroImage from "../assets/image.png";
 
 export default function InYourArea() {
   const [postcode, setPostcode] = useState("");
-  const [toast, setToast] = useState({ message: "", type: "" });
-  const [showToast, setShowToast] = useState(false);
   const navigate = useNavigate();
 
-  // Example valid postcodes
-  const validPostcodes = ["700001", "700002", "700003","713407","713102"];
+  const validPostcodes = ["700001", "700002", "700003", "713407", "713102"];
 
   const onSubmit = () => {
     if (postcode.trim() === "") {
-      showToastMessage("Please enter a postcode!", "error");
+      toast.error("Please enter a postcode!", { autoClose: 2000 });
       return;
     }
 
     if (validPostcodes.includes(postcode)) {
-      showToastMessage("Postcode is valid!", "success");
-      setTimeout(() => navigate("/localnews"), 2000); // Navigate after 2s
+      toast.success("Postcode is valid!", { autoClose: 2000 });
+      setTimeout(() => navigate("/localnews"), 2000);
     } else {
-      showToastMessage("Postcode does not exist!", "error");
+      toast.error("Postcode does not exist!", { autoClose: 2000 });
     }
   };
 
-  const showToastMessage = (message, type) => {
-    setToast({ message, type });
-    setShowToast(true);
-    setTimeout(() => setShowToast(false), 2000); // Hide after 2s
-  };
-
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col font-sans relative">
+    <div className="min-h-screen bg-white flex flex-col font-sans overflow-x-hidden">
       {/* Header */}
-      <header className="bg-white shadow flex justify-between items-center px-8 py-4">
-        <div className="flex items-center gap-3">
-          <img src={mackup} alt="logo" className="w-8 h-8 rounded-md" />
-          <span className="text-xl font-semibold text-gray-700 tracking-wide">
+      <motion.header
+        initial={{ y: -80, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ type: "spring", stiffness: 80, damping: 12 }}
+        className="bg-white shadow-md flex justify-between items-center px-8 py-4"
+      >
+        <div className="flex items-center gap-2">
+          <MapPin className="text-green-700 w-6 h-6" />
+          <span className="text-xl font-bold text-gray-800 tracking-wide">
             InYourArea
           </span>
         </div>
+
         <nav className="flex gap-6">
           <a
             href="#"
-            className="text-gray-600 font-medium hover:text-green-700 transition"
+            className="text-gray-600 font-medium hover:text-green-700 transition-colors duration-300"
           >
             App
           </a>
           <a
             href="#"
-            className="text-gray-600 font-medium hover:text-green-700 transition"
+            className="text-gray-600 font-medium hover:text-green-700 transition-colors duration-300"
           >
             Advertise
           </a>
         </nav>
-      </header>
+      </motion.header>
 
       {/* Hero Section */}
-      <section className="text-center px-6 py-12 flex-1 flex flex-col justify-center">
+      <motion.section
+        initial={{ opacity: 0, y: 40 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.7, ease: "easeOut" }}
+        className="text-center px-6 py-12 flex-1 flex flex-col justify-center"
+      >
         <h1 className="text-3xl md:text-4xl font-bold text-gray-800 mb-4 leading-relaxed">
           The Jharkhand Leading{" "}
           <span className="text-green-700">Local News</span>,{" "}
           <span className="text-green-700">Information</span> &amp;{" "}
           <span className="text-green-700">Community</span> Platform
         </h1>
+
         <p className="mt-2 text-gray-600 text-lg">
           Enter your postcode to see news near you.
         </p>
-        <div className="mt-8 flex justify-center">
+
+        <motion.div
+          className="mt-8 flex justify-center"
+          initial={{ scale: 0.95, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ delay: 0.2, duration: 0.4 }}
+        >
           <input
             type="text"
             value={postcode}
             onChange={(e) => setPostcode(e.target.value)}
             placeholder="Enter your full postcode"
-            className="w-72 px-4 py-2 border border-gray-300 rounded-l-md focus:ring-green-600 focus:outline-none"
+            onKeyDown={(e) => e.key === "Enter" && onSubmit()} // ✅ Enter key triggers submit
+            className="w-72 px-4 py-2 border border-gray-300 rounded-l-md focus:ring-2 focus:ring-green-600 focus:outline-none text-gray-700 placeholder-gray-400 transition-all"
           />
           <button
             onClick={onSubmit}
-            className="px-6 bg-green-700 text-white rounded-r-md font-semibold hover:bg-green-800 transition"
+            className="px-6 bg-green-700 text-white rounded-r-md font-semibold hover:bg-green-800 transition-all duration-300 hover:scale-105"
           >
             →
           </button>
-        </div>
-        <p className="mt-3 text-sm text-gray-500 underline cursor-pointer">
-          How We Use Your Data
-        </p>
-      </section>
+        </motion.div>
 
-      {/* Mockup Image Section */}
-      <section className="relative bg-white w-full">
-        <div className="flex justify-center py-6">
-          <img
-            src={mackup}
-            alt="Laptop"
-            className="w-[65%] max-w-xl rounded-lg border shadow-md"
-          />
-        </div>
-        <div className="absolute left-0 bottom-0 w-full">
-          <img
-            src={homes}
-            alt="Houses"
-            className="w-full h-[100px] object-cover"
-          />
-          <div className="w-full h-[40px] bg-green-800"></div>
-        </div>
-      </section>
-
-      {/* Featured On Section */}
-      <footer className="bg-green-900 text-white text-center py-10 mt-0">
-        <h2 className="text-lg font-semibold mb-6">As Featured On</h2>
-        <div className="flex flex-wrap justify-center gap-8 items-center text-gray-200">
-          <span className="font-medium">Discovery</span>
-          <span className="font-medium">Sky News</span>
-          <span className="font-medium">National Geographic</span>
-          <span className="font-medium">Sky One</span>
-          <span className="font-medium">Mirror</span>
-        </div>
-      </footer>
-
-      {/* Toast Notification */}
-      {showToast && (
-        <div
-          className={`fixed top-10 right-10 px-6 py-3 rounded-lg font-semibold shadow-lg text-white z-50 ${
-            toast.type === "success"
-              ? "bg-green-500 animate-fadeInOut"
-              : "bg-red-500 animate-fadeInOut"
-          }`}
+        <motion.p
+          className="mt-3 text-sm text-gray-500 underline cursor-pointer hover:text-green-700 transition-colors"
+          whileHover={{ scale: 1.05 }}
         >
-          {toast.message}
-        </div>
-      )}
+          How We Use Your Data
+        </motion.p>
+      </motion.section>
 
-      {/* Tailwind Animations */}
-      <style jsx>{`
-        @keyframes fadeInOut {
-          0% { opacity: 0; transform: translateY(-20px); }
-          10% { opacity: 1; transform: translateY(0); }
-          90% { opacity: 1; transform: translateY(0); }
-          100% { opacity: 0; transform: translateY(-20px); }
-        }
-        .animate-fadeInOut {
-          animation: fadeInOut 2s ease-in-out forwards;
-        }
-      `}</style>
+      {/* Hero Image */}
+      <motion.section
+        initial={{ opacity: 0, scale: 0.98 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.8, ease: "easeOut" }}
+        className="relative mb-0 -mb-px"
+      >
+        <div className="relative w-screen h-full left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] bg-white py-0">
+          <img
+            src={heroImage}
+            alt="InYourArea preview"
+            className="block mx-auto w-full h-full mt-14 object-contain align-top drop-shadow-2xl"
+            loading="eager"
+            decoding="async"
+          />
+        </div>
+      </motion.section>
+
+      <FeatureRail />
+      <Footer className="mt-0 pt-0" />
+
+      {/* ✅ Toastify Container */}
+      <ToastContainer
+        position="top-right"
+        autoClose={2000}
+        hideProgressBar={false}
+        newestOnTop={true}
+        closeOnClick
+        pauseOnHover={false}
+        draggable
+        theme="colored"
+      />
     </div>
   );
 }

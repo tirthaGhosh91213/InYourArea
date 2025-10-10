@@ -17,7 +17,7 @@ export default function RightSidebar() {
   };
 
   return (
-    <div className="w-80 flex flex-col gap-6 px-2 sm:px-0">
+    <div className="w-80 flex flex-col  pr-32 sm:px-0">
       {/* Login/Register or My Account Button */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
