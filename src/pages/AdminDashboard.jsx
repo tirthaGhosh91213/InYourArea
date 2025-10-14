@@ -1,6 +1,7 @@
+// src/pages/AdminDashboard.jsx
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { CheckCircle, XCircle, Bell } from "lucide-react";
+import { CheckCircle, XCircle } from "lucide-react";
 import axios from "axios";
 
 export default function AdminDashboard() {
@@ -12,7 +13,7 @@ export default function AdminDashboard() {
     const fetchEvents = async () => {
       try {
         setLoading(true);
-        const res = await axios.get("http://localhost:8000/api/v1/events/pending"); // Your pending events API
+        const res = await axios.get("http://localhost:8000/api/v1/events/pending");
         setEvents(res.data.data || []);
       } catch (err) {
         console.error("Error fetching events:", err);
@@ -36,7 +37,7 @@ export default function AdminDashboard() {
     }
   };
 
-  // Reject event (optional)
+  // Reject event
   const rejectEvent = (id) => {
     setEvents(events.filter((event) => event.id !== id));
     alert("Event rejected");

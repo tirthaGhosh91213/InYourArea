@@ -21,10 +21,16 @@ export default function Sidebar() {
   const handleOptionClick = (type) => {
     const token = localStorage.getItem("accessToken");
     setShowModal(false);
-    if (token) {
-      navigate(`/create-post/${type.toLowerCase()}`);
-    } else {
+
+    if (!token) {
       navigate("/login");
+      return;
+    }
+
+    if (type === "Events") {
+      navigate("/event-post-form"); // Redirect to EventPostForm page
+    } else {
+      navigate(`/create-post/${type.toLowerCase()}`);
     }
   };
 

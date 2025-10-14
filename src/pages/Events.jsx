@@ -1,42 +1,63 @@
 // src/pages/Events.jsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  Calendar,
-  MapPin,
-  Clock,
-  Heart,
-  PlusCircle,
-  Search,
-  X,
-} from "lucide-react";
+import { Calendar, MapPin, Clock, Heart, PlusCircle, Search, X } from "lucide-react";
+import axios from "axios";
 import Sidebar from "../components/SideBar";
 import RightSidebar from "../components/RightSidebar";
 
-const initialEvents = [
-  { id: 1, title: "Tech Meetup 2025", location: "New Delhi", date: "Oct 15, 2025", time: "5:00 PM", isFavorite: false },
-  { id: 2, title: "Startup Workshop", location: "Bangalore", date: "Oct 20, 2025", time: "2:00 PM", isFavorite: true },
-  { id: 3, title: "AI Conference", location: "Mumbai", date: "Nov 5, 2025", time: "10:00 AM", isFavorite: false },
-  { id: 4, title: "Web3 Hackathon", location: "Hyderabad", date: "Nov 12, 2025", time: "11:00 AM", isFavorite: false },
-];
-
 export default function Events() {
-  const [events, setEvents] = useState(initialEvents);
+  const [events, setEvents] = useState([]);
   const [search, setSearch] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [newEvent, setNewEvent] = useState({ title: "", location: "", date: "", time: "" });
+  const [loading, setLoading] = useState(false);
 
+  // Fetch events from API
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        setLoading(true);
+        const res = await axios.get("http://localhost:8000/api/v1/events");
+        setEvents(res.data.data || []);
+      } catch (err) {
+        console.error("Error fetching events:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchEvents();
+  }, []);
+
+  // Toggle favorite locally
   const toggleFavorite = (id) => {
     setEvents((prev) =>
       prev.map((e) => (e.id === id ? { ...e, isFavorite: !e.isFavorite } : e))
     );
   };
 
-  const handleAddEvent = () => {
+  // Add new event via API
+  const handleAddEvent = async () => {
     if (!newEvent.title || !newEvent.location || !newEvent.date || !newEvent.time) return;
-    setEvents((prev) => [...prev, { ...newEvent, id: prev.length + 1, isFavorite: false }]);
-    setNewEvent({ title: "", location: "", date: "", time: "" });
-    setShowModal(false);
+
+    try {
+      const eventDateTime = `${newEvent.date}T${newEvent.time}:00`;
+      const res = await axios.post("http://localhost:8000/api/v1/events", {
+        title: newEvent.title,
+        description: "", // optional, can add input field if needed
+        location: newEvent.location,
+        eventDate: eventDateTime,
+      });
+
+      if (res.data.success) {
+        alert(res.data.message); // "Event created successfully and pending approval"
+        setNewEvent({ title: "", location: "", date: "", time: "" });
+        setShowModal(false);
+      }
+    } catch (err) {
+      console.error("Error creating event:", err);
+      alert("Failed to create event");
+    }
   };
 
   const filteredEvents = events.filter(
@@ -47,10 +68,8 @@ export default function Events() {
 
   return (
     <div className="flex h-screen font-sans bg-gradient-to-br from-gray-50 to-gray-100">
-      {/* Sidebar */}
       <Sidebar activePage="events" />
 
-      {/* Main Content */}
       <div className="flex-1 p-6 overflow-y-auto">
         <div className="flex justify-between items-center mb-6">
           <motion.h1
@@ -72,12 +91,7 @@ export default function Events() {
           </motion.button>
         </div>
 
-        {/* Search Bar */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="mb-6 relative"
-        >
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-6 relative">
           <Search className="absolute left-3 top-3 text-gray-400" />
           <input
             type="text"
@@ -88,7 +102,6 @@ export default function Events() {
           />
         </motion.div>
 
-        {/* Filter Buttons */}
         <div className="flex gap-3 mb-6 flex-wrap">
           {["All", "Delhi", "Bangalore", "Mumbai", "Hyderabad"].map((loc) => (
             <motion.button
@@ -105,9 +118,10 @@ export default function Events() {
           ))}
         </div>
 
-        {/* Events Grid */}
         <AnimatePresence>
-          {filteredEvents.length > 0 ? (
+          {loading ? (
+            <motion.div className="text-gray-500">Loading events...</motion.div>
+          ) : filteredEvents.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredEvents.map((event) => (
                 <motion.div
@@ -124,23 +138,19 @@ export default function Events() {
                     <MapPin className="w-4 h-4 mr-2" /> {event.location}
                   </div>
                   <div className="flex items-center text-gray-600 mb-1">
-                    <Calendar className="w-4 h-4 mr-2" /> {event.date}
+                    <Calendar className="w-4 h-4 mr-2" /> {new Date(event.eventDate).toLocaleDateString()}
                   </div>
                   <div className="flex items-center text-gray-600">
-                    <Clock className="w-4 h-4 mr-2" /> {event.time}
+                    <Clock className="w-4 h-4 mr-2" />{" "}
+                    {new Date(event.eventDate).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                   </div>
 
-                  {/* Favorite Button */}
                   <motion.button
                     onClick={() => toggleFavorite(event.id)}
                     whileTap={{ scale: 1.2 }}
                     className="absolute top-4 right-4 text-red-500"
                   >
-                    <Heart
-                      className={`w-6 h-6 ${
-                        event.isFavorite ? "fill-red-500" : "fill-none"
-                      }`}
-                    />
+                    <Heart className={`w-6 h-6 ${event.isFavorite ? "fill-red-500" : "fill-none"}`} />
                   </motion.button>
                 </motion.div>
               ))}
@@ -157,7 +167,6 @@ export default function Events() {
         </AnimatePresence>
       </div>
 
-      {/* Right Sidebar */}
       <RightSidebar />
 
       {/* Add Event Modal */}
