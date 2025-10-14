@@ -1,100 +1,255 @@
 // src/components/RightSidebar.jsx
-import React, { useState } from "react";
-import { motion } from "framer-motion";
+import React, { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Bell, Trash2, X, Loader2 } from "lucide-react";
+import AdminDashboard from "../pages/AdminDashboard"; // ✅ Import
 
 export default function RightSidebar() {
   const navigate = useNavigate();
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [showDashboard, setShowDashboard] = useState(false); // ✅ New
 
-  // Check if user is logged in
-  const isLoggedIn = Boolean(localStorage.getItem("accessToken"));
+  const token = localStorage.getItem("accessToken");
+  const role = localStorage.getItem("role");
+  const isLoggedIn = Boolean(token);
+  const isAdmin = role?.toLowerCase().includes("admin"); // ✅ robust check
+
+  const fetchNotifications = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch("http://localhost:8000/api/v1/notifications/recent", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (res.ok) setNotifications(data.notifications || []);
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isLoggedIn) fetchNotifications();
+  }, [isLoggedIn]);
+
+  const deleteNotification = async (id) => {
+    try {
+      const res = await fetch(`http://localhost:8000/api/v1/notifications/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) setNotifications((prev) => prev.filter((n) => n.id !== id));
+    } catch (error) {
+      console.error("Error deleting notification:", error);
+    }
+  };
+
+  const clearAllNotifications = async () => {
+    try {
+      const res = await fetch("http://localhost:8000/api/v1/notifications/clear-all", {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) setNotifications([]);
+    } catch (error) {
+      console.error("Error clearing notifications:", error);
+    }
+  };
 
   const handleLogout = () => {
     localStorage.removeItem("accessToken");
+    localStorage.removeItem("role");
+    setShowDashboard(false);
     navigate("/login");
   };
 
+  // ✅ Show dashboard directly if admin clicked Dashboard
+  if (showDashboard && isAdmin) {
+    return <AdminDashboard onBack={() => setShowDashboard(false)} />;
+  }
+
   return (
-    <div className="w-80 flex flex-col  pr-32 sm:px-0">
-      {/* Login/Register or My Account Button */}
+    <div className="w-80 flex flex-col pr-32 sm:px-0">
+      {/* ======= HEADER (Notifications + Account) ======= */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1, type: "spring", stiffness: 80 }}
-        className="flex justify-end relative"
+        className="flex justify-end items-center gap-3 relative"
       >
+        {/* 🔔 Notification Bell */}
+        {isLoggedIn && (
+          <div className="relative">
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => {
+                setNotifOpen((p) => !p);
+                setDropdownOpen(false);
+              }}
+              className="relative bg-white rounded-full p-2 shadow-md hover:bg-green-50 transition"
+            >
+              <Bell className="text-green-500" size={22} />
+              {notifications.length > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
+                  {notifications.length}
+                </span>
+              )}
+            </motion.button>
+
+            {/* Notification Dropdown */}
+            <AnimatePresence>
+              {notifOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: -15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ type: "spring", stiffness: 80 }}
+                  className="absolute right-0 mt-3 w-80 bg-white shadow-2xl rounded-xl z-20 border border-gray-100"
+                >
+                  <div className="flex justify-between items-center p-3 border-b bg-gradient-to-r from-green-400 to-green-500 text-white rounded-t-xl">
+                    <h3 className="font-semibold text-sm">Notifications</h3>
+                    {notifications.length > 0 && (
+                      <button
+                        onClick={clearAllNotifications}
+                        className="text-xs hover:underline flex items-center gap-1"
+                      >
+                        <Trash2 size={14} /> Clear All
+                      </button>
+                    )}
+                  </div>
+
+                  {loading ? (
+                    <div className="p-4 flex justify-center text-gray-500">
+                      <Loader2 className="animate-spin" size={20} />
+                    </div>
+                  ) : notifications.length === 0 ? (
+                    <div className="p-4 text-center text-gray-500 text-sm">
+                      No new notifications ✨
+                    </div>
+                  ) : (
+                    <ul className="max-h-60 overflow-y-auto">
+                      {notifications.map((notif) => (
+                        <motion.li
+                          key={notif.id}
+                          initial={{ opacity: 0, x: 50 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, x: 50 }}
+                          transition={{ duration: 0.3 }}
+                          className="flex justify-between items-start p-3 border-b hover:bg-green-50 transition"
+                        >
+                          <div>
+                            <h4 className="font-semibold text-gray-800 text-sm">
+                              {notif.title}
+                            </h4>
+                            <p className="text-xs text-gray-500 mt-0.5">
+                              {notif.message}
+                            </p>
+                          </div>
+                          <button
+                            onClick={() => deleteNotification(notif.id)}
+                            className="text-red-500 hover:text-red-600 transition"
+                          >
+                            <X size={16} />
+                          </button>
+                        </motion.li>
+                      ))}
+                    </ul>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        )}
+
+        {/* 👤 Account / Login */}
         {isLoggedIn ? (
           <div className="relative">
             <motion.button
-              whileHover={{
-                scale: 1.05,
-                boxShadow: "0 10px 20px rgba(34,197,94,0.4)",
-              }}
+              whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              onClick={() => setDropdownOpen((prev) => !prev)}
-              className="bg-gradient-to-r from-green-400 to-green-500 text-white font-semibold rounded-full px-5 py-2 shadow-md transition-all duration-300 flex items-center gap-1"
+              onClick={() => {
+                setDropdownOpen((p) => !p);
+                setNotifOpen(false);
+              }}
+              className="bg-gradient-to-r from-green-400 to-green-500 text-white font-semibold rounded-full px-5 py-2 shadow-md flex items-center gap-1"
             >
               My Account <ChevronDown size={18} />
             </motion.button>
 
-            {dropdownOpen && (
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                className="absolute right-0 mt-2 w-48 bg-white shadow-lg rounded-xl overflow-hidden z-10"
-              >
-                <button
-                  onClick={() => navigate("/my-account")}
-                  className="w-full text-left px-4 py-2 hover:bg-green-50 transition"
+            {/* Dropdown */}
+            <AnimatePresence>
+              {dropdownOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="absolute right-0 mt-2 w-48 bg-white shadow-lg rounded-xl overflow-hidden z-10"
                 >
-                  Profile
-                </button>
-                <button
-                  onClick={() => navigate("/settings")}
-                  className="w-full text-left px-4 py-2 hover:bg-green-50 transition"
-                >
-                  Settings
-                </button>
-                <button
-                  onClick={handleLogout}
-                  className="w-full text-left px-4 py-2 hover:bg-red-100 text-red-600 transition"
-                >
-                  Logout
-                </button>
-              </motion.div>
-            )}
+                  {isAdmin ? (
+                    <>
+                      <button
+                        onClick={() => {
+                          setShowDashboard(true);
+                          setDropdownOpen(false);
+                          navigate("/dashboard")
+                        }}
+                        className="w-full text-left px-4 py-2 hover:bg-green-50 transition"
+                      >
+                        Dashboard
+                      </button>
+                      <button
+                        onClick={handleLogout}
+                        className="w-full text-left px-4 py-2 hover:bg-red-100 text-red-600 transition"
+                      >
+                        Logout
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        onClick={() => navigate("/profile")}
+                        className="w-full text-left px-4 py-2 hover:bg-green-50 transition"
+                      >
+                        My Profile
+                      </button>
+                      <button
+                        onClick={handleLogout}
+                        className="w-full text-left px-4 py-2 hover:bg-red-100 text-red-600 transition"
+                      >
+                        Logout
+                      </button>
+                    </>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         ) : (
           <motion.button
-            whileHover={{
-              scale: 1.05,
-              boxShadow: "0 10px 20px rgba(34,197,94,0.4)",
-            }}
+            whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => navigate("/login")}
-            className="bg-gradient-to-r from-green-400 to-green-500 text-white font-semibold rounded-full px-5 py-2 shadow-md transition-all duration-300"
+            className="bg-gradient-to-r from-green-400 to-green-500 text-white font-semibold rounded-full px-5 py-2 shadow-md"
           >
             Register or Sign In
           </motion.button>
         )}
       </motion.div>
 
-      {/* Email Updates */}
+      {/* Sidebar Cards */}
       <motion.div
         initial={{ opacity: 0, x: 20 }}
         animate={{ opacity: 1, x: 0 }}
-        transition={{ delay: 0.2, type: "spring", stiffness: 80 }}
-        whileHover={{ scale: 1.03, boxShadow: "0 15px 25px rgba(0,0,0,0.1)" }}
-        className="bg-white p-4 rounded-xl shadow-lg flex gap-3 items-start transition-all duration-300 cursor-pointer hover:bg-green-50"
+        transition={{ delay: 0.2 }}
+        className="bg-white p-4 rounded-xl shadow-lg flex gap-3 items-start mt-5 hover:bg-green-50 transition"
       >
-        <img
-          src="https://cdn-icons-png.flaticon.com/512/561/561127.png"
-          alt="Email Icon"
-          className="w-10 h-10"
-        />
+        <img src="https://cdn-icons-png.flaticon.com/512/561/561127.png" alt="Email Icon" className="w-10 h-10" />
         <div>
           <h4 className="font-semibold text-gray-800">Daily Email Updates</h4>
           <p className="text-sm text-gray-500 mt-1">
@@ -103,62 +258,18 @@ export default function RightSidebar() {
         </div>
       </motion.div>
 
-      {/* Grow Your Business */}
       <motion.div
         initial={{ opacity: 0, x: 20 }}
         animate={{ opacity: 1, x: 0 }}
-        transition={{ delay: 0.3, type: "spring", stiffness: 80 }}
-        whileHover={{ scale: 1.03, boxShadow: "0 15px 25px rgba(0,0,0,0.1)" }}
-        className="bg-white p-4 rounded-xl shadow-lg flex gap-3 items-start transition-all duration-300 cursor-pointer hover:bg-green-50"
+        transition={{ delay: 0.3 }}
+        className="bg-white p-4 rounded-xl shadow-lg flex gap-3 items-start mt-3 hover:bg-green-50 transition"
       >
-        <img
-          src="https://cdn-icons-png.flaticon.com/512/2721/2721292.png"
-          alt="Business Icon"
-          className="w-10 h-10"
-        />
+        <img src="https://cdn-icons-png.flaticon.com/512/2721/2721292.png" alt="Business Icon" className="w-10 h-10" />
         <div>
-          <h4 className="font-semibold text-gray-800">
-            Grow your business with us
-          </h4>
+          <h4 className="font-semibold text-gray-800">Grow your business with us</h4>
           <p className="text-sm text-gray-500 mt-1">
-            We connect you with the people and communities that matter to your
-            business.
+            We connect you with the people and communities that matter to your business.
           </p>
-        </div>
-      </motion.div>
-
-      {/* Advert Card */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.4, type: "spring", stiffness: 80 }}
-        whileHover={{ scale: 1.02, boxShadow: "0 20px 30px rgba(0,0,0,0.15)" }}
-        className="bg-white rounded-xl shadow-lg overflow-hidden cursor-pointer transition-all duration-300"
-      >
-        <img
-          src="https://images.unsplash.com/photo-1607746882042-944635dfe10e?w=500"
-          alt="Ad"
-          className="w-full h-40 object-cover hover:scale-105 transition-transform duration-500"
-        />
-        <div className="p-4">
-          <h4 className="font-semibold text-gray-800 text-base">
-            Radnor House Sevenoaks is where individual talent meets academic
-            excellence
-          </h4>
-          <p className="text-xs text-gray-500 mt-1">
-            Advertorial by Radnor House Sevenoaks
-          </p>
-          <p className="text-sm text-gray-600 mt-2">
-            Discover Radnor for yourself at the Whole School Open Day on
-            Saturday, October 4
-          </p>
-          <motion.button
-            whileHover={{ scale: 1.05, boxShadow: "0 8px 16px rgba(34,197,94,0.4)" }}
-            whileTap={{ scale: 0.95 }}
-            className="mt-3 bg-gradient-to-r from-green-400 to-green-500 text-white font-semibold rounded-full py-1.5 px-4 shadow-md transition-all duration-300"
-          >
-            Learn More
-          </motion.button>
         </div>
       </motion.div>
     </div>

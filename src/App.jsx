@@ -11,6 +11,7 @@ import Jobs from "./pages/Jobs";
 import Events from "./pages/Events";
 import CreatePost from "./pages/CreatePost";
 import Login from "./pages/Login";
+import AdminDashboard from "./pages/AdminDashboard";
 
 
 // ✅ Home component with postcode + navigation
@@ -51,6 +52,7 @@ export default function App() {
         <Route path="/events" element={<Events />} />
         <Route path="/login" element={<Login />} />
         <Route path="/create-post/:type" element={<CreatePost />} />
+        <Route path="/dashboard" element={<AdminDashboard />} />
          <Route path="*" element={<NotFound />} />
       </Routes>
     </Router>
