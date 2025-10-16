@@ -1,14 +1,17 @@
+// src/pages/CreatePost.jsx
 import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowLeft, Upload, XCircle } from "lucide-react";
-import EventPostForm from "./EventPostForm"; // ✅ event form
+import { toast } from "react-toastify";
+import EventPostForm from "./EventPostForm"; // Event form component
+import axios from "axios";
 
 export default function CreatePost() {
   const { type } = useParams();
   const navigate = useNavigate();
 
-  // ✅ Decode and normalize type (handles "localnews" as "local news")
+  // Normalize post type
   const normalizedType =
     type === "localnews"
       ? "local news"
@@ -35,6 +38,8 @@ export default function CreatePost() {
     eventTime: "",
   });
 
+  const [loading, setLoading] = useState(false);
+
   const handleChange = (e) => {
     const { name, value, files } = e.target;
     if (files && files[0]) {
@@ -50,17 +55,74 @@ export default function CreatePost() {
     setFormData({ ...formData, image: null, imagePreview: null });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!formData.image) {
-      alert("Please upload an image before posting!");
+      toast.error("Please upload an image before posting!");
       return;
     }
 
-    console.log("Post created:", { type: normalizedType, ...formData });
-    alert(`${normalizedType.toUpperCase()} post created successfully!`);
-    navigate(`/${type.replace(/\s/g, "").toLowerCase()}`);
+    setLoading(true);
+
+    try {
+      let response;
+
+      if (normalizedType === "jobs") {
+        // POST job
+        response = await axios.post("http://localhost:8000/api/v1/jobs", {
+          title: formData.title,
+          company: formData.company,
+          location: formData.location,
+          jobType: formData.jobType,
+          salaryRange: formData.salaryRange,
+          description: formData.description,
+          image: formData.image, // implement multipart/form-data if backend expects files
+        });
+      } else if (normalizedType === "events") {
+        // POST event
+        response = await axios.post("http://localhost:8000/api/v1/events", {
+          title: formData.eventName,
+          description: formData.description,
+          location: formData.eventLocation,
+          date: formData.eventDate,
+          time: formData.eventTime,
+          image: formData.image,
+        });
+      } else {
+        // POST general/other posts (local news/community)
+        response = await axios.post(`http://localhost:8000/api/v1/posts`, {
+          title: formData.title,
+          description: formData.description,
+          type: normalizedType,
+          image: formData.image,
+        });
+      }
+
+      if (response.data.success) {
+        toast.success(`${normalizedType.toUpperCase()} post created successfully!`);
+        setFormData({
+          title: "",
+          description: "",
+          company: "",
+          location: "",
+          jobType: "Full-Time",
+          salaryRange: "",
+          image: null,
+          imagePreview: null,
+          eventName: "",
+          eventLocation: "",
+          eventDate: "",
+          eventTime: "",
+        });
+        navigate(`/${type.replace(/\s/g, "").toLowerCase()}`);
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to create post");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const isJobPost = normalizedType === "jobs";
@@ -203,7 +265,7 @@ export default function CreatePost() {
             />
           </div>
 
-          {/* Image Upload (Mandatory) */}
+          {/* Image Upload */}
           <div>
             <label className="block text-gray-700 font-medium mb-2">
               Upload Image <span className="text-red-500">*</span>
@@ -251,9 +313,10 @@ export default function CreatePost() {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             type="submit"
+            disabled={loading}
             className="w-full bg-gradient-to-r from-green-400 to-green-500 text-white font-semibold py-3 rounded-full shadow-lg hover:shadow-xl transition-all"
           >
-            Post {postTypeTitle}
+            {loading ? "Posting..." : `Post ${postTypeTitle}`}
           </motion.button>
         </form>
       </motion.div>

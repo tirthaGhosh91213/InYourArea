@@ -1,6 +1,8 @@
 // src/components/EventPostForm.jsx
 import React, { useState } from "react";
 import axios from "axios";
+import { motion, AnimatePresence } from "framer-motion";
+import { Plus } from "lucide-react";
 
 /**
  * Props:
@@ -24,18 +26,22 @@ export default function EventPostForm({ onSuccess }) {
 
   const handleFileChange = (e) => {
     const files = Array.from(e.target.files);
-    setImages(files);
+    setImages((prev) => [...prev, ...files]);
   };
 
   const resetForm = () => {
-    setFormData({ eventName: "", eventDescription: "", eventLocation: "", eventDate: "", eventTime: "" });
+    setFormData({
+      eventName: "",
+      eventDescription: "",
+      eventLocation: "",
+      eventDate: "",
+      eventTime: "",
+    });
     setImages([]);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    // basic validation
     if (!formData.eventName || !formData.eventLocation || !formData.eventDate || !formData.eventTime) {
       return window.alert("Please fill all required fields (name, location, date, time).");
     }
@@ -51,17 +57,11 @@ export default function EventPostForm({ onSuccess }) {
       };
 
       const fd = new FormData();
-      // backend expects a key 'event' with JSON string
       fd.append("event", JSON.stringify(eventPayload));
-
-      // append each image file as 'images'
-      images.forEach((file) => {
-        fd.append("images", file);
-      });
+      images.forEach((file) => fd.append("images", file));
 
       const token = localStorage.getItem("accessToken");
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
-      // Note: axios will automatically set Content-Type multipart/form-data with proper boundary when sending FormData
       const res = await axios.post("http://localhost:8000/api/v1/events", fd, { headers });
 
       if (res.data && res.data.success) {
@@ -70,11 +70,10 @@ export default function EventPostForm({ onSuccess }) {
         if (onSuccess) onSuccess(created);
         resetForm();
       } else {
-        console.error("Unexpected create response", res);
         window.alert("Failed to create event");
       }
     } catch (err) {
-      console.error("Error creating event", err);
+      console.error(err);
       window.alert(err?.response?.data?.message || "Error creating event");
     } finally {
       setSubmitting(false);
@@ -83,6 +82,7 @@ export default function EventPostForm({ onSuccess }) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      {/* Event Name */}
       <div>
         <label className="block text-gray-700 font-medium mb-2">Event Name</label>
         <input
@@ -96,6 +96,7 @@ export default function EventPostForm({ onSuccess }) {
         />
       </div>
 
+      {/* Description */}
       <div>
         <label className="block text-gray-700 font-medium mb-2">Description</label>
         <textarea
@@ -108,6 +109,7 @@ export default function EventPostForm({ onSuccess }) {
         />
       </div>
 
+      {/* Location */}
       <div>
         <label className="block text-gray-700 font-medium mb-2">Location</label>
         <input
@@ -121,7 +123,8 @@ export default function EventPostForm({ onSuccess }) {
         />
       </div>
 
-      <div className="flex gap-4">
+      {/* Date & Time */}
+      <div className="flex gap-4 flex-col sm:flex-row">
         <div className="flex-1">
           <label className="block text-gray-700 font-medium mb-2">Date</label>
           <input
@@ -146,27 +149,33 @@ export default function EventPostForm({ onSuccess }) {
         </div>
       </div>
 
+      {/* Images */}
       <div>
         <label className="block text-gray-700 font-medium mb-2">Images (you can select multiple)</label>
-        <input
-          type="file"
-          multiple
-          accept="image/*"
-          onChange={handleFileChange}
-          className="w-full"
-        />
-        {images.length > 0 && (
-          <div className="mt-2 flex gap-2 overflow-x-auto">
-            {images.map((f, idx) => (
-              <div key={idx} className="w-24 h-24 rounded-md overflow-hidden border">
-                <img src={URL.createObjectURL(f)} alt={f.name} className="w-full h-full object-cover" />
-              </div>
+        <div className="flex gap-2 overflow-x-auto py-2">
+          <AnimatePresence>
+            {images.map((file, idx) => (
+              <motion.div
+                key={idx}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="relative w-24 h-24 rounded-md overflow-hidden border flex-shrink-0"
+              >
+                <img src={URL.createObjectURL(file)} alt={file.name} className="w-full h-full object-cover" />
+              </motion.div>
             ))}
-          </div>
-        )}
+            {/* Plus button to add more images */}
+            <label className="w-24 h-24 rounded-md border-dashed border-2 border-gray-400 flex items-center justify-center cursor-pointer flex-shrink-0 hover:border-green-400 transition">
+              <Plus className="text-gray-500" size={24} />
+              <input type="file" multiple accept="image/*" onChange={handleFileChange} className="hidden" />
+            </label>
+          </AnimatePresence>
+        </div>
       </div>
 
-      <div className="flex gap-2">
+      {/* Buttons */}
+      <div className="flex gap-2 flex-wrap">
         <button
           type="submit"
           disabled={submitting}
@@ -174,7 +183,11 @@ export default function EventPostForm({ onSuccess }) {
         >
           {submitting ? "Creating..." : "Create Event"}
         </button>
-        <button type="button" onClick={resetForm} className="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300">
+        <button
+          type="button"
+          onClick={resetForm}
+          className="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300"
+        >
           Reset
         </button>
       </div>
