@@ -1,19 +1,30 @@
 // src/pages/Events.jsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Calendar, MapPin, Clock, Heart, PlusCircle, Search, X } from "lucide-react";
+import {
+  Calendar,
+  MapPin,
+  Clock,
+  Heart,
+  PlusCircle,
+  Search,
+  X,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import axios from "axios";
 import Sidebar from "../components/SideBar";
 import RightSidebar from "../components/RightSidebar";
+import EventPostForm from "./EventPostForm";
 
 export default function Events() {
   const [events, setEvents] = useState([]);
   const [search, setSearch] = useState("");
   const [showModal, setShowModal] = useState(false);
-  const [newEvent, setNewEvent] = useState({ title: "", location: "", date: "", time: "" });
   const [loading, setLoading] = useState(false);
+  const [filterCity, setFilterCity] = useState("All");
 
-  // Fetch events from API
+  // fetch all approved events
   useEffect(() => {
     const fetchEvents = async () => {
       try {
@@ -29,42 +40,27 @@ export default function Events() {
     fetchEvents();
   }, []);
 
-  // Toggle favorite locally
+  // called by EventPostForm on successful create to add the new event to list
+  const handleAddEventToList = (newEvent) => {
+    // place newest first
+    setEvents((prev) => [newEvent, ...prev]);
+  };
+
   const toggleFavorite = (id) => {
     setEvents((prev) =>
       prev.map((e) => (e.id === id ? { ...e, isFavorite: !e.isFavorite } : e))
     );
   };
 
-  // Add new event via API
-  const handleAddEvent = async () => {
-    if (!newEvent.title || !newEvent.location || !newEvent.date || !newEvent.time) return;
-
-    try {
-      const eventDateTime = `${newEvent.date}T${newEvent.time}:00`;
-      const res = await axios.post("http://localhost:8000/api/v1/events", {
-        title: newEvent.title,
-        description: "", // optional, can add input field if needed
-        location: newEvent.location,
-        eventDate: eventDateTime,
-      });
-
-      if (res.data.success) {
-        alert(res.data.message); // "Event created successfully and pending approval"
-        setNewEvent({ title: "", location: "", date: "", time: "" });
-        setShowModal(false);
-      }
-    } catch (err) {
-      console.error("Error creating event:", err);
-      alert("Failed to create event");
-    }
-  };
-
-  const filteredEvents = events.filter(
-    (e) =>
-      e.title.toLowerCase().includes(search.toLowerCase()) ||
-      e.location.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredEvents = events.filter((e) => {
+    // guard against undefined fields
+    const title = (e.title || "").toLowerCase();
+    const location = (e.location || "").toLowerCase();
+    const q = search.toLowerCase();
+    const matchesSearch = title.includes(q) || location.includes(q);
+    const matchesFilter = filterCity === "All" ? true : (e.location || "").toLowerCase().includes(filterCity.toLowerCase());
+    return matchesSearch && matchesFilter;
+  });
 
   return (
     <div className="flex h-screen font-sans bg-gradient-to-br from-gray-50 to-gray-100">
@@ -91,6 +87,7 @@ export default function Events() {
           </motion.button>
         </div>
 
+        {/* Search */}
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-6 relative">
           <Search className="absolute left-3 top-3 text-gray-400" />
           <input
@@ -102,65 +99,33 @@ export default function Events() {
           />
         </motion.div>
 
+        {/* Filters */}
         <div className="flex gap-3 mb-6 flex-wrap">
-          {["All", "Delhi", "Bangalore", "Mumbai", "Hyderabad"].map((loc) => (
+          {["All", "Bokaro", "Delhi", "Bangalore", "Mumbai", "Hyderabad"].map((loc) => (
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               key={loc}
-              className={`px-4 py-1 rounded-full border ${
-                loc === "All" ? "bg-blue-600 text-white border-blue-600" : "border-gray-300 text-gray-700"
-              }`}
-              onClick={() => setSearch(loc === "All" ? "" : loc)}
+              className={`px-4 py-1 rounded-full border ${filterCity === loc ? "bg-blue-600 text-white border-blue-600" : "border-gray-300 text-gray-700"}`}
+              onClick={() => setFilterCity(loc)}
             >
               {loc}
             </motion.button>
           ))}
         </div>
 
+        {/* Events Grid */}
         <AnimatePresence>
           {loading ? (
             <motion.div className="text-gray-500">Loading events...</motion.div>
           ) : filteredEvents.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredEvents.map((event) => (
-                <motion.div
-                  key={event.id}
-                  layout
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  whileHover={{ scale: 1.05, boxShadow: "0 20px 30px rgba(0,0,0,0.2)" }}
-                  className="bg-white rounded-2xl p-6 relative cursor-pointer hover:bg-gradient-to-r hover:from-blue-50 hover:to-blue-100 transition"
-                >
-                  <h2 className="text-xl font-semibold mb-2">{event.title}</h2>
-                  <div className="flex items-center text-gray-600 mb-1">
-                    <MapPin className="w-4 h-4 mr-2" /> {event.location}
-                  </div>
-                  <div className="flex items-center text-gray-600 mb-1">
-                    <Calendar className="w-4 h-4 mr-2" /> {new Date(event.eventDate).toLocaleDateString()}
-                  </div>
-                  <div className="flex items-center text-gray-600">
-                    <Clock className="w-4 h-4 mr-2" />{" "}
-                    {new Date(event.eventDate).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                  </div>
-
-                  <motion.button
-                    onClick={() => toggleFavorite(event.id)}
-                    whileTap={{ scale: 1.2 }}
-                    className="absolute top-4 right-4 text-red-500"
-                  >
-                    <Heart className={`w-6 h-6 ${event.isFavorite ? "fill-red-500" : "fill-none"}`} />
-                  </motion.button>
-                </motion.div>
+                <EventCard key={event.id} event={event} onToggleFav={() => toggleFavorite(event.id)} />
               ))}
             </div>
           ) : (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="text-center text-gray-500 text-xl mt-10"
-            >
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center text-gray-500 text-xl mt-10">
               No events found 🔍
             </motion.div>
           )}
@@ -183,53 +148,96 @@ export default function Events() {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.8, opacity: 0 }}
               transition={{ type: "spring", stiffness: 300, damping: 25 }}
-              className="bg-white p-6 rounded-2xl w-full max-w-md relative shadow-2xl"
+              className="bg-white p-6 rounded-2xl w-full max-w-2xl relative shadow-2xl"
             >
-              <button
-                onClick={() => setShowModal(false)}
-                className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
-              >
+              <button onClick={() => setShowModal(false)} className="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
                 <X className="w-5 h-5" />
               </button>
-              <h2 className="text-2xl font-bold mb-4">Add New Event</h2>
-              <input
-                type="text"
-                placeholder="Event Title"
-                className="w-full mb-3 p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={newEvent.title}
-                onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
+              <h2 className="text-2xl font-bold mb-4">Create Event</h2>
+              <EventPostForm
+                onSuccess={(createdEvent) => {
+                  handleAddEventToList(createdEvent);
+                  setShowModal(false);
+                  window.alert("Event created and is pending approval.");
+                }}
               />
-              <input
-                type="text"
-                placeholder="Location"
-                className="w-full mb-3 p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={newEvent.location}
-                onChange={(e) => setNewEvent({ ...newEvent, location: e.target.value })}
-              />
-              <input
-                type="date"
-                className="w-full mb-3 p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={newEvent.date}
-                onChange={(e) => setNewEvent({ ...newEvent, date: e.target.value })}
-              />
-              <input
-                type="time"
-                className="w-full mb-3 p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={newEvent.time}
-                onChange={(e) => setNewEvent({ ...newEvent, time: e.target.value })}
-              />
-              <motion.button
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.97 }}
-                onClick={handleAddEvent}
-                className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition"
-              >
-                Add Event
-              </motion.button>
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
     </div>
+  );
+}
+
+/* Small EventCard sub-component to keep Events.jsx tidy */
+function EventCard({ event, onToggleFav }) {
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const hasImages = Array.isArray(event.imageUrls) && event.imageUrls.length > 0;
+
+  return (
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      whileHover={{ scale: 1.03, boxShadow: "0 20px 30px rgba(0,0,0,0.08)" }}
+      className="bg-white rounded-2xl p-4 relative cursor-pointer hover:bg-gradient-to-r hover:from-blue-50 hover:to-blue-100 transition"
+    >
+      {/* Image carousel */}
+      <div className="relative rounded-lg overflow-hidden mb-3">
+        {hasImages ? (
+          <>
+            <img
+              src={event.imageUrls[currentImageIndex]}
+              alt={event.title}
+              className="w-full h-44 object-cover rounded-lg"
+            />
+            {event.imageUrls.length > 1 && (
+              <>
+                <button
+                  className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/70 p-2 rounded-full"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setCurrentImageIndex((i) => (i - 1 + event.imageUrls.length) % event.imageUrls.length);
+                  }}
+                >
+                  <ChevronLeft />
+                </button>
+                <button
+                  className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/70 p-2 rounded-full"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setCurrentImageIndex((i) => (i + 1) % event.imageUrls.length);
+                  }}
+                >
+                  <ChevronRight />
+                </button>
+              </>
+            )}
+          </>
+        ) : (
+          <div className="w-full h-44 bg-gray-100 flex items-center justify-center rounded-lg text-gray-400">No image</div>
+        )}
+      </div>
+
+      <div className="flex justify-between items-start gap-2">
+        <div>
+          <h2 className="text-lg font-semibold">{event.title}</h2>
+          <p className="text-sm text-gray-600">{event.description?.slice(0, 120)}{event.description && event.description.length > 120 ? "…" : ""}</p>
+
+          <div className="mt-3 text-gray-600 text-sm flex gap-3 items-center flex-wrap">
+            <span className="flex items-center gap-1"><MapPin className="w-4 h-4" /> {event.location}</span>
+            <span className="flex items-center gap-1"><Calendar className="w-4 h-4" /> {event.eventDate ? new Date(event.eventDate).toLocaleDateString() : "-"}</span>
+            <span className="flex items-center gap-1"><Clock className="w-4 h-4" /> {event.eventDate ? new Date(event.eventDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "-"}</span>
+          </div>
+
+          <p className="text-xs text-gray-400 mt-2">Posted by: {event.author ? `${event.author.firstName} ${event.author.lastName}` : "Unknown"}</p>
+        </div>
+
+        <motion.button onClick={(e) => { e.stopPropagation(); onToggleFav(); }} whileTap={{ scale: 1.1 }} className="text-red-500">
+          <Heart className={`w-6 h-6 ${event.isFavorite ? "fill-red-500" : "fill-none"}`} />
+        </motion.button>
+      </div>
+    </motion.div>
   );
 }
