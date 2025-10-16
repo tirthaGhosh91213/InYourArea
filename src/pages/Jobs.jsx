@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Briefcase,
   Building2,
   MapPin,
   Search,
@@ -16,17 +15,9 @@ import RightSidebar from "../components/RightSidebar";
 import axios from "axios";
 import { toast } from "react-toastify";
 
-const filterTabs = [
-  { name: "All", icon: Briefcase },
-  { name: "Full-Time", icon: Briefcase },
-  { name: "Remote", icon: Building2 },
-  { name: "Hybrid", icon: MapPin },
-];
-
 export default function Jobs() {
   const [searchTerm, setSearchTerm] = useState("");
   const [likedJobs, setLikedJobs] = useState([]);
-  const [activeTab, setActiveTab] = useState("All"); // default: All
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -34,7 +25,9 @@ export default function Jobs() {
     try {
       setLoading(true);
       const res = await axios.get("http://localhost:8000/api/v1/jobs");
-      if (res.data.success) setJobs(res.data.data);
+      if (res.data.success) {
+        setJobs(res.data.data.filter((job) => job.status === "APPROVED"));
+      }
     } catch (err) {
       toast.error("Failed to fetch jobs");
     } finally {
@@ -52,34 +45,30 @@ export default function Jobs() {
     );
   };
 
-  // Filter jobs by search term and active tab
-  const filteredJobs = jobs.filter((job) => {
-    const matchesSearch =
-      job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      job.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      job.location.toLowerCase().includes(searchTerm.toLowerCase());
-
-    const matchesTab = activeTab === "All" || job.jobType === activeTab;
-
-    return matchesSearch && matchesTab;
-  });
+  const filteredJobs = jobs.filter((job) =>
+    [job.title, job.company, job.location].some((field) =>
+      field?.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+  );
 
   return (
-    <div className="flex min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      <Sidebar />
+    <div className="flex h-screen bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden">
+      {/* ===== Left Sidebar ===== */}
+      <div className="hidden lg:block w-64 bg-white shadow-md border-r border-gray-200">
+        <Sidebar />
+      </div>
 
-      <main className="flex-1 px-4 sm:px-6 md:px-8 py-6 overflow-y-auto">
-        {/* Jobs Header */}
+      {/* ===== Main Content ===== */}
+      <main className="flex-1 overflow-y-auto p-6 relative">
+        {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ type: "spring", stiffness: 80 }}
           className="bg-emerald-700 text-white rounded-xl p-6 mb-6 shadow-lg"
         >
-          <h2 className="text-xl font-semibold text-center mb-4">Job Board</h2>
-
-          {/* Search Bar */}
-          <div className="flex justify-center mb-6">
+          <h2 className="text-2xl font-semibold text-center mb-4">Job Board</h2>
+          <div className="flex justify-center">
             <div className="relative w-full sm:w-96">
               <div className="absolute inset-y-0 left-2 flex items-center justify-center pointer-events-none">
                 <Search size={18} className="text-emerald-700" />
@@ -93,51 +82,33 @@ export default function Jobs() {
               />
             </div>
           </div>
-
-          {/* Filter Tabs */}
-          <div className="flex justify-center gap-3">
-            {filterTabs.map((tab) => {
-              const Icon = tab.icon;
-              const isActive = activeTab === tab.name;
-              return (
-                <button
-                  key={tab.name}
-                  onClick={() => setActiveTab(tab.name)}
-                  className={`flex flex-col items-center justify-center w-20 h-20 rounded-lg border transition ${
-                    isActive
-                      ? "bg-red-500 text-white border-red-500"
-                      : "bg-white/20 text-white border-white/30 hover:bg-white/30 hover:text-white"
-                  }`}
-                >
-                  <Icon size={20} />
-                  <span className="text-xs mt-1 font-semibold text-center">
-                    {tab.name}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
         </motion.div>
 
         {/* Job Cards */}
         {loading ? (
-          <div className="flex justify-center py-12 text-gray-600">Loading...</div>
+          <div className="flex justify-center py-12 text-gray-600">
+            Loading...
+          </div>
         ) : filteredJobs.length > 0 ? (
           <AnimatePresence>
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-              {filteredJobs.map((job, index) => (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 pb-20">
+              {filteredJobs.map((job, idx) => (
                 <motion.div
                   key={job.id}
                   layout
                   initial={{ opacity: 0, y: 60 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -20 }}
-                  transition={{ delay: index * 0.1, type: "spring", stiffness: 100 }}
+                  transition={{
+                    delay: idx * 0.05,
+                    type: "spring",
+                    stiffness: 100,
+                  }}
                   whileHover={{
-                    scale: 1.06,
+                    scale: 1.05,
                     boxShadow: "0 25px 40px rgba(52, 211, 153, 0.25)",
                   }}
-                  className="relative rounded-2xl overflow-hidden p-5 flex flex-col justify-between bg-white/90 shadow-lg border border-green-100 backdrop-blur transition-all cursor-pointer hover:bg-gradient-to-r hover:from-emerald-100 hover:via-green-50 hover:to-teal-100"
+                  className="relative rounded-2xl overflow-hidden p-5 flex flex-col justify-between bg-white/90 shadow-md border border-green-100 backdrop-blur transition-all cursor-pointer hover:bg-gradient-to-r hover:from-emerald-100 hover:via-green-50 hover:to-teal-100"
                 >
                   <img
                     src={job.imageUrls?.[0] || job.logo}
@@ -146,21 +117,22 @@ export default function Jobs() {
                   />
 
                   <div className="mb-3">
-                    <h2 className="text-xl font-semibold text-gray-800">{job.title}</h2>
+                    <h2 className="text-xl font-semibold text-gray-800">
+                      {job.title}
+                    </h2>
                     <p className="text-sm text-emerald-700 flex items-center gap-1">
                       <Building2 size={14} /> {job.company}
                     </p>
                   </div>
 
                   <div className="space-y-2 text-gray-700">
-                    <p className="flex items-center gap-2 hover:text-green-700 transition">
-                      <MapPin size={16} className="text-green-700" /> {job.location}
+                    <p className="flex items-center gap-2">
+                      <MapPin size={16} className="text-green-700" />{" "}
+                      {job.location}
                     </p>
-                    <span className="inline-block px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800 animate-pulse">
-                      {job.jobType}
-                    </span>
-                    <p className="flex items-center gap-2 hover:text-yellow-600 transition">
-                      <DollarSign size={16} className="text-yellow-600" /> {job.salaryRange}
+                    <p className="flex items-center gap-2">
+                      <DollarSign size={16} className="text-yellow-600" />{" "}
+                      {job.salaryRange}
                     </p>
                   </div>
 
@@ -194,23 +166,27 @@ export default function Jobs() {
             animate={{ opacity: 1 }}
             className="text-center text-gray-500 col-span-full mt-10 text-xl"
           >
-            No results found for "<span className="font-semibold">{searchTerm}</span>"
+            No results found for{" "}
+            <span className="font-semibold">"{searchTerm}"</span>
           </motion.p>
         )}
 
-        {/* Floating Post Job Button */}
+        {/* Floating Post Button */}
         <motion.button
           whileHover={{ scale: 1.1, rotate: 5 }}
           whileTap={{ scale: 0.95 }}
-          onClick={() => window.location.href = "/create/jobs"}
-          className="fixed bottom-10 right-10 flex items-center gap-2 bg-emerald-600 text-white font-semibold px-5 py-3 rounded-full shadow-lg hover:bg-emerald-700 transition-all"
+          onClick={() => (window.location.href = "/create/jobs")}
+          className="fixed bottom-10 right-10 flex items-center gap-2 bg-emerald-600 text-white font-semibold px-5 py-3 rounded-full shadow-lg hover:bg-emerald-700 transition-all z-50"
         >
           <PlusCircle size={20} />
           Post a Job
         </motion.button>
       </main>
 
-      <RightSidebar refreshJobs={fetchJobs} />
+      {/* ===== Right Sidebar ===== */}
+      <div className="hidden xl:block w-80 bg-white shadow-md border-l border-gray-200">
+        <RightSidebar refreshJobs={fetchJobs} />
+      </div>
     </div>
   );
 }

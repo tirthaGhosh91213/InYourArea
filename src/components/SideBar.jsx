@@ -27,16 +27,27 @@ export default function Sidebar() {
       return;
     }
 
-    if (type === "Events") {
-      navigate("/event-post-form"); // Redirect to EventPostForm page
-    } else {
-      navigate(`/create-post/${type.toLowerCase()}`);
+    switch (type) {
+      case "Jobs":
+        navigate("/create/jobs");
+        break;
+      case "Local News":
+        navigate("/create/localnews");
+        break;
+      case "Community":
+        navigate("/create/community");
+        break;
+      case "Events":
+        navigate("/create/events");
+        break;
+      default:
+        break;
     }
   };
 
   return (
     <>
-      <aside className="w-64 px-10 py-5 bg-gradient-to-b from-white/90 via-white/80 to-white/70 backdrop-blur-lg border-r border-gray-200 shadow-lg flex flex-col justify-between transition-all duration-500 hover:shadow-2xl ">
+      <aside className="w-64 px-10 py-5 bg-gradient-to-b from-white/90 via-white/80 to-white/70 backdrop-blur-lg border-r border-gray-200 shadow-lg flex flex-col justify-between transition-all duration-500 hover:shadow-2xl">
         <div>
           {/* Logo */}
           <motion.div
@@ -76,10 +87,9 @@ export default function Sidebar() {
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.1 }}
                   className={`flex items-center gap-3 py-3 px-4 rounded-xl font-medium text-lg transition-all duration-300
-                    ${
-                      active
-                        ? "bg-red-500 text-white shadow-lg"
-                        : "text-gray-700 hover:bg-green-100 hover:text-green-700"
+                    ${active
+                      ? "bg-red-500 text-white shadow-lg"
+                      : "text-gray-700 hover:bg-green-100 hover:text-green-700"
                     }`}
                 >
                   <Icon
@@ -91,10 +101,10 @@ export default function Sidebar() {
               );
             })}
 
-            {/* Divider Line */}
+            {/* Divider */}
             <div className="border-t border-gray-200 my-3"></div>
 
-            {/* Post Button */}
+            {/* + Post Button */}
             <motion.button
               onClick={() => setShowModal(true)}
               whileHover={{
@@ -107,7 +117,6 @@ export default function Sidebar() {
               + Post
             </motion.button>
 
-            {/* Divider Line Below */}
             <div className="border-t border-gray-200 my-3"></div>
           </nav>
         </div>
