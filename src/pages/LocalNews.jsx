@@ -1,171 +1,271 @@
 // src/pages/LocalNews.jsx
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import axios from "axios";
 import Sidebar from "../components/SideBar";
 import RightSidebar from "../components/RightSidebar";
-import Weather from "../components/Weather"; // import your weather component
-import { Clock, Cloud, Search, Heart, Share2 } from "lucide-react";
+import { MessageSquare, Clock, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
 
 export default function LocalNews() {
-  const [likedItems, setLikedItems] = useState([]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [activeTab, setActiveTab] = useState("updates");
+  const params = useParams();
+  const navigate = useNavigate();
+  const initialDistrict = params.district
+    ? decodeURIComponent(params.district)
+    : "";
 
-  const feedItems = [
-    { img: "https://images.unsplash.com/photo-1600880292089-90a7e086ee0c?w=500", title: "Tesco Mobile encourages people to stay connected", source: "Advertorial" },
-    { img: "https://images.unsplash.com/photo-1581091870622-9b6f7e33f0c6?w=500", title: "Tate Britain to get ‘garden classroom’", source: "bbc.com • 22 minutes ago" },
-    { img: "https://images.unsplash.com/photo-1571607388263-8b35b5b3d1a3?w=500", title: "Car meets: The hobby that petrolheads love", source: "bbc.com • 23 minutes ago" },
-    { img: "https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?w=500", title: "Leader’s Community Reassurance update", source: "westminster.gov.uk • 9 hours ago" },
-    { img: "https://images.unsplash.com/photo-1606813902913-cf3b7f1b4e47?w=500", title: "This 5-star beauty organiser is now 79% off", source: "inyourarea.co.uk • 13 hours ago" },
-    { img: "https://images.unsplash.com/photo-1551836022-d5d88e9218df?w=500", title: "Rosie Jones says wine bottle was thrown at her", source: "rutland-times.co.uk • 14 hours ago" },
+  const [district, setDistrict] = useState(initialDistrict);
+  const [newsList, setNewsList] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [currentImage, setCurrentImage] = useState({});
+
+  const token = localStorage.getItem("accessToken");
+
+  const districts = [
+    "Bokaro",
+    "Chatra",
+    "Deoghar",
+    "Dhanbad",
+    "Dumka",
+    "East Singhbhum",
+    "Garhwa",
+    "Giridih",
+    "Godda",
+    "Gumla",
+    "Hazaribagh",
+    "Jamtara",
+    "Jamshedpur",
+    "Khunti",
+    "Koderma",
+    "Latehar",
+    "Lohardaga",
+    "Pakur",
+    "Palamu",
+    "Ramgarh",
+    "Ranchi",
+    "Sahibganj",
+    "Seraikela-Kharsawan",
+    "Simdega",
+    "West Singhbhum",
   ];
 
-  const toggleLike = (i) => {
-    setLikedItems((prev) =>
-      prev.includes(i) ? prev.filter((id) => id !== i) : [...prev, i]
-    );
+  // Keep district and URL in sync when dropdown is changed
+  useEffect(() => {
+    if (district && params.district !== district) {
+      navigate(`/localnews/${encodeURIComponent(district)}`, { replace: true });
+    }
+    // eslint-disable-next-line
+  }, [district]);
+
+  // Fetch news whenever district changes
+  useEffect(() => {
+    if (!district) return;
+    const fetchNews = async () => {
+      setLoading(true);
+      setError("");
+      try {
+        const res = await axios.get(
+          `http://localhost:8000/api/v1/district-news/${district}/recent`,
+          token ? { headers: { Authorization: `Bearer ${token}` } } : {}
+        );
+        if (res.data.success) {
+          setNewsList(res.data.data || []);
+        } else {
+          setError("Failed to load news data");
+        }
+      } catch (err) {
+        console.error("Error fetching news:", err);
+        setError("Failed to load local news");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchNews();
+  }, [district, token]);
+
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleString("en-IN", {
+      dateStyle: "medium",
+      timeStyle: "short",
+    });
   };
 
-  const filteredFeed = feedItems.filter((item) =>
-    item.title.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const handlePrevImage = (newsId, total) => {
+    setCurrentImage((prev) => ({
+      ...prev,
+      [newsId]: prev[newsId] === 0 ? total - 1 : prev[newsId] - 1,
+    }));
+  };
 
-  // Example coordinates (replace with dynamic location if needed)
-  const location = { latitude: 23.25, longitude: 87.31 };
+  const handleNextImage = (newsId, total) => {
+    setCurrentImage((prev) => ({
+      ...prev,
+      [newsId]: prev[newsId] === total - 1 ? 0 : prev[newsId] + 1,
+    }));
+  };
 
   return (
-    <div className="flex min-h-screen bg-gray-50 font-sans">
-      <Sidebar />
+    <div className="flex min-h-screen bg-gray-50">
+      {/* Left Sidebar */}
+      <div className="hidden lg:block w-64 fixed h-full top-0 left-0 z-20">
+        <Sidebar />
+      </div>
 
-      <main className="flex-1 flex gap-6 p-6 overflow-y-auto">
-        <div className="flex-1">
-          {/* Header with Search */}
-          <div className="bg-emerald-700 text-white rounded-xl p-6 mb-6 shadow-lg">
-            <h2 className="text-xl font-semibold text-center mb-4">Local News</h2>
-
-            {/* Search Bar */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ type: "spring", stiffness: 80 }}
-              className="relative w-full sm:w-80 mx-auto"
-            >
-              <input
-                type="text"
-                placeholder="Search news..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 rounded-full border border-white/70 bg-white/80 text-gray-800 focus:ring-2 focus:ring-green-500 outline-none shadow-sm placeholder-gray-500 transition backdrop-blur"
-              />
-              <motion.span
-                whileHover={{ scale: 1.1, rotate: 5 }}
-                className="absolute left-3 top-2.5 text-gray-600 hover:text-green-700 transition cursor-pointer"
-              >
-                <Search size={20} />
-              </motion.span>
-            </motion.div>
-
-            {/* Tabs */}
-            <div className="flex justify-center gap-12 mt-6 relative">
-              {["updates", "weather"].map((tab) => (
-                <motion.div
-                  key={tab}
-                  className="flex flex-col items-center cursor-pointer relative group"
-                  onClick={() => setActiveTab(tab)}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  {tab === "updates" ? (
-                    <Clock
-                      size={20}
-                      className={`transition ${activeTab === "updates" ? "text-emerald-300" : "text-white group-hover:text-emerald-200"}`}
-                    />
-                  ) : (
-                    <Cloud
-                      size={20}
-                      className={`transition ${activeTab === "weather" ? "text-emerald-300" : "text-white group-hover:text-emerald-200"}`}
-                    />
-                  )}
-                  <span
-                    className={`text-sm mt-1 transition ${activeTab === tab ? "text-emerald-300 font-semibold" : "text-white group-hover:text-emerald-200"}`}
-                  >
-                    {tab.charAt(0).toUpperCase() + tab.slice(1)}
-                  </span>
-
-                  {/* Underline animation */}
-                  <AnimatePresence>
-                    {activeTab === tab && (
-                      <motion.div
-                        layoutId="underline"
-                        initial={{ opacity: 0, scaleX: 0 }}
-                        animate={{ opacity: 1, scaleX: 1 }}
-                        exit={{ opacity: 0, scaleX: 0 }}
-                        transition={{ duration: 0.25 }}
-                        className="absolute -bottom-2 w-8 h-1 bg-emerald-300 rounded-full"
-                      />
-                    )}
-                  </AnimatePresence>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-
-          {/* Content */}
-          {activeTab === "updates" && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-              <AnimatePresence>
-                {filteredFeed.map((item, i) => (
-                  <motion.div
-                    key={i}
-                    layout
-                    initial={{ opacity: 0, y: 50 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    transition={{ delay: i * 0.1, type: "spring", stiffness: 100 }}
-                    whileHover={{ scale: 1.05, boxShadow: "0 20px 40px rgba(16, 185, 129, 0.25)" }}
-                    className="relative bg-white rounded-2xl overflow-hidden shadow-lg border border-green-100 transition-all cursor-pointer hover:bg-gradient-to-br hover:from-emerald-100 hover:via-green-50 hover:to-teal-100"
-                  >
-                    <img
-                      src={item.img}
-                      alt={item.title}
-                      className="h-48 w-full object-cover transition-transform duration-500 hover:scale-105"
-                    />
-                    <div className="p-4 space-y-2">
-                      <h3 className="font-semibold text-gray-800">{item.title}</h3>
-                      <p className="text-xs text-gray-500">{item.source}</p>
-                      <div className="flex justify-between mt-3 pt-2 border-t border-gray-200">
-                        <motion.button
-                          whileTap={{ scale: 1.2 }}
-                          onClick={() => toggleLike(i)}
-                          className={`flex items-center gap-1 transition ${
-                            likedItems.includes(i) ? "text-red-500" : "text-gray-500 hover:text-red-500"
-                          }`}
-                        >
-                          <Heart size={16} /> Like
-                        </motion.button>
-
-                        <motion.button
-                          whileHover={{ scale: 1.05 }}
-                          className="flex items-center gap-1 text-gray-500 hover:text-green-600 transition"
-                        >
-                          <Share2 size={16} /> Share
-                        </motion.button>
-                      </div>
-                    </div>
-                  </motion.div>
-                ))}
-              </AnimatePresence>
-            </div>
-          )}
-
-          {activeTab === "weather" && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-              <Weather {...location} />
-            </div>
-          )}
+      <div className="flex-1 flex flex-col lg:ml-64">
+        {/* Top Right Sidebar */}
+        <div className="fixed top-0 w-full z-30">
+          <RightSidebar />
         </div>
 
-        <RightSidebar />
-      </main>
+        <main className="flex-1 flex flex-col gap-6 p-6 pt-24 items-center">
+          {/* Header + District Select */}
+          <motion.div
+            className="bg-emerald-700 text-white rounded-xl p-6 shadow-lg w-full max-w-5xl flex flex-col sm:flex-row items-center justify-between gap-4"
+            initial={{ opacity: 0, y: -30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ type: "spring", stiffness: 100 }}
+          >
+            <div>
+              <h2 className="text-2xl font-bold text-center sm:text-left">
+                Local District News
+              </h2>
+              <p className="text-center sm:text-left text-emerald-200 mt-1">
+                Latest news updates from {district || "your district"} (Last 5 Days)
+              </p>
+            </div>
+
+            {/* Standard District Dropdown */}
+            <select
+              value={district}
+              onChange={(e) => setDistrict(e.target.value)}
+              className="px-4 py-2 rounded-md text-gray-700 font-medium focus:outline-none focus:ring-2 focus:ring-green-500"
+            >
+              <option value="">-- Select District --</option>
+              {districts.map((d) => (
+                <option key={d} value={d}>
+                  {d}
+                </option>
+              ))}
+            </select>
+          </motion.div>
+
+          {/* Loading / Error / News */}
+          {loading ? (
+            <div className="flex justify-center items-center h-64">
+              <Loader2 className="animate-spin text-green-600" size={40} />
+            </div>
+          ) : error ? (
+            <div className="text-center text-red-500 font-semibold">{error}</div>
+          ) : newsList.length === 0 ? (
+            district && <div className="text-center text-gray-600 font-medium">No district news found.</div>
+          ) : (
+            <AnimatePresence>
+              <div className="flex flex-col gap-6 w-full max-w-5xl">
+                {newsList.map((news, i) => {
+                  const images = Array.isArray(news.imageUrls) ? news.imageUrls : [];
+                  const imgIndex = currentImage[news.id] || 0;
+
+                  return (
+                    <motion.div
+                      key={news.id || i}
+                      layout
+                      initial={{ opacity: 0, y: 40 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -20 }}
+                      transition={{ delay: i * 0.1 }}
+                      className="bg-white rounded-3xl shadow-md border border-green-100 overflow-hidden hover:shadow-xl hover:border-green-300 transition-all duration-300 w-full"
+                    >
+                      {/* Image Slider */}
+                      {images.length > 0 && (
+                        <div className="relative w-full overflow-hidden">
+                          <div className="hidden sm:flex gap-2 p-2 overflow-x-auto">
+                            {images.map((img, idx) => (
+                              <img
+                                key={idx}
+                                src={img}
+                                alt={`News ${idx + 1}`}
+                                className="h-64 object-cover rounded-lg flex-shrink-0"
+                              />
+                            ))}
+                          </div>
+                          <div className="sm:hidden relative">
+                            <img
+                              src={images[imgIndex]}
+                              alt="News"
+                              className="w-full h-64 object-cover transition-transform duration-700 cursor-pointer"
+                              onClick={() => window.open(images[imgIndex], "_blank")}
+                            />
+                            {images.length > 1 && (
+                              <>
+                                <button
+                                  onClick={() => handlePrevImage(news.id, images.length)}
+                                  className="absolute top-1/2 left-2 bg-white/70 rounded-full p-1 hover:bg-white/90 transition"
+                                >
+                                  <ChevronLeft size={24} />
+                                </button>
+                                <button
+                                  onClick={() => handleNextImage(news.id, images.length)}
+                                  className="absolute top-1/2 right-2 bg-white/70 rounded-full p-1 hover:bg-white/90 transition"
+                                >
+                                  <ChevronRight size={24} />
+                                </button>
+                                <div className="absolute bottom-2 right-2 bg-white/80 text-gray-700 px-3 py-1 rounded-full text-xs font-medium">
+                                  {imgIndex + 1} / {images.length}
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* News Content */}
+                      <div className="p-6 space-y-3">
+                        <div className="flex justify-between items-start flex-wrap gap-2">
+                          <div className="flex flex-col gap-1">
+                            <h3 className="text-xl font-bold text-gray-800">
+                              {news.title}
+                            </h3>
+                            {news.districtName && (
+                              <div className="text-sm text-gray-600 font-medium">
+                                District:{" "}
+                                <span className="font-semibold">
+                                  {news.districtName}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-1 text-gray-500 text-sm mt-1 sm:mt-0">
+                            <Clock size={16} /> {formatDate(news.createdAt)}
+                          </div>
+                        </div>
+
+                        <p className="text-gray-700 leading-relaxed text-base">
+                          {news.content || "No content available."}
+                        </p>
+
+                        <div className="flex justify-between items-center mt-4 pt-3 border-t border-gray-200">
+                          <div className="flex items-center text-sm text-gray-600">
+                            By{" "}
+                            <span className="ml-1 font-semibold text-green-700">
+                              {news.author?.firstName} {news.author?.lastName}
+                            </span>
+                          </div>
+                          <button className="flex items-center gap-1 bg-green-600 text-white px-4 py-1.5 rounded-full text-sm shadow-md hover:bg-green-700 transition">
+                            <MessageSquare size={16} /> Comment
+                          </button>
+                        </div>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            </AnimatePresence>
+          )}
+        </main>
+      </div>
     </div>
   );
 }

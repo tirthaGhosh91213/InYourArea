@@ -1,3 +1,4 @@
+// src/components/InYourArea.jsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { MapPin } from "lucide-react";
@@ -10,23 +11,45 @@ import FeatureRail from "./FeautreRail.jsx";
 import heroImage from "../assets/image.png";
 
 export default function InYourArea() {
-  const [postcode, setPostcode] = useState("");
   const navigate = useNavigate();
 
-  const validPostcodes = ["700001", "700002", "700003", "713407", "713102"];
+  const districts = [
+    "Bokaro",
+    "Chatra",
+    "Deoghar",
+    "Dhanbad",
+    "Dumka",
+    "East Singhbhum",
+    "Garhwa",
+    "Giridih",
+    "Godda",
+    "Gumla",
+    "Hazaribagh",
+    "Jamtara",
+    "Jamshedpur",
+    "Khunti",
+    "Koderma",
+    "Latehar",
+    "Lohardaga",
+    "Pakur",
+    "Palamu",
+    "Ramgarh",
+    "Ranchi",
+    "Sahibganj",
+    "Seraikela-Kharsawan",
+    "Simdega",
+    "West Singhbhum",
+  ];
+
+  const [selectedDistrict, setSelectedDistrict] = useState("");
 
   const onSubmit = () => {
-    if (postcode.trim() === "") {
-      toast.error("Please enter a postcode!", { autoClose: 2000 });
+    if (!selectedDistrict) {
+      toast.error("Please select your district!", { autoClose: 1000 });
       return;
     }
-
-    if (validPostcodes.includes(postcode)) {
-      toast.success("Postcode is valid!", { autoClose: 2000 });
-      setTimeout(() => navigate("/localnews"), 2000);
-    } else {
-      toast.error("Postcode does not exist!", { autoClose: 2000 });
-    }
+    // Navigate to LocalNews with district in URL
+    navigate(`/localnews/${encodeURIComponent(selectedDistrict)}`);
   };
 
   return (
@@ -36,29 +59,14 @@ export default function InYourArea() {
         initial={{ y: -80, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ type: "spring", stiffness: 80, damping: 12 }}
-        className="bg-white shadow-md flex justify-between items-center px-8 py-4"
+        className="bg-white shadow-md flex justify-between items-center px-6 sm:px-10 py-4"
       >
         <div className="flex items-center gap-2">
           <MapPin className="text-green-700 w-6 h-6" />
-          <span className="text-xl font-bold text-gray-800 tracking-wide">
+          <span className="text-xl sm:text-2xl font-bold text-gray-800 tracking-wide">
             InYourArea
           </span>
         </div>
-
-        <nav className="flex gap-6">
-          <a
-            href="#"
-            className="text-gray-600 font-medium hover:text-green-700 transition-colors duration-300"
-          >
-            App
-          </a>
-          <a
-            href="#"
-            className="text-gray-600 font-medium hover:text-green-700 transition-colors duration-300"
-          >
-            Advertise
-          </a>
-        </nav>
       </motion.header>
 
       {/* Hero Section */}
@@ -66,43 +74,49 @@ export default function InYourArea() {
         initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.7, ease: "easeOut" }}
-        className="text-center px-6 py-12 flex-1 flex flex-col justify-center"
+        className="text-center px-4 sm:px-6 py-12 flex-1 flex flex-col justify-center"
       >
-        <h1 className="text-3xl md:text-4xl font-bold text-gray-800 mb-4 leading-relaxed">
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 mb-4 leading-relaxed">
           The Jharkhand Leading{" "}
           <span className="text-green-700">Local News</span>,{" "}
           <span className="text-green-700">Information</span> &amp;{" "}
           <span className="text-green-700">Community</span> Platform
         </h1>
 
-        <p className="mt-2 text-gray-600 text-lg">
-          Enter your postcode to see news near you.
+        <p className="mt-2 text-gray-600 text-base sm:text-lg">
+          Select your district to see local news near you.
         </p>
 
+        {/* District Dropdown */}
         <motion.div
-          className="mt-8 flex justify-center"
+          className="mt-8 flex flex-col sm:flex-row justify-center items-center gap-3"
           initial={{ scale: 0.95, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ delay: 0.2, duration: 0.4 }}
         >
-          <input
-            type="text"
-            value={postcode}
-            onChange={(e) => setPostcode(e.target.value)}
-            placeholder="Enter your full postcode"
-            onKeyDown={(e) => e.key === "Enter" && onSubmit()} // ✅ Enter key triggers submit
-            className="w-72 px-4 py-2 border border-gray-300 rounded-l-md focus:ring-2 focus:ring-green-600 focus:outline-none text-gray-700 placeholder-gray-400 transition-all"
-          />
+          <select
+            value={selectedDistrict}
+            onChange={(e) => setSelectedDistrict(e.target.value)}
+            className="w-72 sm:w-80 px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-600 focus:outline-none text-gray-700 placeholder-gray-400 transition-all"
+          >
+            <option value="">-- Select Your District --</option>
+            {districts.map((district) => (
+              <option key={district} value={district}>
+                {district}
+              </option>
+            ))}
+          </select>
+
           <button
             onClick={onSubmit}
-            className="px-6 bg-green-700 text-white rounded-r-md font-semibold hover:bg-green-800 transition-all duration-300 hover:scale-105"
+            className="px-8 py-3 bg-green-700 text-white rounded-md font-semibold hover:bg-green-800 transition-all duration-300 hover:scale-105 w-72 sm:w-auto"
           >
-            →
+            Continue →
           </button>
         </motion.div>
 
         <motion.p
-          className="mt-3 text-sm text-gray-500 underline cursor-pointer hover:text-green-700 transition-colors"
+          className="mt-4 text-sm text-gray-500 underline cursor-pointer hover:text-green-700 transition-colors"
           whileHover={{ scale: 1.05 }}
         >
           How We Use Your Data
@@ -114,13 +128,13 @@ export default function InYourArea() {
         initial={{ opacity: 0, scale: 0.98 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.8, ease: "easeOut" }}
-        className="relative mb-0 -mb-px"
+        className="relative mb-0"
       >
         <div className="relative w-screen h-full left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] bg-white py-0">
           <img
             src={heroImage}
             alt="InYourArea preview"
-            className="block mx-auto w-full h-full mt-14 object-contain align-top drop-shadow-2xl"
+            className="block mx-auto w-full max-h-[500px] object-contain drop-shadow-2xl"
             loading="eager"
             decoding="async"
           />
@@ -130,10 +144,10 @@ export default function InYourArea() {
       <FeatureRail />
       <Footer className="mt-0 pt-0" />
 
-      {/* ✅ Toastify Container */}
+      {/* Toastify Container */}
       <ToastContainer
         position="top-right"
-        autoClose={2000}
+        autoClose={1000}
         hideProgressBar={false}
         newestOnTop={true}
         closeOnClick

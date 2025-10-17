@@ -1,5 +1,4 @@
-// src/components/Sidebar.jsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   Radio,
@@ -9,24 +8,101 @@ import {
   X,
   Mail,
   Menu,
+  MapPin,
+  ChevronDown,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import PostcodeDropdown from "../pages/PostcodeDropdown";
+
+// List of districts (ensure this matches everywhere)
+const districts = [
+  "Bokaro",
+  "Chatra",
+  "Deoghar",
+  "Dhanbad",
+  "Dumka",
+  "East Singhbhum",
+  "Garhwa",
+  "Giridih",
+  "Godda",
+  "Gumla",
+  "Hazaribagh",
+  "Jamtara",
+  "Jamshedpur",
+  "Khunti",
+  "Koderma",
+  "Latehar",
+  "Lohardaga",
+  "Pakur",
+  "Palamu",
+  "Ramgarh",
+  "Ranchi",
+  "Sahibganj",
+  "Seraikela-Kharsawan",
+  "Simdega",
+  "West Singhbhum",
+];
 
 export default function Sidebar() {
   const navigate = useNavigate();
   const location = useLocation();
   const [showModal, setShowModal] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [role, setRole] = useState(null);
+  const [selectedDistrict, setSelectedDistrict] = useState(() => {
+    return localStorage.getItem("district") || districts[0];
+  });
+  const [dropdownOpen, setDropdownOpen] = useState(false);
 
-  const isActive = (path) => location.pathname === path;
+  // Sync role and district from localStorage, watch for updates to district in localStorage by other components
+  useEffect(() => {
+    const storedRole = localStorage.getItem("role");
+    if (storedRole) setRole(storedRole);
+
+    // Add event listener to listen for district changes in other tabs or components
+    const onStorageChange = (e) => {
+      if (e.key === "district" && e.newValue && e.newValue !== selectedDistrict) {
+        setSelectedDistrict(e.newValue);
+        // If on /localnews, redirect to new district page
+        if (location.pathname.startsWith("/localnews")) {
+          navigate(`/localnews/${encodeURIComponent(e.newValue)}`, { replace: true });
+        }
+      }
+    };
+    window.addEventListener("storage", onStorageChange);
+
+    return () => {
+      window.removeEventListener("storage", onStorageChange);
+    };
+  }, [selectedDistrict, location.pathname, navigate]);
+
+  // Persist selectedDistrict to localStorage and redirect if on /localnews route
+  useEffect(() => {
+    localStorage.setItem("district", selectedDistrict);
+    if (location.pathname.startsWith("/localnews")) {
+      navigate(`/localnews/${encodeURIComponent(selectedDistrict)}`, { replace: true });
+    }
+  }, [selectedDistrict, location.pathname, navigate]);
+
+  const isActive = (path) =>
+    path === "/localnews"
+      ? location.pathname.startsWith("/localnews")
+      : location.pathname === path;
 
   const menuItems = [
-    { name: "Local News", icon: Radio, path: "/localnews" },
+    {
+      name: "Local News",
+      icon: Radio,
+      path: `/localnews/${encodeURIComponent(selectedDistrict)}`,
+    },
     { name: "Jobs", icon: Newspaper, path: "/jobs" },
     { name: "Community", icon: Users, path: "/community" },
     { name: "Events", icon: Home, path: "/events" },
   ];
+
+  const getPostOptions = () => {
+    if (role === "admin") return ["Local News", "Jobs", "Events", "Community"];
+    return ["Jobs", "Events", "Community"];
+  };
 
   const handleOptionClick = (type) => {
     const token = localStorage.getItem("accessToken");
@@ -55,6 +131,26 @@ export default function Sidebar() {
     }
   };
 
+  // Handle navigation for Local News to redirect to current district
+  const handleMenuClick = (item) => {
+    if (item.name === "Local News") {
+      if (!selectedDistrict) {
+        setDropdownOpen(true);
+        return;
+      }
+      navigate(`/localnews/${encodeURIComponent(selectedDistrict)}`);
+    } else {
+      navigate(item.path);
+    }
+  };
+
+  // Dropdown handler for district selection
+  const handleDistrictSelect = (district) => {
+    setSelectedDistrict(district);
+    setDropdownOpen(false);
+    // Navigate handled in useEffect on selectedDistrict change
+  };
+
   return (
     <>
       {/* ===== Mobile Toggle Button ===== */}
@@ -69,7 +165,7 @@ export default function Sidebar() {
         </motion.button>
       </div>
 
-      {/* ===== Sidebar (Desktop + Mobile) ===== */}
+      {/* ===== Sidebar ===== */}
       <AnimatePresence>
         {(sidebarOpen || window.innerWidth >= 1024) && (
           <motion.aside
@@ -92,14 +188,45 @@ export default function Sidebar() {
                 </span>
               </motion.div>
 
-              {/* Postcode Dropdown */}
+              {/* District Dropdown */}
               <motion.div
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.2 }}
-                className="py-4"
+                className="py-4 relative"
               >
-                <PostcodeDropdown initialPostcode="SW1A1AA" />
+                <button
+                  type="button"
+                  onClick={() => setDropdownOpen((prev) => !prev)}
+                  className="w-full flex items-center justify-between px-6 py-3 border-2 border-gray-300 rounded-full shadow hover:border-green-600 transition relative bg-white"
+                  style={{ minHeight: "48px" }}
+                >
+                  <span className="flex items-center gap-2 text-lg font-semibold text-gray-700">
+                    <MapPin className="text-green-600" size={20} />
+                    {selectedDistrict}
+                  </span>
+                  <ChevronDown className="text-gray-500" size={20} />
+                </button>
+                {dropdownOpen && (
+                  <div
+                    className="absolute left-0 right-0 z-40 mt-2 bg-white border border-gray-200 rounded-2xl shadow-xl max-h-60 overflow-y-auto"
+                    style={{ top: "56px" }}
+                  >
+                    {districts.map((district) => (
+                      <button
+                        key={district}
+                        onClick={() => handleDistrictSelect(district)}
+                        className={`w-full text-left px-6 py-3 hover:bg-green-100 text-gray-700 font-medium ${
+                          selectedDistrict === district
+                            ? "bg-green-50 text-green-700"
+                            : ""
+                        }`}
+                      >
+                        {district}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </motion.div>
 
               {/* Sidebar Menu */}
@@ -111,21 +238,24 @@ export default function Sidebar() {
                   return (
                     <motion.button
                       key={item.name}
-                      onClick={() => navigate(item.path)}
+                      onClick={() => handleMenuClick(item)}
                       whileHover={{ x: 5 }}
                       whileTap={{ scale: 0.95 }}
                       initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: index * 0.1 }}
                       className={`flex items-center gap-3 py-3 px-4 rounded-xl font-medium text-lg transition-all duration-300
-                        ${active
-                          ? "bg-red-500 text-white shadow-lg"
-                          : "text-gray-700 hover:bg-green-100 hover:text-green-700"
+                        ${
+                          active
+                            ? "bg-red-500 text-white shadow-lg"
+                            : "text-gray-700 hover:bg-green-100 hover:text-green-700"
                         }`}
                     >
                       <Icon
                         size={20}
-                        className={`${active ? "text-white" : "text-green-600"}`}
+                        className={`${
+                          active ? "text-white" : "text-green-600"
+                        }`}
                       />
                       {item.name}
                     </motion.button>
@@ -148,7 +278,7 @@ export default function Sidebar() {
                   + Post
                 </motion.button>
 
-                {/* ✅ Email Service Button */}
+                {/* Email Service */}
                 <motion.button
                   onClick={() => navigate("/email-service")}
                   whileHover={{ scale: 1.05 }}
@@ -193,7 +323,7 @@ export default function Sidebar() {
               </h2>
 
               <div className="flex flex-col gap-3">
-                {["Local News", "Jobs", "Events", "Community"].map((type) => (
+                {getPostOptions().map((type) => (
                   <motion.button
                     key={type}
                     whileHover={{ scale: 1.05 }}

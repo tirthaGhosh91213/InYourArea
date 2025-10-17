@@ -18,6 +18,7 @@ import CommunityDetails from "./pages/CommunityDetails";
 import JobDetails from "./pages/JobDetails";
 import EventDetails from "./pages/EventDetails";
 import UserDashboard from "./components/UserDashboard";
+import RightSidebar from "./components/RightSidebar";
 
 // ✅ Home component
 function Home() {
@@ -33,14 +34,13 @@ function Home() {
 
   return (
     <>
-    
+   
       <HeroPage
         onSubmit={handleSubmit}
         setPostcode={setPostcode}
         postcode={postcode}
       />
-      <LocalNews />
-      <Footer />
+    
     </>
   );
 }
@@ -57,7 +57,8 @@ export default function App() {
       {/* Routes */}
       <Routes>
         <Route path="/" element={<Home />} />
-        <Route path="/localnews" element={<LocalNews />} />
+        <Route path="/localnews/:district" element={<LocalNews />} />
+
         <Route path="/community" element={<Community />} />
         <Route path="/jobs" element={<Jobs />} />
         <Route path="/events" element={<Events />} />
@@ -70,7 +71,7 @@ export default function App() {
         <Route path="/admin/:type/:id" element={<AdminItemDetail />} />
         <Route
           path="/community/:id"
-          element={token ? <CommunityDetails /> : <Navigate to="/login" />}
+          element= {<CommunityDetails /> }
         />
           <Route path="/jobs/:id" element={<JobDetails />} />
           <Route path="/events/:id" element={<EventDetails />} />

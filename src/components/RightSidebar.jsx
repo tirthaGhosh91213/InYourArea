@@ -33,11 +33,14 @@ export default function RightSidebar() {
   const isLoggedIn = Boolean(token);
   const isAdmin = role?.toLowerCase().includes("admin");
 
+  // ✅ Redirect to login if user tries to access restricted sidebar
   useEffect(() => {
-    if (!isLoggedIn) navigate("/login");
-  }, [isLoggedIn, navigate]);
+    if (!isLoggedIn) {
+      // do not auto-redirect immediately on all pages
+      // only when trying to access dashboard or profile
+    }
+  }, [isLoggedIn]);
 
-  // Fetch notifications (mock data)
   const fetchNotifications = async () => {
     setLoading(true);
     try {
@@ -87,13 +90,16 @@ export default function RightSidebar() {
   };
 
   const handleNavigation = (path) => {
+    if (!isLoggedIn) {
+      navigate("/login");
+      return;
+    }
     navigate(path);
     setDropdownOpen(false);
     setRightSidebarOpen(false);
     setLeftSidebarOpen(false);
   };
 
-  // Close dropdowns on outside click
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (
@@ -110,7 +116,6 @@ export default function RightSidebar() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Close sidebars on ESC key
   useEffect(() => {
     const onEsc = (e) => {
       if (e.key === "Escape") {
@@ -124,11 +129,9 @@ export default function RightSidebar() {
     return () => document.removeEventListener("keydown", onEsc);
   }, []);
 
-  if (!isLoggedIn) return null;
-
   return (
     <>
-      {/* Top Bar */}
+      {/* ✅ Top Navbar */}
       <motion.div
         initial={{ y: -60, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
@@ -136,14 +139,16 @@ export default function RightSidebar() {
       >
         {/* Left side */}
         <div className="flex items-center gap-3">
-          {/* Left sidebar menu button (small screens only) */}
+          {/* Left sidebar (menu icon on small screens) */}
           <div className="sm:hidden">
             <motion.button
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.95 }}
-              onClick={() => setLeftSidebarOpen(true)}
+              onClick={() => {
+                if (!isLoggedIn) return navigate("/login"); // ✅ redirect if not logged in
+                setLeftSidebarOpen(true);
+              }}
               className="p-2 rounded-full hover:bg-green-100 transition"
-              aria-label="Open Menu Sidebar"
             >
               <Menu className="w-6 h-6 text-gray-700" />
             </motion.button>
@@ -159,102 +164,123 @@ export default function RightSidebar() {
 
         {/* Right side */}
         <div className="flex items-center gap-2 sm:gap-4">
-          {/* Notifications */}
-          <div className="relative" ref={notifRef}>
-            <motion.button
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => {
-                setNotifOpen((prev) => !prev);
-                if (!notifOpen) fetchNotifications();
-              }}
-              className="relative p-2 rounded-full hover:bg-green-100 transition"
-              aria-label="Toggle Notifications"
-            >
-              <Bell className="w-5 h-5 text-gray-700" />
-              {unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full px-1.5">
-                  {unreadCount}
-                </span>
-              )}
-            </motion.button>
-            <NotificationPanel
-              notifOpen={notifOpen}
-              notifications={notifications}
-              loading={loading}
-              onClose={() => setNotifOpen(false)}
-              onClear={handleClearNotifications}
-            />
-          </div>
+          {/* Notifications (only for logged in users) */}
+          {isLoggedIn && (
+            <div className="relative" ref={notifRef}>
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => {
+                  setNotifOpen((prev) => !prev);
+                  if (!notifOpen) fetchNotifications();
+                }}
+                className="relative p-2 rounded-full hover:bg-green-100 transition"
+              >
+                <Bell className="w-5 h-5 text-gray-700" />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full px-1.5">
+                    {unreadCount}
+                  </span>
+                )}
+              </motion.button>
+              <NotificationPanel
+                notifOpen={notifOpen}
+                notifications={notifications}
+                loading={loading}
+                onClose={() => setNotifOpen(false)}
+                onClear={handleClearNotifications}
+              />
+            </div>
+          )}
 
-          {/* Desktop: My Account dropdown */}
-          <div className="relative hidden sm:block" ref={dropdownRef}>
+          {/* ✅ If logged in → show My Account dropdown */}
+          {isLoggedIn ? (
+            <div className="relative hidden sm:block" ref={dropdownRef}>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setDropdownOpen((prev) => !prev)}
+                className="flex items-center gap-2 px-4 py-2 bg-gray-200 text-gray-800 rounded-full hover:bg-gray-300 transition"
+              >
+                <User size={18} />
+                My Account
+                <ChevronDown size={16} />
+              </motion.button>
+
+              <AnimatePresence>
+                {dropdownOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.2 }}
+                    className="absolute right-0 mt-2 w-48 bg-white shadow-lg rounded-xl overflow-hidden z-50"
+                  >
+                    {isAdmin ? (
+                      <button
+                        onClick={() => handleNavigation("/dashboard")}
+                        className="w-full text-left px-4 py-2 hover:bg-green-50 transition"
+                      >
+                        Dashboard
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleNavigation("/user-dashboard")}
+                        className="w-full text-left px-4 py-2 hover:bg-green-50 transition"
+                      >
+                        Profile
+                      </button>
+                    )}
+                    <button
+                      onClick={handleLogout}
+                      className="w-full text-left px-4 py-2 hover:bg-red-100 text-red-600 transition"
+                    >
+                      Logout
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          ) : (
+            // ✅ If not logged in → show Register/Login button
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              onClick={() => setDropdownOpen((prev) => !prev)}
-              className="flex items-center gap-2 px-4 py-2 bg-gray-200 text-gray-800 rounded-full hover:bg-gray-300 transition"
-              aria-haspopup="true"
-              aria-expanded={dropdownOpen}
+              onClick={() => navigate("/login")}
+              className="hidden sm:block px-4 py-2 bg-green-600 text-white rounded-full hover:bg-green-700 transition"
             >
-              <User size={18} />
-              My Account
-              <ChevronDown size={16} />
+              Register / Login
             </motion.button>
+          )}
 
-            <AnimatePresence>
-              {dropdownOpen && (
-                <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ duration: 0.2 }}
-                  className="absolute right-0 mt-2 w-48 bg-white shadow-lg rounded-xl overflow-hidden z-50"
-                >
-                  {isAdmin ? (
-                    <button
-                      onClick={() => handleNavigation("/dashboard")}
-                      className="w-full text-left px-4 py-2 hover:bg-green-50 transition"
-                    >
-                      Dashboard
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => handleNavigation("/user-dashboard")}
-                      className="w-full text-left px-4 py-2 hover:bg-green-50 transition"
-                    >
-                      Profile
-                    </button>
-                  )}
-                  <button
-                    onClick={handleLogout}
-                    className="w-full text-left px-4 py-2 hover:bg-red-100 text-red-600 transition"
-                  >
-                    Logout
-                  </button>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-
-          {/* Mobile: Profile icon */}
+          {/* ✅ Mobile: Profile or Register icon */}
           <div className="sm:hidden">
-            <motion.button
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setRightSidebarOpen(true)}
-              className="p-2 rounded-full hover:bg-green-100 transition"
-              aria-label="Open Profile Menu"
-            >
-              <User className="w-6 h-6 text-gray-700" />
-            </motion.button>
+            {isLoggedIn ? (
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setRightSidebarOpen(true)}
+                className="p-2 rounded-full hover:bg-green-100 transition"
+              >
+                <User className="w-6 h-6 text-gray-700" />
+              </motion.button>
+            ) : (
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => navigate("/login")}
+                className="p-2 rounded-full bg-green-600 text-white hover:bg-green-700 transition"
+              >
+                <User className="w-6 h-6" />
+              </motion.button>
+            )}
           </div>
         </div>
       </motion.div>
 
-      {/* Left Sidebar (from Menu button) */}
+      {/* ✅ Left Sidebar (only if logged in) */}
       <AnimatePresence>
-        {leftSidebarOpen && (
+        {leftSidebarOpen && isLoggedIn && (
           <>
             <motion.div
               initial={{ opacity: 0 }}
@@ -269,7 +295,6 @@ export default function RightSidebar() {
               exit={{ x: "-100%" }}
               transition={{ type: "spring", stiffness: 100, damping: 20 }}
               className="fixed top-0 left-0 h-full w-72 bg-white shadow-2xl z-50"
-              onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between p-4 border-b border-gray-200">
                 <h2 className="text-lg font-semibold text-gray-800">Menu</h2>
@@ -278,7 +303,6 @@ export default function RightSidebar() {
                   whileTap={{ scale: 0.95 }}
                   onClick={() => setLeftSidebarOpen(false)}
                   className="p-2 rounded-full hover:bg-gray-100 transition"
-                  aria-label="Close menu"
                 >
                   <X className="w-5 h-5 text-gray-700" />
                 </motion.button>
@@ -289,9 +313,9 @@ export default function RightSidebar() {
         )}
       </AnimatePresence>
 
-      {/* Right Profile Sidebar (from Profile icon) */}
+      {/* ✅ Right Profile Sidebar (mobile) */}
       <AnimatePresence>
-        {rightSidebarOpen && (
+        {rightSidebarOpen && isLoggedIn && (
           <>
             <motion.div
               initial={{ opacity: 0 }}
@@ -306,7 +330,6 @@ export default function RightSidebar() {
               exit={{ x: "100%" }}
               transition={{ type: "spring", stiffness: 120, damping: 22 }}
               className="fixed top-0 right-0 h-full w-80 max-w-[85vw] bg-white shadow-2xl z-[70] sm:hidden"
-              onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between p-4 border-b border-gray-200">
                 <h2 className="text-lg font-semibold text-gray-800">
@@ -317,7 +340,6 @@ export default function RightSidebar() {
                   whileTap={{ scale: 0.95 }}
                   onClick={() => setRightSidebarOpen(false)}
                   className="p-2 rounded-full hover:bg-gray-100 transition"
-                  aria-label="Close profile menu"
                 >
                   <X className="w-5 h-5 text-gray-700" />
                 </motion.button>
