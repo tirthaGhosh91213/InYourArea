@@ -22,7 +22,7 @@ const BASE_API = "http://localhost:8000/api/v1";
 const TABS = [
   { key: "events", label: "Events" },
   { key: "jobs", label: "Jobs" },
-  { key: "communityPosts", label: "Community" },
+  { key: "community", label: "Community" },
 ];
 
 export default function AdminDashboard() {
