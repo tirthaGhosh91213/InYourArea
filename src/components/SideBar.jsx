@@ -1,6 +1,15 @@
+// src/components/Sidebar.jsx
 import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Radio, Newspaper, Users, Home, X } from "lucide-react";
+import {
+  Radio,
+  Newspaper,
+  Users,
+  Home,
+  X,
+  Mail,
+  Menu,
+} from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import PostcodeDropdown from "../pages/PostcodeDropdown";
 
@@ -8,6 +17,7 @@ export default function Sidebar() {
   const navigate = useNavigate();
   const location = useLocation();
   const [showModal, setShowModal] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const isActive = (path) => location.pathname === path;
 
@@ -47,82 +57,115 @@ export default function Sidebar() {
 
   return (
     <>
-      <aside className="w-64 px-10 py-5 bg-gradient-to-b from-white/90 via-white/80 to-white/70 backdrop-blur-lg border-r border-gray-200 shadow-lg flex flex-col justify-between transition-all duration-500 hover:shadow-2xl">
-        <div>
-          {/* Logo */}
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="flex items-center gap-3 py-6 border-b border-gray-200"
+      {/* ===== Mobile Toggle Button ===== */}
+      <div className="lg:hidden fixed top-4 left-4 z-50">
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => setSidebarOpen((prev) => !prev)}
+          className="p-3 rounded-full bg-green-600 text-white shadow-lg"
+        >
+          {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
+        </motion.button>
+      </div>
+
+      {/* ===== Sidebar (Desktop + Mobile) ===== */}
+      <AnimatePresence>
+        {(sidebarOpen || window.innerWidth >= 1024) && (
+          <motion.aside
+            initial={{ x: -250 }}
+            animate={{ x: 0 }}
+            exit={{ x: -250 }}
+            transition={{ type: "spring", stiffness: 100, damping: 20 }}
+            className="fixed top-0 left-0 h-screen w-64 px-8 py-14 bg-gradient-to-b from-white/90 via-white/80 to-white/70 backdrop-blur-lg border-r border-gray-200 shadow-lg flex flex-col justify-between z-40"
           >
-            <span className="text-green-600 text-3xl font-extrabold tracking-tight select-none">
-              InYourArea
-            </span>
-          </motion.div>
+            <div>
+              {/* Logo */}
+              <motion.div
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+                className="flex items-center gap-3 py-6 border-b border-gray-200"
+              >
+                <span className="text-green-600 text-3xl font-extrabold tracking-tight select-none">
+                  InYourArea
+                </span>
+              </motion.div>
 
-          {/* Postcode Dropdown */}
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.2 }}
-            className="py-4"
-          >
-            <PostcodeDropdown initialPostcode="SW1A1AA" />
-          </motion.div>
+              {/* Postcode Dropdown */}
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.2 }}
+                className="py-4"
+              >
+                <PostcodeDropdown initialPostcode="SW1A1AA" />
+              </motion.div>
 
-          {/* Sidebar Menu */}
-          <nav className="flex flex-col gap-3 mt-4">
-            {menuItems.map((item, index) => {
-              const Icon = item.icon;
-              const active = isActive(item.path);
+              {/* Sidebar Menu */}
+              <nav className="flex flex-col gap-3 mt-4">
+                {menuItems.map((item, index) => {
+                  const Icon = item.icon;
+                  const active = isActive(item.path);
 
-              return (
+                  return (
+                    <motion.button
+                      key={item.name}
+                      onClick={() => navigate(item.path)}
+                      whileHover={{ x: 5 }}
+                      whileTap={{ scale: 0.95 }}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.1 }}
+                      className={`flex items-center gap-3 py-3 px-4 rounded-xl font-medium text-lg transition-all duration-300
+                        ${active
+                          ? "bg-red-500 text-white shadow-lg"
+                          : "text-gray-700 hover:bg-green-100 hover:text-green-700"
+                        }`}
+                    >
+                      <Icon
+                        size={20}
+                        className={`${active ? "text-white" : "text-green-600"}`}
+                      />
+                      {item.name}
+                    </motion.button>
+                  );
+                })}
+
+                {/* Divider */}
+                <div className="border-t border-gray-200 my-3"></div>
+
+                {/* + Post Button */}
                 <motion.button
-                  key={item.name}
-                  onClick={() => navigate(item.path)}
-                  whileHover={{ x: 5 }}
+                  onClick={() => setShowModal(true)}
+                  whileHover={{
+                    scale: 1.05,
+                    boxShadow: "0 10px 20px rgba(34,197,94,0.4)",
+                  }}
                   whileTap={{ scale: 0.95 }}
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                  className={`flex items-center gap-3 py-3 px-4 rounded-xl font-medium text-lg transition-all duration-300
-                    ${active
-                      ? "bg-red-500 text-white shadow-lg"
-                      : "text-gray-700 hover:bg-green-100 hover:text-green-700"
-                    }`}
+                  className="w-full bg-gradient-to-r from-green-400 to-green-500 text-white font-semibold rounded-full py-3 shadow-lg hover:shadow-xl transition-all duration-300"
                 >
-                  <Icon
-                    size={20}
-                    className={`${active ? "text-white" : "text-green-600"}`}
-                  />
-                  {item.name}
+                  + Post
                 </motion.button>
-              );
-            })}
 
-            {/* Divider */}
-            <div className="border-t border-gray-200 my-3"></div>
+                {/* ✅ Email Service Button */}
+                <motion.button
+                  onClick={() => navigate("/email-service")}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="mt-3 w-full flex items-center justify-center gap-2 bg-blue-500 text-white font-semibold rounded-full py-3 shadow-md hover:bg-blue-600 transition-all"
+                >
+                  <Mail size={18} /> Email Service
+                </motion.button>
 
-            {/* + Post Button */}
-            <motion.button
-              onClick={() => setShowModal(true)}
-              whileHover={{
-                scale: 1.05,
-                boxShadow: "0 10px 20px rgba(34,197,94,0.4)",
-              }}
-              whileTap={{ scale: 0.95 }}
-              className="w-full bg-gradient-to-r from-green-400 to-green-500 text-white font-semibold rounded-full py-3 shadow-lg hover:shadow-xl transition-all duration-300"
-            >
-              + Post
-            </motion.button>
+                <div className="border-t border-gray-200 my-3"></div>
+              </nav>
+            </div>
+          </motion.aside>
+        )}
+      </AnimatePresence>
 
-            <div className="border-t border-gray-200 my-3"></div>
-          </nav>
-        </div>
-      </aside>
-
-      {/* Popup Modal */}
+      {/* ===== Popup Modal for + Post ===== */}
       <AnimatePresence>
         {showModal && (
           <motion.div

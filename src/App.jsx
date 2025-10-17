@@ -14,7 +14,7 @@ import AdminItemDetail from "./pages/AdminItemDetail";
 import CreateJobPost from "./pages/CreateJobPost";
 import CreateCommunityPost from "./pages/CreateCommunityPost";
 import CreateLocalNewsPost from "./pages/CreateLocalNewsPost";
-import RightSidebar from "./components/RightSidebar";
+import CommunityDetails from "./pages/CommunityDetails";
 
 // ✅ Home component
 function Home() {
@@ -44,6 +44,7 @@ function Home() {
 
 // ✅ App component
 export default function App() {
+  const token = localStorage.getItem("accessToken");
   return (
     
     <Router>
@@ -64,6 +65,10 @@ export default function App() {
         <Route path="/create/localnews" element={<CreateLocalNewsPost />} />
         <Route path="/create/community" element={<CreateCommunityPost />} />
         <Route path="/admin/:type/:id" element={<AdminItemDetail />} />
+        <Route
+          path="/community/:id"
+          element={token ? <CommunityDetails /> : <Navigate to="/login" />}
+        />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </Router>
