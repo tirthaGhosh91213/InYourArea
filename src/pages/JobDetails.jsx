@@ -1,28 +1,30 @@
-// src/pages/CommunityDetails.jsx
+// src/pages/JobDetails.jsx
 import React, { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  UserCircle,
-  MessageCircle,
-  Calendar,
+  Building2,
   MapPin,
+  DollarSign,
+  Calendar,
+  MessageCircle,
   ArrowLeft,
   ChevronLeft,
   ChevronRight,
   X,
+  UserCircle,
 } from "lucide-react";
 import Sidebar from "../components/SideBar";
 import RightSidebar from "../components/RightSidebar";
 import axios from "axios";
 import { toast } from "react-toastify";
 
-export default function CommunityDetails() {
+export default function JobDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
   const token = localStorage.getItem("accessToken");
 
-  const [post, setPost] = useState(null);
+  const [job, setJob] = useState(null);
   const [comments, setComments] = useState([]);
   const [commentText, setCommentText] = useState("");
   const [currentImage, setCurrentImage] = useState(0);
@@ -44,15 +46,15 @@ export default function CommunityDetails() {
   };
 
   const prevImage = () => {
-    if (!post?.imageUrls) return;
+    if (!job?.imageUrls) return;
     setCurrentImage((prev) =>
-      prev === 0 ? post.imageUrls.length - 1 : prev - 1
+      prev === 0 ? job.imageUrls.length - 1 : prev - 1
     );
   };
   const nextImage = () => {
-    if (!post?.imageUrls) return;
+    if (!job?.imageUrls) return;
     setCurrentImage((prev) =>
-      prev === post.imageUrls.length - 1 ? 0 : prev + 1
+      prev === job.imageUrls.length - 1 ? 0 : prev + 1
     );
   };
 
@@ -65,17 +67,17 @@ export default function CommunityDetails() {
       minute: "2-digit",
     });
 
-  // Fetch post
-  const fetchPost = async () => {
+  // Fetch job
+  const fetchJob = async () => {
     try {
       setLoading(true);
-      const res = await axios.get(
-        `http://localhost:8000/api/v1/community/${id}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      if (res.data.success) setPost(res.data.data);
+      const res = await axios.get(`http://localhost:8000/api/v1/jobs`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const foundJob = res.data.data.find((j) => j.id.toString() === id);
+      setJob(foundJob);
     } catch {
-      toast.error("Failed to fetch post");
+      toast.error("Failed to fetch job");
     } finally {
       setLoading(false);
     }
@@ -85,7 +87,7 @@ export default function CommunityDetails() {
   const fetchComments = async () => {
     try {
       const res = await axios.get(
-        `http://localhost:8000/api/v1/comments/community-posts/${id}`,
+        `http://localhost:8000/api/v1/comments/jobs/${id}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (res.data.success) setComments(res.data.data);
@@ -94,12 +96,12 @@ export default function CommunityDetails() {
     }
   };
 
-  // Send comment
-  const sendComment = async () => {
+  // Post comment
+  const postComment = async () => {
     if (!commentText.trim()) return toast.error("Comment cannot be empty");
     try {
       const res = await axios.post(
-        `http://localhost:8000/api/v1/comments/community-posts/${id}`,
+        `http://localhost:8000/api/v1/comments/jobs/${id}`,
         { content: commentText },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -109,16 +111,17 @@ export default function CommunityDetails() {
         toast.success("Comment added!");
       }
     } catch {
-      toast.error("Failed to send comment");
+      toast.error("Failed to post comment");
     }
   };
 
   useEffect(() => {
-    fetchPost();
+    if (!token) navigate("/login");
+    fetchJob();
     fetchComments();
-  }, [id]);
+  }, [id, token]);
 
-  if (loading || !post)
+  if (loading || !job)
     return (
       <div className="flex justify-center items-center h-screen text-gray-600 text-lg animate-pulse">
         Loading...
@@ -138,8 +141,7 @@ export default function CommunityDetails() {
           <Sidebar />
         </div> */}
 
-        <main className="flex-1 overflow-y-auto p-6 relative">
-          {/* Back Button */}
+       <main className="flex-1 overflow-y-auto p-6 relative">
           <motion.button
             whileHover={{ scale: 1.05 }}
             onClick={() => navigate(-1)}
@@ -148,23 +150,23 @@ export default function CommunityDetails() {
             <ArrowLeft size={20} /> Back
           </motion.button>
 
-          {/* Post Card */}
+          {/* Job Card */}
           <motion.div
             layout
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
             className="max-w-3xl mx-auto bg-white rounded-3xl shadow-2xl p-6 space-y-6 border border-green-200"
           >
-            {/* Image Carousel */}
-            {post.imageUrls?.length > 0 && (
+            {/* Images */}
+            {job.imageUrls?.length > 0 && (
               <div className="relative w-full h-64 md:h-80 rounded-2xl overflow-hidden shadow-lg">
                 <img
-                  src={post.imageUrls[currentImage]}
-                  alt={post.title}
+                  src={job.imageUrls[currentImage]}
+                  alt={job.title}
                   className="w-full h-full object-cover transition-all duration-500 rounded-2xl cursor-pointer"
                   onClick={() => setIsFullscreen(true)}
                 />
-                {post.imageUrls.length > 1 && (
+                {job.imageUrls.length > 1 && (
                   <>
                     <button
                       onClick={prevImage}
@@ -183,33 +185,38 @@ export default function CommunityDetails() {
               </div>
             )}
 
-            {/* Author & Location */}
+            {/* Job Info */}
             <div className="flex justify-between items-center text-gray-700">
               <div className="flex items-center gap-3">
-                <UserCircle size={24} className="text-green-600" />
+                <Building2 size={24} className="text-green-600" />
                 <div>
-                  <div className="font-semibold text-gray-800">
-                    {post.author
-                      ? `${post.author.firstName} ${post.author.lastName}`
-                      : "Unknown Author"}
-                  </div>
+                  <div className="font-semibold text-gray-800">{job.company}</div>
                   <div className="text-sm text-gray-500 flex items-center gap-1">
-                    <Calendar size={14} /> {formatDate(post.createdAt)}
+                    <Calendar size={14} /> Deadline:{" "}
+                    <span className="text-red-500">{job.applicationDeadline}</span>
                   </div>
                 </div>
               </div>
               <div className="flex items-center gap-1 text-gray-500 text-sm">
-                <MapPin size={16} className="text-green-600" /> {post.location}
+                <MapPin size={16} className="text-green-600" /> {job.location}
               </div>
             </div>
 
-            {/* Title */}
-            <h1 className="text-3xl font-bold text-gray-800">{post.title}</h1>
-
-            {/* Content */}
+            <h1 className="text-3xl font-bold text-gray-800">{job.title}</h1>
             <p className="text-gray-700 whitespace-pre-line leading-relaxed text-lg">
-              {post.content}
+              {job.description}
             </p>
+
+            {/* Apply Button */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                window.open(job.applyLink, "_blank");
+              }}
+              className="inline-block bg-emerald-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-emerald-700 transition mb-6"
+            >
+              Apply Now
+            </button>
 
             {/* Comments */}
             <div className="mt-6 space-y-3">
@@ -222,7 +229,7 @@ export default function CommunityDetails() {
                   className="flex-1 px-4 py-2 border rounded-full focus:outline-none focus:ring-2 focus:ring-green-400"
                 />
                 <button
-                  onClick={sendComment}
+                  onClick={postComment}
                   className="bg-green-600 text-white px-5 py-2 rounded-full hover:bg-green-700 transition"
                 >
                   Send
@@ -241,9 +248,7 @@ export default function CommunityDetails() {
                       <UserCircle size={20} className="text-green-500 mt-1" />
                       <div>
                         <div className="font-semibold text-gray-800">
-                          {c.author
-                            ? `${c.author.firstName} ${c.author.lastName}`
-                            : "Anonymous"}
+                          {c.author ? `${c.author.firstName} ${c.author.lastName}` : "Anonymous"}
                         </div>
                         <div className="text-gray-700">{c.content}</div>
                       </div>
@@ -257,9 +262,9 @@ export default function CommunityDetails() {
           </motion.div>
         </main>
 
-        {/* Fullscreen Image Modal */}
+        {/* Fullscreen Image */}
         <AnimatePresence>
-          {isFullscreen && post.imageUrls?.length > 0 && (
+          {isFullscreen && job.imageUrls?.length > 0 && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -274,7 +279,7 @@ export default function CommunityDetails() {
               >
                 <X size={24} />
               </button>
-              {post.imageUrls.length > 1 && (
+              {job.imageUrls.length > 1 && (
                 <>
                   <button
                     onClick={prevImage}
@@ -291,8 +296,8 @@ export default function CommunityDetails() {
                 </>
               )}
               <img
-                src={post.imageUrls[currentImage]}
-                alt={post.title}
+                src={job.imageUrls[currentImage]}
+                alt={job.title}
                 className="max-h-full max-w-full object-contain rounded-lg shadow-lg"
               />
             </motion.div>
