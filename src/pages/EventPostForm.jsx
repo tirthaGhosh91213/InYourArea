@@ -14,6 +14,7 @@ export default function EventPostForm({ onSuccess }) {
     eventLocation: "",
     eventDate: "",
     eventTime: "",
+    registerLink: "", // ✅ New field for event portal
   });
 
   const [images, setImages] = useState([]);
@@ -36,6 +37,7 @@ export default function EventPostForm({ onSuccess }) {
       eventLocation: "",
       eventDate: "",
       eventTime: "",
+      registerLink: "",
     });
     setImages([]);
   };
@@ -60,6 +62,7 @@ export default function EventPostForm({ onSuccess }) {
         description: formData.eventDescription,
         location: formData.eventLocation,
         eventDate: `${formData.eventDate}T${formData.eventTime}:00`,
+        registerLink: formData.registerLink, // ✅ Send register link
       };
 
       const fd = new FormData();
@@ -163,6 +166,19 @@ export default function EventPostForm({ onSuccess }) {
             required
           />
         </div>
+      </div>
+
+      {/* Register Link */}
+      <div>
+        <label className="block text-gray-700 font-medium mb-2">Event Portal Link</label>
+        <input
+          type="url"
+          name="registerLink"
+          value={formData.registerLink}
+          onChange={handleChange}
+          placeholder="https://example.com"
+          className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-green-500 transition"
+        />
       </div>
 
       {/* Images */}

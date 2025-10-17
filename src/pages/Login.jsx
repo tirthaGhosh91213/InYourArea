@@ -111,9 +111,9 @@ function LogIn() {
         showPopup("Login successful!");
 
         setTimeout(() => {
-          if (role === "admin") navigate("/admindashboard");
-          else navigate("/localnews");
-        }, 1500);
+          
+           navigate("/localnews");
+        }, 500);
       } else {
         showPopup(result.message || "Invalid credentials", "error");
       }

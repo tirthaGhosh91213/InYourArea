@@ -16,6 +16,8 @@ import CreateCommunityPost from "./pages/CreateCommunityPost";
 import CreateLocalNewsPost from "./pages/CreateLocalNewsPost";
 import CommunityDetails from "./pages/CommunityDetails";
 import JobDetails from "./pages/JobDetails";
+import EventDetails from "./pages/EventDetails";
+import UserDashboard from "./components/UserDashboard";
 
 // ✅ Home component
 function Home() {
@@ -71,6 +73,8 @@ export default function App() {
           element={token ? <CommunityDetails /> : <Navigate to="/login" />}
         />
           <Route path="/jobs/:id" element={<JobDetails />} />
+          <Route path="/events/:id" element={<EventDetails />} />
+          <Route path="/user-dashboard" element={<UserDashboard />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </Router>

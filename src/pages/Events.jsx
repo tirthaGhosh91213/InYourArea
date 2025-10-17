@@ -1,7 +1,15 @@
 // src/pages/Events.jsx
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Calendar, MapPin, Clock, PlusCircle, Search } from "lucide-react";
+import {
+  Calendar,
+  MapPin,
+  Clock,
+  PlusCircle,
+  Search,
+  MessageCircle,
+  Link as LinkIcon,
+} from "lucide-react";
 import axios from "axios";
 import Sidebar from "../components/SideBar";
 import RightSidebar from "../components/RightSidebar";
@@ -14,7 +22,6 @@ export default function Events() {
   const [filterCity, setFilterCity] = useState("All");
   const navigate = useNavigate();
 
-  // ✅ Fetch all approved events
   const fetchEvents = async () => {
     try {
       setLoading(true);
@@ -31,7 +38,6 @@ export default function Events() {
     fetchEvents();
   }, []);
 
-  // ✅ Search + Filter Logic
   const filteredEvents = events.filter((e) => {
     const title = (e.title || "").toLowerCase();
     const location = (e.location || "").toLowerCase();
@@ -46,21 +52,16 @@ export default function Events() {
 
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      {/* ✅ Fixed Top Navbar */}
       <header className="w-full fixed top-0 left-0 z-50 bg-white shadow-md border-b border-gray-200">
         <RightSidebar refreshEvents={fetchEvents} />
       </header>
 
-      {/* ✅ Page Layout */}
       <div className="flex flex-1 pt-16 overflow-hidden">
-        {/* ✅ Left Sidebar (Hidden on mobile) */}
         <aside className="hidden lg:block w-64 bg-white shadow-md border-r border-gray-200">
           <Sidebar activePage="events" />
         </aside>
 
-        {/* ✅ Main Content */}
         <main className="flex-1 p-4 sm:p-6 overflow-y-auto">
-          {/* Header Section */}
           <div className="flex justify-between items-center mb-6 flex-wrap gap-3">
             <motion.h1
               initial={{ y: -20, opacity: 0 }}
@@ -71,7 +72,6 @@ export default function Events() {
               Upcoming Events
             </motion.h1>
 
-            {/* ✅ Redirect to /create/events */}
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
@@ -82,7 +82,6 @@ export default function Events() {
             </motion.button>
           </div>
 
-          {/* Search Input */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -98,7 +97,6 @@ export default function Events() {
             />
           </motion.div>
 
-          {/* City Filters */}
           <div className="flex gap-2 sm:gap-3 mb-6 flex-wrap">
             {["All", "Bokaro", "Delhi", "Bangalore", "Mumbai", "Hyderabad"].map(
               (loc) => (
@@ -119,7 +117,6 @@ export default function Events() {
             )}
           </div>
 
-          {/* ✅ Events Grid */}
           <AnimatePresence>
             {loading ? (
               <motion.div className="text-gray-500 text-center">
@@ -138,11 +135,11 @@ export default function Events() {
                       scale: 1.03,
                       boxShadow: "0 20px 30px rgba(0,0,0,0.08)",
                     }}
-                    className="bg-white rounded-2xl p-4 relative hover:bg-gradient-to-r hover:from-blue-50 hover:to-blue-100 transition"
+                    className="bg-white rounded-2xl p-4 relative hover:bg-gradient-to-r hover:from-blue-50 hover:to-blue-100 transition cursor-pointer"
+                    onClick={() => navigate(`/events/${event.id}`)}
                   >
                     {/* Image Section */}
-                    {Array.isArray(event.imageUrls) &&
-                    event.imageUrls.length > 0 ? (
+                    {Array.isArray(event.imageUrls) && event.imageUrls.length > 0 ? (
                       <img
                         src={event.imageUrls[0]}
                         alt={event.title}
@@ -158,9 +155,7 @@ export default function Events() {
                     <h2 className="text-lg font-semibold">{event.title}</h2>
                     <p className="text-sm text-gray-600">
                       {event.description?.slice(0, 100)}
-                      {event.description && event.description.length > 100
-                        ? "…"
-                        : ""}
+                      {event.description && event.description.length > 100 ? "…" : ""}
                     </p>
 
                     <div className="mt-3 text-gray-600 text-sm flex gap-3 items-center flex-wrap">
@@ -190,6 +185,33 @@ export default function Events() {
                         ? `${event.author.firstName} ${event.author.lastName}`
                         : "Unknown"}
                     </p>
+
+                    {/* Comment & Register Buttons */}
+                    <div className="mt-3 flex gap-2">
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/events/${event.id}`);
+                        }}
+                        className="flex-1 flex items-center justify-center gap-2 bg-green-600 text-white py-2 rounded-xl text-sm hover:bg-green-700 transition"
+                      >
+                        <MessageCircle className="w-4 h-4" /> Comment
+                      </motion.button>
+
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          window.open(event.registerLink, "_blank");
+                        }}
+                        className="flex-1 flex items-center justify-center gap-2 bg-blue-600 text-white py-2 rounded-xl text-sm hover:bg-blue-700 transition"
+                      >
+                        <LinkIcon className="w-4 h-4" /> Register
+                      </motion.button>
+                    </div>
                   </motion.div>
                 ))}
               </div>

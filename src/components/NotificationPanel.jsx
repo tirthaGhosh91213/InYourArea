@@ -1,15 +1,47 @@
 // src/components/NotificationPanel.jsx
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Loader2, Trash2 } from "lucide-react";
+import axios from "axios";
 
-export default function NotificationPanel({
-  notifOpen,
-  notifications,
-  loading,
-  onClose,
-  onClear,
-}) {
+export default function NotificationPanel({ notifOpen, onClose }) {
+  const [notifications, setNotifications] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  // Fetch notifications for the logged-in author
+  const fetchNotifications = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem("accessToken");
+      if (!token) return;
+      const res = await axios.get("http://localhost:8000/api/v1/notifications?limit=50", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setNotifications(res.data.data || []);
+    } catch (err) {
+      console.error("Error fetching notifications:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (notifOpen) fetchNotifications();
+  }, [notifOpen]);
+
+  const handleClear = async () => {
+    try {
+      const token = localStorage.getItem("accessToken");
+      if (!token) return;
+      await axios.delete("http://localhost:8000/api/v1/notifications/clear", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setNotifications([]);
+    } catch (err) {
+      console.error("Error clearing notifications:", err);
+    }
+  };
+
   return (
     <AnimatePresence>
       {notifOpen && (
@@ -22,7 +54,7 @@ export default function NotificationPanel({
           <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white">
             <h4 className="font-semibold">Notifications</h4>
             <button
-              onClick={onClear}
+              onClick={handleClear}
               className="flex items-center gap-1 text-sm hover:opacity-80"
             >
               <Trash2 size={16} /> Clear
@@ -42,7 +74,9 @@ export default function NotificationPanel({
               notifications.map((n) => (
                 <div
                   key={n.id}
-                  className="px-4 py-3 hover:bg-green-50 transition cursor-pointer"
+                  className={`px-4 py-3 hover:bg-green-50 transition cursor-pointer ${
+                    !n.read ? "bg-green-50" : ""
+                  }`}
                 >
                   <h5 className="font-medium text-gray-800">{n.title}</h5>
                   <p className="text-sm text-gray-500">{n.message}</p>
