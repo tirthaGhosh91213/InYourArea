@@ -112,7 +112,7 @@ function LogIn() {
 
         setTimeout(() => {
           
-           navigate("/localnews");
+           navigate("/jobs");
         }, 500);
       } else {
         showPopup(result.message || "Invalid credentials", "error");

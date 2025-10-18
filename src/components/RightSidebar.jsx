@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import NotificationPanel from "./NotificationPanel";
 import Sidebar from "./SideBar";
+import axios from "axios";
 
 export default function RightSidebar() {
   const navigate = useNavigate();
@@ -24,6 +25,7 @@ export default function RightSidebar() {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [hasNewNotif, setHasNewNotif] = useState(false);
 
   const dropdownRef = useRef(null);
   const notifRef = useRef(null);
@@ -33,46 +35,29 @@ export default function RightSidebar() {
   const isLoggedIn = Boolean(token);
   const isAdmin = role?.toLowerCase().includes("admin");
 
-  // ✅ Redirect to login if user tries to access restricted sidebar
-  useEffect(() => {
-    if (!isLoggedIn) {
-      // do not auto-redirect immediately on all pages
-      // only when trying to access dashboard or profile
-    }
-  }, [isLoggedIn]);
-
+  // ✅ Fetch notifications
   const fetchNotifications = async () => {
     setLoading(true);
     try {
-      const mockData = [
+      const token = localStorage.getItem("accessToken");
+      if (!token) return;
+
+      const res = await axios.get(
+        "http://localhost:8000/api/v1/notifications/recent?limit=50",
         {
-          id: 1,
-          title: "Event Approved",
-          message: "Your event 'Bokaro Bazaar' has been approved by admin!",
-          createdAt: new Date(),
-          read: false,
-        },
-        {
-          id: 2,
-          title: "Event Pending",
-          message: "Your event 'Delhi Meetup' is pending approval.",
-          createdAt: new Date(),
-          read: false,
-        },
-        {
-          id: 3,
-          title: "Comment Received",
-          message: "Someone commented on your event 'Bokaro Bazaar'.",
-          createdAt: new Date(),
-          read: false,
-        },
-      ];
-      setNotifications(mockData);
-      setUnreadCount(mockData.filter((n) => !n.read).length);
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      const data = res.data?.data || [];
+      setNotifications(data);
+      setUnreadCount(data.length);
+      setHasNewNotif(data.length > 0);
     } catch (err) {
       console.error("Error fetching notifications:", err);
       setNotifications([]);
       setUnreadCount(0);
+      setHasNewNotif(false);
     } finally {
       setLoading(false);
     }
@@ -81,6 +66,7 @@ export default function RightSidebar() {
   const handleClearNotifications = () => {
     setNotifications([]);
     setUnreadCount(0);
+    setHasNewNotif(false);
   };
 
   const handleLogout = () => {
@@ -100,6 +86,7 @@ export default function RightSidebar() {
     setLeftSidebarOpen(false);
   };
 
+  // ✅ Close dropdown and notif panel when clicked outside
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (
@@ -116,6 +103,7 @@ export default function RightSidebar() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // ✅ ESC to close sidebars or dropdowns
   useEffect(() => {
     const onEsc = (e) => {
       if (e.key === "Escape") {
@@ -128,6 +116,15 @@ export default function RightSidebar() {
     document.addEventListener("keydown", onEsc);
     return () => document.removeEventListener("keydown", onEsc);
   }, []);
+
+  // ✅ Auto-refresh notification badge every 10 seconds
+  useEffect(() => {
+    if (isLoggedIn) {
+      fetchNotifications();
+      const interval = setInterval(fetchNotifications, 10000);
+      return () => clearInterval(interval);
+    }
+  }, [isLoggedIn]);
 
   return (
     <>
@@ -145,7 +142,7 @@ export default function RightSidebar() {
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => {
-                if (!isLoggedIn) return navigate("/login"); // ✅ redirect if not logged in
+                if (!isLoggedIn) return navigate("/login");
                 setLeftSidebarOpen(true);
               }}
               className="p-2 rounded-full hover:bg-green-100 transition"
@@ -164,7 +161,7 @@ export default function RightSidebar() {
 
         {/* Right side */}
         <div className="flex items-center gap-2 sm:gap-4">
-          {/* Notifications (only for logged in users) */}
+          {/* 🔔 Notifications */}
           {isLoggedIn && (
             <div className="relative" ref={notifRef}>
               <motion.button
@@ -172,17 +169,20 @@ export default function RightSidebar() {
                 whileTap={{ scale: 0.95 }}
                 onClick={() => {
                   setNotifOpen((prev) => !prev);
-                  if (!notifOpen) fetchNotifications();
+                  if (!notifOpen) {
+                    fetchNotifications();
+                    setHasNewNotif(false); // remove dot on open
+                  }
                 }}
                 className="relative p-2 rounded-full hover:bg-green-100 transition"
               >
                 <Bell className="w-5 h-5 text-gray-700" />
-                {unreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full px-1.5">
-                    {unreadCount}
-                  </span>
+                {/* 🔴 Notification dot */}
+                {hasNewNotif && unreadCount > 0 && (
+                  <span className="absolute top-1 right-1 h-2.5 w-2.5 bg-red-500 rounded-full animate-pulse"></span>
                 )}
               </motion.button>
+
               <NotificationPanel
                 notifOpen={notifOpen}
                 notifications={notifications}
@@ -193,7 +193,7 @@ export default function RightSidebar() {
             </div>
           )}
 
-          {/* ✅ If logged in → show My Account dropdown */}
+          {/* 👤 My Account / Login */}
           {isLoggedIn ? (
             <div className="relative hidden sm:block" ref={dropdownRef}>
               <motion.button
@@ -242,7 +242,6 @@ export default function RightSidebar() {
               </AnimatePresence>
             </div>
           ) : (
-            // ✅ If not logged in → show Register/Login button
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
@@ -253,7 +252,7 @@ export default function RightSidebar() {
             </motion.button>
           )}
 
-          {/* ✅ Mobile: Profile or Register icon */}
+          {/* 📱 Mobile Account Icon */}
           <div className="sm:hidden">
             {isLoggedIn ? (
               <motion.button
@@ -278,7 +277,7 @@ export default function RightSidebar() {
         </div>
       </motion.div>
 
-      {/* ✅ Left Sidebar (only if logged in) */}
+      {/* ✅ Left Sidebar */}
       <AnimatePresence>
         {leftSidebarOpen && isLoggedIn && (
           <>
@@ -297,7 +296,7 @@ export default function RightSidebar() {
               className="fixed top-0 left-0 h-full w-72 bg-white shadow-2xl z-50"
             >
               <div className="flex items-center justify-between p-4 border-b border-gray-200">
-                <h2 className="text-lg font-semibold text-gray-800">Menu</h2>
+                <h2 className="text-lg font-semibold text-gray-800"></h2>
                 <motion.button
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.95 }}
@@ -313,7 +312,7 @@ export default function RightSidebar() {
         )}
       </AnimatePresence>
 
-      {/* ✅ Right Profile Sidebar (mobile) */}
+      {/* ✅ Mobile Right Profile Sidebar */}
       <AnimatePresence>
         {rightSidebarOpen && isLoggedIn && (
           <>
