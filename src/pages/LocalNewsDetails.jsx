@@ -95,40 +95,42 @@ export default function LocalNewsDetails() {
   }, [id]);
 
   // ✅ Post comment
-  const handlePostComment = async () => {
-    if (!commentText.trim()) {
-      toast.warning("Comment cannot be empty!");
-      return;
-    }
+ const handlePostComment = async () => {
+  if (!commentText.trim()) {
+    toast.warning("Comment cannot be empty!");
+    return;
+  }
 
-    const token = localStorage.getItem("accessToken");
-    if (!token) {
-      toast.error("You must be logged in to comment.");
-      return;
-    }
+  const token = localStorage.getItem("accessToken");
+  if (!token) {
+    // User is not logged in, redirect to /login
+    navigate("/login");
+    return;
+  }
 
-    try {
-      setPosting(true);
-      const res = await axios.post(
-        `http://localhost:8000/api/v1/comments/district-news/${id}`,
-        { content: commentText },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+  try {
+    setPosting(true);
+    const res = await axios.post(
+      `http://localhost:8000/api/v1/comments/district-news/${id}`,
+      { content: commentText },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
 
-      if (res.data.success) {
-        toast.success("Comment added successfully!");
-        setCommentText("");
-        fetchComments(); // refresh comments
-      } else {
-        toast.error("Failed to add comment.");
-      }
-    } catch (err) {
-      console.error(err);
-      toast.error("Error adding comment.");
-    } finally {
-      setPosting(false);
+    if (res.data.success) {
+      toast.success("Comment added successfully!");
+      setCommentText("");
+      fetchComments(); // refresh comments
+    } else {
+      toast.error("Failed to add comment.");
     }
-  };
+  } catch (err) {
+    console.error(err);
+    toast.error("Error adding comment.");
+  } finally {
+    setPosting(false);
+  }
+};
+
 
   if (loading || !news)
     return (

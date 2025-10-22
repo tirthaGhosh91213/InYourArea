@@ -19,6 +19,7 @@ import { useNavigate } from "react-router-dom";
 export default function UserDashboard() {
   const navigate = useNavigate();
   const token = localStorage.getItem("accessToken");
+  const role = localStorage.getItem("role") || "user"; // 'user' or 'admin'
   const headers = { Authorization: `Bearer ${token}` };
 
   const [profile, setProfile] = useState(null);
@@ -34,7 +35,8 @@ export default function UserDashboard() {
   const [modalType, setModalType] = useState(null);
 
   useEffect(() => {
-    fetchAll();
+    if (!token) navigate("/login"); // redirect if no token
+    else fetchAll();
     // eslint-disable-next-line
   }, []);
 
@@ -104,6 +106,7 @@ export default function UserDashboard() {
       if (type === "events") url = `http://localhost:8000/api/v1/events/${id}`;
       if (type === "jobs") url = `http://localhost:8000/api/v1/jobs/${id}`;
       if (type === "community") url = `http://localhost:8000/api/v1/community/${id}`;
+      if (type === "localNews") url = `http://localhost:8000/api/v1/district-news/${id}`;
       const res = await axios.get(url, { headers });
       setModalContent(res.data.data);
       setModalType(type);
@@ -119,11 +122,23 @@ export default function UserDashboard() {
       if (type === "events") url = `http://localhost:8000/api/v1/events/${id}`;
       if (type === "jobs") url = `http://localhost:8000/api/v1/jobs/${id}`;
       if (type === "community") url = `http://localhost:8000/api/v1/community/${id}`;
+      if (type === "localNews") url = `http://localhost:8000/api/v1/district-news/${id}`;
       await axios.delete(url, { headers });
       toast.success("Deleted successfully");
       await fetchContent();
     } catch {
       toast.error("Failed to delete");
+    }
+  };
+
+  const handleUpdateNews = async (id, updatedData) => {
+    try {
+      await axios.put(`http://localhost:8000/api/v1/district-news/${id}`, updatedData, { headers });
+      toast.success("Local News updated successfully");
+      setModalContent(null);
+      fetchContent();
+    } catch {
+      toast.error("Failed to update Local News");
     }
   };
 
@@ -138,6 +153,7 @@ export default function UserDashboard() {
 
   const handleLogout = () => {
     localStorage.removeItem("accessToken");
+    localStorage.removeItem("role");
     toast.info("Logged out successfully");
     navigate("/login");
   };
@@ -148,17 +164,26 @@ export default function UserDashboard() {
     if (activeTab === "jobs") return content.jobs || [];
     if (activeTab === "community") return content.communityPosts || [];
     if (activeTab === "comments") return comments || [];
+    if (activeTab === "localNews") return content.districtNews || [];
     return [];
   };
 
   if (!profile || !stats || !content)
     return <div className="text-center mt-10 text-gray-500">Loading dashboard...</div>;
 
+  const tabs = [
+    { key: "events", label: "Events", icon: Calendar },
+    { key: "jobs", label: "Jobs", icon: Briefcase },
+    { key: "community", label: "Community", icon: FileText },
+  ];
+
+  if (role === "admin") tabs.push({ key: "localNews", label: "Local News", icon: FileText });
+
   return (
     <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-8">
       {/* Header + Logout */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl md:text-3xl font-bold text-gray-900">User Dashboard</h1>
+        <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Dashboard</h1>
         <button
           onClick={handleLogout}
           className="flex items-center gap-2 bg-red-100 text-red-700 px-4 py-2 rounded-lg hover:bg-red-200 transition"
@@ -227,7 +252,7 @@ export default function UserDashboard() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        {[
+        {[ 
           { title: "District News", value: stats.totalDistrictNews },
           { title: "Events", value: stats.totalEvents },
           { title: "Jobs", value: stats.totalJobs },
@@ -244,12 +269,7 @@ export default function UserDashboard() {
 
       {/* Tabs */}
       <div className="flex flex-wrap gap-3">
-        {[
-          { key: "events", label: "Events", icon: Calendar },
-          { key: "jobs", label: "Jobs", icon: Briefcase },
-          { key: "community", label: "Community", icon: FileText },
-          { key: "comments", label: "Comments", icon: MessageCircle },
-        ].map((tab) => {
+        {tabs.map((tab) => {
           const active = activeTab === tab.key;
           return (
             <motion.button
@@ -286,20 +306,22 @@ export default function UserDashboard() {
                     {item.status || "UNKNOWN"}
                   </span>
                 </div>
-               <p className="text-sm text-gray-500 mt-1 flex flex-wrap items-center gap-7">
-  {activeTab === "jobs" ? (
-    <>
-      <span>• Deadline: {item.applicationDeadline || "N/A"}</span>
-      <span>• Salary Range: ₹{item.salaryRange || "N/A"}</span>
-    </>
-  ) : activeTab === "events" ? (
-    <span>• Date: {item.eventDate || "N/A"}</span>
-  ) : activeTab === "community" ? (
-    <span>• Created: {new Date(item.createdAt).toLocaleDateString()}</span>
-  ) : (
-    ""
-  )}
-</p>
+                <p className="text-sm text-gray-500 mt-1 flex flex-wrap items-center gap-7">
+                  {activeTab === "jobs" ? (
+                    <>
+                      <span>• Deadline: {item.applicationDeadline || "N/A"}</span>
+                      <span>• Salary Range: ₹{item.salaryRange || "N/A"}</span>
+                    </>
+                  ) : activeTab === "events" ? (
+                    <span>• Date: {item.eventDate || "N/A"}</span>
+                  ) : activeTab === "community" ? (
+                    <span>• Created: {new Date(item.createdAt).toLocaleDateString()}</span>
+                  ) : activeTab === "localNews" ? (
+                    <span>• Created: {new Date(item.createdAt).toLocaleDateString()}</span>
+                  ) : (
+                    ""
+                  )}
+                </p>
 
                 {activeTab !== "comments" && (
                   <div className="flex gap-2 mt-2">
@@ -309,12 +331,30 @@ export default function UserDashboard() {
                     >
                       <Eye size={14} /> View Details
                     </button>
-                    <button
-                      onClick={() => handleDelete(activeTab, item.id)}
-                      className="flex items-center gap-2 bg-red-50 text-red-600 px-3 py-1 rounded-lg"
-                    >
-                      <Trash2 size={14} /> Delete
-                    </button>
+
+                    {activeTab === "localNews" && role === "admin" ? (
+                      <>
+                        <button
+                          onClick={() => handleUpdateNews(item.id, item)}
+                          className="flex items-center gap-2 bg-yellow-50 text-yellow-700 px-3 py-1 rounded-lg"
+                        >
+                          <Save size={14} /> Update
+                        </button>
+                        <button
+                          onClick={() => handleDelete(activeTab, item.id)}
+                          className="flex items-center gap-2 bg-red-50 text-red-600 px-3 py-1 rounded-lg"
+                        >
+                          <Trash2 size={14} /> Delete
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        onClick={() => handleDelete(activeTab, item.id)}
+                        className="flex items-center gap-2 bg-red-50 text-red-600 px-3 py-1 rounded-lg"
+                      >
+                        <Trash2 size={14} /> Delete
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
@@ -346,61 +386,6 @@ export default function UserDashboard() {
               </button>
               <h2 className="text-2xl font-bold text-gray-900 mb-2">{modalContent.title}</h2>
               <p className="text-gray-600 mb-4">{modalContent.description}</p>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-gray-700">
-                {modalType === "jobs" && (
-                  <>
-                    <p>
-                      <strong>Deadline:</strong> {modalContent.applicationDeadline || "N/A"}
-                    </p>
-                    <p>
-                      <strong>Salary:</strong> ₹{modalContent.salaryRange || "N/A"}
-                    </p>
-                    <p>
-                      <strong>Location:</strong> {modalContent.location || "N/A"}
-                    </p>
-                    <p>
-                      <strong>Company:</strong> {modalContent.company || "N/A"}
-                    </p>
-                  </>
-                )}
-                {modalType === "community" && (
-                  <>
-                    
-                    <p>
-                      <strong>Content:</strong> {modalContent.content || "N/A"}
-                    </p>
-                    <p>
-                      <strong>Location:</strong> {modalContent.location || "N/A"}
-                    </p>
-                    
-                  </>
-                )}
-                {modalType === "events" && (
-                  <>
-                    <p>
-                      <strong>Date:</strong> {modalContent.eventDate || "N/A"}
-                    </p>
-                    <p>
-                      <strong>Location:</strong> {modalContent.location|| "N/A"}
-                    </p>
-                  </>
-                )}
-                <p>
-                  <strong>Status:</strong>{" "}
-                  <span
-                    className={`px-3 py-1 rounded-full text-xs ${getStatusColor(
-                      modalContent.status
-                    )}`}
-                  >
-                    {modalContent.status || "UNKNOWN"}
-                  </span>
-                </p>
-                <p>
-                  <strong>Created On:</strong>{" "}
-                  {new Date(modalContent.createdAt).toLocaleString()}
-                </p>
-              </div>
 
               {/* Images */}
               <div className="mt-5">
