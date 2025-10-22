@@ -19,6 +19,7 @@ import JobDetails from "./pages/JobDetails";
 import EventDetails from "./pages/EventDetails";
 import UserDashboard from "./components/UserDashboard";
 import RightSidebar from "./components/RightSidebar";
+import LocalNewsDetails from "./pages/LocalNewsDetails";
 
 // ✅ Home component
 function Home() {
@@ -75,6 +76,7 @@ export default function App() {
         />
           <Route path="/jobs/:id" element={<JobDetails />} />
           <Route path="/events/:id" element={<EventDetails />} />
+          <Route path="/localnews/details/:id" element={<LocalNewsDetails />} />
           <Route path="/user-dashboard" element={<UserDashboard />} />
         <Route path="*" element={<NotFound />} />
       </Routes>

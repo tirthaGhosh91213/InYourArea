@@ -3,23 +3,19 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import axios from "axios";
-import Sidebar from "../components/SideBar";
+import Sidebar from "../../src/components/SideBar";
 import RightSidebar from "../components/RightSidebar";
-import { MessageSquare, Clock, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
+import { MessageSquare, Clock, Loader2 } from "lucide-react";
 
 export default function LocalNews() {
   const params = useParams();
   const navigate = useNavigate();
-  const initialDistrict = params.district
-    ? decodeURIComponent(params.district)
-    : "";
+  const initialDistrict = params.district ? decodeURIComponent(params.district) : "";
 
   const [district, setDistrict] = useState(initialDistrict);
   const [newsList, setNewsList] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [currentImage, setCurrentImage] = useState({});
-
   const token = localStorage.getItem("accessToken");
 
   const districts = [
@@ -50,7 +46,7 @@ export default function LocalNews() {
     "West Singhbhum",
   ];
 
-  // Keep district and URL in sync when dropdown is changed
+  // Keep district and URL in sync when dropdown changes
   useEffect(() => {
     if (district && params.district !== district) {
       navigate(`/localnews/${encodeURIComponent(district)}`, { replace: true });
@@ -58,9 +54,20 @@ export default function LocalNews() {
     // eslint-disable-next-line
   }, [district]);
 
-  // Fetch news whenever district changes
+  // Shuffle array (for random news order)
+  const shuffleArray = (array) => {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+  };
+
+  // Fetch news
   useEffect(() => {
     if (!district) return;
+
     const fetchNews = async () => {
       setLoading(true);
       setError("");
@@ -70,7 +77,9 @@ export default function LocalNews() {
           token ? { headers: { Authorization: `Bearer ${token}` } } : {}
         );
         if (res.data.success) {
-          setNewsList(res.data.data || []);
+          const fetchedNews = res.data.data || [];
+          const randomized = shuffleArray(fetchedNews); // randomize order
+          setNewsList(randomized);
         } else {
           setError("Failed to load news data");
         }
@@ -93,18 +102,9 @@ export default function LocalNews() {
     });
   };
 
-  const handlePrevImage = (newsId, total) => {
-    setCurrentImage((prev) => ({
-      ...prev,
-      [newsId]: prev[newsId] === 0 ? total - 1 : prev[newsId] - 1,
-    }));
-  };
-
-  const handleNextImage = (newsId, total) => {
-    setCurrentImage((prev) => ({
-      ...prev,
-      [newsId]: prev[newsId] === total - 1 ? 0 : prev[newsId] + 1,
-    }));
+  // ✅ Function to navigate to news details page
+  const handleNewsClick = (id) => {
+    navigate(`/localnews/details/${id}`);
   };
 
   return (
@@ -137,7 +137,7 @@ export default function LocalNews() {
               </p>
             </div>
 
-            {/* Standard District Dropdown */}
+            {/* District Dropdown */}
             <select
               value={district}
               onChange={(e) => setDistrict(e.target.value)}
@@ -152,7 +152,7 @@ export default function LocalNews() {
             </select>
           </motion.div>
 
-          {/* Loading / Error / News */}
+          {/* News Section */}
           {loading ? (
             <div className="flex justify-center items-center h-64">
               <Loader2 className="animate-spin text-green-600" size={40} />
@@ -160,107 +160,89 @@ export default function LocalNews() {
           ) : error ? (
             <div className="text-center text-red-500 font-semibold">{error}</div>
           ) : newsList.length === 0 ? (
-            district && <div className="text-center text-gray-600 font-medium">No district news found.</div>
+            district && (
+              <div className="text-center text-gray-600 font-medium">
+                No district news found.
+              </div>
+            )
           ) : (
             <AnimatePresence>
-              <div className="flex flex-col gap-6 w-full max-w-5xl">
-                {newsList.map((news, i) => {
-                  const images = Array.isArray(news.imageUrls) ? news.imageUrls : [];
-                  const imgIndex = currentImage[news.id] || 0;
+              <div className="w-full max-w-6xl flex flex-col gap-8">
+                {/* Featured News (first item) */}
+                {newsList[0] && (
+                  <motion.div
+                    key={newsList[0].id}
+                    layout
+                    initial={{ opacity: 0, y: 40 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="relative bg-white rounded-3xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-500 border border-green-100 cursor-pointer"
+                    onClick={() => handleNewsClick(newsList[0].id)} // ✅ Navigate on click
+                  >
+                    {Array.isArray(newsList[0].imageUrls) && newsList[0].imageUrls.length > 0 && (
+                      <img
+                        src={newsList[0].imageUrls[0]}
+                        alt={newsList[0].title}
+                        className="w-full h-[400px] object-cover sm:object-center"
+                      />
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
+                    <div className="absolute bottom-0 p-6 sm:p-10 text-white">
+                      <h2 className="text-2xl sm:text-4xl font-bold mb-3 drop-shadow-lg">
+                        {newsList[0].title}
+                      </h2>
+                      <p className="text-sm sm:text-base mb-3 line-clamp-3 text-gray-100">
+                        {newsList[0].content || "No content available."}
+                      </p>
+                      <div className="flex items-center justify-between text-sm sm:text-base text-gray-200">
+                        <span>
+                          By {newsList[0].author?.firstName} {newsList[0].author?.lastName}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Clock size={16} /> {formatDate(newsList[0].createdAt)}
+                        </span>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
 
-                  return (
+                {/* Remaining News Cards */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  {newsList.slice(1).map((news, i) => (
                     <motion.div
                       key={news.id || i}
                       layout
                       initial={{ opacity: 0, y: 40 }}
                       animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -20 }}
-                      transition={{ delay: i * 0.1 }}
-                      className="bg-white rounded-3xl shadow-md border border-green-100 overflow-hidden hover:shadow-xl hover:border-green-300 transition-all duration-300 w-full"
+                      transition={{ delay: i * 0.05 }}
+                      className="bg-white rounded-2xl shadow-md border border-green-100 overflow-hidden hover:shadow-xl transition-all duration-300 flex flex-col cursor-pointer"
+                      onClick={() => handleNewsClick(news.id)} // ✅ Navigate on click
                     >
-                      {/* Image Slider */}
-                      {images.length > 0 && (
-                        <div className="relative w-full overflow-hidden">
-                          <div className="hidden sm:flex gap-2 p-2 overflow-x-auto">
-                            {images.map((img, idx) => (
-                              <img
-                                key={idx}
-                                src={img}
-                                alt={`News ${idx + 1}`}
-                                className="h-64 object-cover rounded-lg flex-shrink-0"
-                              />
-                            ))}
-                          </div>
-                          <div className="sm:hidden relative">
-                            <img
-                              src={images[imgIndex]}
-                              alt="News"
-                              className="w-full h-64 object-cover transition-transform duration-700 cursor-pointer"
-                              onClick={() => window.open(images[imgIndex], "_blank")}
-                            />
-                            {images.length > 1 && (
-                              <>
-                                <button
-                                  onClick={() => handlePrevImage(news.id, images.length)}
-                                  className="absolute top-1/2 left-2 bg-white/70 rounded-full p-1 hover:bg-white/90 transition"
-                                >
-                                  <ChevronLeft size={24} />
-                                </button>
-                                <button
-                                  onClick={() => handleNextImage(news.id, images.length)}
-                                  className="absolute top-1/2 right-2 bg-white/70 rounded-full p-1 hover:bg-white/90 transition"
-                                >
-                                  <ChevronRight size={24} />
-                                </button>
-                                <div className="absolute bottom-2 right-2 bg-white/80 text-gray-700 px-3 py-1 rounded-full text-xs font-medium">
-                                  {imgIndex + 1} / {images.length}
-                                </div>
-                              </>
-                            )}
-                          </div>
-                        </div>
+                      {Array.isArray(news.imageUrls) && news.imageUrls.length > 0 && (
+                        <img
+                          src={news.imageUrls[0]}
+                          alt={news.title}
+                          className="w-full h-48 sm:h-56 object-cover"
+                        />
                       )}
-
-                      {/* News Content */}
-                      <div className="p-6 space-y-3">
-                        <div className="flex justify-between items-start flex-wrap gap-2">
-                          <div className="flex flex-col gap-1">
-                            <h3 className="text-xl font-bold text-gray-800">
-                              {news.title}
-                            </h3>
-                            {news.districtName && (
-                              <div className="text-sm text-gray-600 font-medium">
-                                District:{" "}
-                                <span className="font-semibold">
-                                  {news.districtName}
-                                </span>
-                              </div>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-1 text-gray-500 text-sm mt-1 sm:mt-0">
-                            <Clock size={16} /> {formatDate(news.createdAt)}
-                          </div>
-                        </div>
-
-                        <p className="text-gray-700 leading-relaxed text-base">
+                      <div className="p-4 flex flex-col flex-grow">
+                        <h3 className="text-lg font-semibold text-gray-800 mb-2 line-clamp-2">
+                          {news.title}
+                        </h3>
+                        <p className="text-gray-600 text-sm flex-grow line-clamp-3 mb-3">
                           {news.content || "No content available."}
                         </p>
-
-                        <div className="flex justify-between items-center mt-4 pt-3 border-t border-gray-200">
-                          <div className="flex items-center text-sm text-gray-600">
-                            By{" "}
-                            <span className="ml-1 font-semibold text-green-700">
-                              {news.author?.firstName} {news.author?.lastName}
-                            </span>
-                          </div>
-                          <button className="flex items-center gap-1 bg-green-600 text-white px-4 py-1.5 rounded-full text-sm shadow-md hover:bg-green-700 transition">
-                            <MessageSquare size={16} /> Comment
-                          </button>
+                        <div className="flex items-center justify-between text-sm text-gray-500">
+                          <span>
+                            {news.author?.firstName} {news.author?.lastName}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Clock size={14} /> {formatDate(news.createdAt)}
+                          </span>
                         </div>
                       </div>
                     </motion.div>
-                  );
-                })}
+                  ))}
+                </div>
               </div>
             </AnimatePresence>
           )}

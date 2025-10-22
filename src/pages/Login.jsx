@@ -456,6 +456,12 @@ function LogIn() {
                     >
                       Sign Up
                     </button>
+                    <button
+                      onClick={() => setRightPanelActive(true)}
+                      className="border border-white py-2 px-4 rounded hover:bg-white hover:text-emerald-700 transition"
+                    >
+                      Sign in
+                    </button>
                   </div>
                 )}
               </div>

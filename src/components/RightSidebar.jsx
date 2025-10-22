@@ -1,4 +1,3 @@
-// src/components/RightSidebar.jsx
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
@@ -13,7 +12,7 @@ import {
   Settings,
 } from "lucide-react";
 import NotificationPanel from "./NotificationPanel";
-import Sidebar from "./SideBar";
+import Sidebar from "./Sidebar";
 import axios from "axios";
 
 export default function RightSidebar() {
@@ -35,26 +34,28 @@ export default function RightSidebar() {
   const isLoggedIn = Boolean(token);
   const isAdmin = role?.toLowerCase().includes("admin");
 
-  // ✅ Fetch notifications
+  // Media query for desktop sizing
+  const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024);
+  useEffect(() => {
+    const handleResize = () => setIsDesktop(window.innerWidth >= 1024);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   const fetchNotifications = async () => {
     setLoading(true);
     try {
       const token = localStorage.getItem("accessToken");
       if (!token) return;
-
       const res = await axios.get(
         "http://localhost:8000/api/v1/notifications/recent?limit=50",
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
-
       const data = res.data?.data || [];
       setNotifications(data);
       setUnreadCount(data.length);
       setHasNewNotif(data.length > 0);
     } catch (err) {
-      console.error("Error fetching notifications:", err);
       setNotifications([]);
       setUnreadCount(0);
       setHasNewNotif(false);
@@ -86,7 +87,6 @@ export default function RightSidebar() {
     setLeftSidebarOpen(false);
   };
 
-  // ✅ Close dropdown and notif panel when clicked outside
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (
@@ -103,7 +103,6 @@ export default function RightSidebar() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // ✅ ESC to close sidebars or dropdowns
   useEffect(() => {
     const onEsc = (e) => {
       if (e.key === "Escape") {
@@ -117,7 +116,6 @@ export default function RightSidebar() {
     return () => document.removeEventListener("keydown", onEsc);
   }, []);
 
-  // ✅ Auto-refresh notification badge every 10 seconds
   useEffect(() => {
     if (isLoggedIn) {
       fetchNotifications();
@@ -161,7 +159,6 @@ export default function RightSidebar() {
 
         {/* Right side */}
         <div className="flex items-center gap-2 sm:gap-4">
-          {/* 🔔 Notifications */}
           {isLoggedIn && (
             <div className="relative" ref={notifRef}>
               <motion.button
@@ -171,18 +168,16 @@ export default function RightSidebar() {
                   setNotifOpen((prev) => !prev);
                   if (!notifOpen) {
                     fetchNotifications();
-                    setHasNewNotif(false); // remove dot on open
+                    setHasNewNotif(false);
                   }
                 }}
                 className="relative p-2 rounded-full hover:bg-green-100 transition"
               >
                 <Bell className="w-5 h-5 text-gray-700" />
-                {/* 🔴 Notification dot */}
                 {hasNewNotif && unreadCount > 0 && (
                   <span className="absolute top-1 right-1 h-2.5 w-2.5 bg-red-500 rounded-full animate-pulse"></span>
                 )}
               </motion.button>
-
               <NotificationPanel
                 notifOpen={notifOpen}
                 notifications={notifications}
@@ -193,7 +188,6 @@ export default function RightSidebar() {
             </div>
           )}
 
-          {/* 👤 My Account / Login */}
           {isLoggedIn ? (
             <div className="relative hidden sm:block" ref={dropdownRef}>
               <motion.button
@@ -206,7 +200,6 @@ export default function RightSidebar() {
                 My Account
                 <ChevronDown size={16} />
               </motion.button>
-
               <AnimatePresence>
                 {dropdownOpen && (
                   <motion.div
@@ -252,7 +245,7 @@ export default function RightSidebar() {
             </motion.button>
           )}
 
-          {/* 📱 Mobile Account Icon */}
+          {/* Mobile Account Icon */}
           <div className="sm:hidden">
             {isLoggedIn ? (
               <motion.button
@@ -261,7 +254,7 @@ export default function RightSidebar() {
                 onClick={() => setRightSidebarOpen(true)}
                 className="p-2 rounded-full hover:bg-green-100 transition"
               >
-                <User className="w-6 h-6 text-gray-700" />
+                <User className="w-6 h-6" />
               </motion.button>
             ) : (
               <motion.button
@@ -270,49 +263,21 @@ export default function RightSidebar() {
                 onClick={() => navigate("/login")}
                 className="p-2 rounded-full bg-green-600 text-white hover:bg-green-700 transition"
               >
-                <User className="w-6 h-6" />
+                
+                <span className="px-4 py-2 bg-green-600 text-white rounded-full hover:bg-green-700 transition">Login</span>
               </motion.button>
             )}
           </div>
         </div>
       </motion.div>
 
-      {/* ✅ Left Sidebar */}
-      <AnimatePresence>
-        {leftSidebarOpen && isLoggedIn && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/50 z-40"
-              onClick={() => setLeftSidebarOpen(false)}
-            />
-            <motion.div
-              initial={{ x: "-100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "-100%" }}
-              transition={{ type: "spring", stiffness: 100, damping: 20 }}
-              className="fixed top-0 left-0 h-full w-72 bg-white shadow-2xl z-50"
-            >
-              <div className="flex items-center justify-between p-4 border-b border-gray-200">
-                <h2 className="text-lg font-semibold text-gray-800"></h2>
-                <motion.button
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => setLeftSidebarOpen(false)}
-                  className="p-2 rounded-full hover:bg-gray-100 transition"
-                >
-                  <X className="w-5 h-5 text-gray-700" />
-                </motion.button>
-              </div>
-              <Sidebar />
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+      {/* ALWAYS show sidebar on desktop, toggle on mobile */}
+      <Sidebar
+        sidebarOpen={isDesktop || leftSidebarOpen}
+        onClose={() => setLeftSidebarOpen(false)}
+      />
 
-      {/* ✅ Mobile Right Profile Sidebar */}
+      {/* Right Profile Sidebar */}
       <AnimatePresence>
         {rightSidebarOpen && isLoggedIn && (
           <>
@@ -343,7 +308,6 @@ export default function RightSidebar() {
                   <X className="w-5 h-5 text-gray-700" />
                 </motion.button>
               </div>
-
               <div className="flex flex-col p-4 gap-3">
                 <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
                   <User className="w-6 h-6 text-green-700" />
@@ -354,7 +318,6 @@ export default function RightSidebar() {
                     <p className="text-sm text-gray-600">User Settings</p>
                   </div>
                 </div>
-
                 {isAdmin ? (
                   <motion.button
                     whileTap={{ scale: 0.95 }}
