@@ -98,7 +98,7 @@ export default function Events() {
           </motion.div>
 
           <div className="flex gap-2 sm:gap-3 mb-6 flex-wrap">
-            {["All", "Bokaro", "Delhi", "Bangalore", "Mumbai", "Hyderabad"].map(
+            {["All", "Bokaro"].map(
               (loc) => (
                 <motion.button
                   whileHover={{ scale: 1.05 }}

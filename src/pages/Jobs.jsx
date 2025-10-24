@@ -47,6 +47,13 @@ export default function Jobs() {
     )
   );
 
+  const formatDate = (date) =>
+    new Date(date).toLocaleString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+
   return (
     <>
       {/* Top Navbar */}
@@ -101,21 +108,69 @@ export default function Jobs() {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -20 }}
                     transition={{ delay: idx * 0.05, type: "spring", stiffness: 100 }}
-                    whileHover={{ scale: 1.03, boxShadow: "0 25px 40px rgba(52, 211, 153, 0.25)" }}
+                    whileHover={{
+                      scale: 1.03,
+                      boxShadow: "0 25px 40px rgba(52,211,153,0.25)",
+                    }}
                     className="relative rounded-2xl overflow-hidden p-5 flex flex-col justify-between bg-white/90 shadow-md border border-green-100 backdrop-blur transition-all cursor-pointer hover:bg-gradient-to-r hover:from-emerald-100 hover:via-green-50 hover:to-teal-100"
                     onClick={() => navigate(`/jobs/${job.id}`)}
                   >
-                    {/* Image Slider */}
-                    {job.imageUrls && job.imageUrls.length > 0 && (
-                      <div className="relative mb-4 overflow-x-auto flex gap-2 scrollbar-thin scrollbar-thumb-emerald-300 scrollbar-track-gray-100">
-                        {job.imageUrls.map((img, idx) => (
-                          <img
-                            key={idx}
-                            src={img}
-                            alt={`job-img-${idx}`}
-                            className="w-36 h-36 object-cover rounded-lg flex-shrink-0"
-                          />
-                        ))}
+                    {/* Image slider matching Community.jsx */}
+                    {job.imageUrls?.length > 0 && (
+                      <div className="relative w-full h-48 mb-4 rounded-xl overflow-hidden">
+                        <img
+                          src={job.imageUrls[job.currentImageIndex || 0]}
+                          alt={job.title}
+                          className="w-full h-full object-cover rounded-xl"
+                        />
+
+                        {job.imageUrls.length > 1 && (
+                          <>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setJobs((prev) =>
+                                  prev.map((j) =>
+                                    j.id === job.id
+                                      ? {
+                                          ...j,
+                                          currentImageIndex:
+                                            (j.currentImageIndex || 0) - 1 < 0
+                                              ? j.imageUrls.length - 1
+                                              : (j.currentImageIndex || 0) - 1,
+                                        }
+                                      : j
+                                  )
+                                );
+                              }}
+                              className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black/30 text-white p-1 rounded-full hover:bg-black/50 transition"
+                            >
+                              &#8592;
+                            </button>
+
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setJobs((prev) =>
+                                  prev.map((j) =>
+                                    j.id === job.id
+                                      ? {
+                                          ...j,
+                                          currentImageIndex:
+                                            (j.currentImageIndex || 0) + 1 >= j.imageUrls.length
+                                              ? 0
+                                              : (j.currentImageIndex || 0) + 1,
+                                        }
+                                      : j
+                                  )
+                                );
+                              }}
+                              className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black/30 text-white p-1 rounded-full hover:bg-black/50 transition"
+                            >
+                              &#8594;
+                            </button>
+                          </>
+                        )}
                       </div>
                     )}
 
@@ -134,7 +189,8 @@ export default function Jobs() {
                         <DollarSign size={16} className="text-yellow-600" /> {job.salaryRange}
                       </p>
                       <p className="flex items-center gap-2">
-                        <Calendar size={16} className="text-blue-600" /> {job.applicationDeadline}
+                        <Calendar size={16} className="text-blue-600" />{" "}
+                        {formatDate(job.applicationDeadline)}
                       </p>
                     </div>
 
@@ -144,7 +200,7 @@ export default function Jobs() {
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.95 }}
                         onClick={(e) => {
-                          e.stopPropagation(); // prevent navigating to details
+                          e.stopPropagation();
                           window.open(job.applyLink, "_blank");
                         }}
                         className="flex items-center gap-2 text-green-700 font-semibold hover:text-teal-700 transition"
@@ -171,15 +227,7 @@ export default function Jobs() {
           )}
 
           {/* Floating Post Button */}
-          <motion.button
-            whileHover={{ scale: 1.1, rotate: 5 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => navigate("/create/jobs")}
-            className="fixed bottom-10 right-10 flex items-center gap-2 bg-emerald-600 text-white font-semibold px-5 py-3 rounded-full shadow-lg hover:bg-emerald-700 transition-all z-50"
-          >
-            <PlusCircle size={20} />
-            Post a Job
-          </motion.button>
+         
         </main>
       </div>
     </>

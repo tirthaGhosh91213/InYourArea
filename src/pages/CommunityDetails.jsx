@@ -128,11 +128,11 @@ export default function CommunityDetails() {
   return (
     <>
       {/* Top Navbar */}
-      <div className="w-full fixed top-0 left-0 z-50 bg-white shadow-md border-b border-gray-200">
+      {/* <div className="w-full fixed top-0 left-0 z-50 bg-white shadow-md border-b border-gray-200">
         <RightSidebar />
-      </div>
+      </div> */}
 
-      <div className="flex h-screen bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden pt-16">
+      <div className="flex h-screen bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden ">
         {/* Left Sidebar */}
         {/* <div className="hidden lg:block w-64 bg-white shadow-md border-r border-gray-200">
           <Sidebar />

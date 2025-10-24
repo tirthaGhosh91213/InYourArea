@@ -270,48 +270,52 @@ export default function Sidebar({ sidebarOpen, onClose }) {
           </div>
 
           {/* ===== Popup Modal for + Post ===== */}
-          <AnimatePresence>
-            {showModal && (
-              <motion.div
-                className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-              >
-                <motion.div
-                  initial={{ scale: 0.8, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  exit={{ scale: 0.8, opacity: 0 }}
-                  transition={{ duration: 0.3 }}
-                  className="bg-white rounded-2xl shadow-2xl w-80 p-6 text-center relative"
-                >
-                  <button
-                    onClick={() => setShowModal(false)}
-                    className="absolute top-3 right-3 text-gray-500 hover:text-gray-700"
-                  >
-                    <X size={20} />
-                  </button>
+         {/* Keep the sidebar code as-is */}
 
-                  <h2 className="text-2xl font-semibold text-green-600 mb-4">
-                    Choose Post Type
-                  </h2>
-                  <div className="flex flex-col gap-3">
-                    {getPostOptions().map((type) => (
-                      <motion.button
-                        key={type}
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        onClick={() => handleOptionClick(type)}
-                        className="py-2 bg-green-100 text-green-700 font-medium rounded-xl hover:bg-green-200 transition-all"
-                      >
-                        {type}
-                      </motion.button>
-                    ))}
-                  </div>
-                </motion.div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+{/* ===== Popup Modal for + Post ===== */}
+<AnimatePresence>
+  {showModal && (
+    <motion.div
+      className="fixed inset-0 bg-black/50  flex items-center justify-center z-50"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+    >
+      <motion.div
+        initial={{ scale: 0.8, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.8, opacity: 0 }}
+        transition={{ duration: 0.3 }}
+        className="bg-white rounded-2xl shadow-2xl w-80 p-6 text-center relative"
+      >
+        <button
+          onClick={() => setShowModal(false)}
+          className="absolute top-3 right-3 text-gray-500 hover:text-gray-700"
+        >
+          <X size={20} />
+        </button>
+
+        <h2 className="text-2xl font-semibold text-green-600 mb-4">
+          Choose Post Type
+        </h2>
+        <div className="flex flex-col gap-3">
+          {getPostOptions().map((type) => (
+            <motion.button
+              key={type}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => handleOptionClick(type)}
+              className="py-2 bg-green-100 text-green-700 font-medium rounded-xl hover:bg-green-200 transition-all"
+            >
+              {type}
+            </motion.button>
+          ))}
+        </div>
+      </motion.div>
+    </motion.div>
+  )}
+</AnimatePresence>
+
         </motion.aside>
       )}
     </AnimatePresence>

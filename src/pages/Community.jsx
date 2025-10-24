@@ -159,12 +159,62 @@ export default function Community() {
                     className="relative rounded-2xl overflow-hidden p-5 flex flex-col justify-between bg-white/90 shadow-md border border-green-100 backdrop-blur transition-all cursor-pointer hover:bg-gradient-to-r hover:from-emerald-100 hover:via-green-50 hover:to-teal-100"
                     onClick={() => navigate(`/community/${post.id}`)}
                   >
-                    {post.imageUrls?.[0] && (
-                      <img
-                        src={post.imageUrls[0]}
-                        alt={post.title}
-                        className="w-full h-48 object-cover rounded-xl mb-4"
-                      />
+                    {/* Image slider */}
+                    {post.imageUrls?.length > 0 && (
+                      <div className="relative w-full h-48 mb-4 rounded-xl overflow-hidden">
+                        <img
+                          src={post.imageUrls[post.currentImageIndex || 0]}
+                          alt={post.title}
+                          className="w-full h-full object-cover rounded-xl"
+                        />
+
+                        {post.imageUrls.length > 1 && (
+                          <>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setPosts((prev) =>
+                                  prev.map((p) =>
+                                    p.id === post.id
+                                      ? {
+                                          ...p,
+                                          currentImageIndex:
+                                            (p.currentImageIndex || 0) - 1 < 0
+                                              ? p.imageUrls.length - 1
+                                              : (p.currentImageIndex || 0) - 1,
+                                        }
+                                      : p
+                                  )
+                                );
+                              }}
+                              className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black/30 text-white p-1 rounded-full hover:bg-black/50 transition"
+                            >
+                              &#8592;
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setPosts((prev) =>
+                                  prev.map((p) =>
+                                    p.id === post.id
+                                      ? {
+                                          ...p,
+                                          currentImageIndex:
+                                            (p.currentImageIndex || 0) + 1 >= p.imageUrls.length
+                                              ? 0
+                                              : (p.currentImageIndex || 0) + 1,
+                                        }
+                                      : p
+                                  )
+                                );
+                              }}
+                              className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black/30 text-white p-1 rounded-full hover:bg-black/50 transition"
+                            >
+                              &#8594;
+                            </button>
+                          </>
+                        )}
+                      </div>
                     )}
 
                     <div className="mb-3 flex items-center justify-between text-gray-700">
@@ -263,14 +313,7 @@ export default function Community() {
             </motion.p>
           )}
 
-          <motion.button
-            whileHover={{ scale: 1.1, rotate: 5 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => navigate("/create/community")}
-            className="fixed bottom-10 right-10 flex items-center gap-2 bg-emerald-600 text-white font-semibold px-5 py-3 rounded-full shadow-lg hover:bg-emerald-700 transition-all z-50"
-          >
-            <PlusCircle size={20} /> Post
-          </motion.button>
+          
         </main>
       </div>
     </>
