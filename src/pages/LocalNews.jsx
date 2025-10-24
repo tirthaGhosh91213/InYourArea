@@ -1,7 +1,7 @@
 // src/pages/LocalNews.jsx
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import axios from "axios";
 import Sidebar from "../../src/components/SideBar";
 import RightSidebar from "../components/RightSidebar";
@@ -76,6 +76,10 @@ export default function LocalNews() {
   const handleNewsClick = (id) => navigate(`/localnews/details/${id}`);
   const handleCommentClick = (id) => navigate(`/localnews/details/${id}`);
 
+  // Split data
+  const smallBoxNews = newsList.slice(0, 2);
+  const largeBoxNews = newsList.slice(2);
+
   return (
     <div className="flex min-h-screen bg-gray-50">
       {/* Left Sidebar */}
@@ -84,7 +88,7 @@ export default function LocalNews() {
       </div>
 
       <div className="flex-1 flex flex-col lg:ml-64">
-        {/* Right Sidebar */}
+        {/* Header bar */}
         <div className="fixed top-0 w-full z-30">
           <RightSidebar />
         </div>
@@ -97,11 +101,9 @@ export default function LocalNews() {
             animate={{ opacity: 1, y: 0 }}
           >
             <div>
-              <h2 className="text-xl sm:text-2xl font-bold">
-                Local District News
-              </h2>
+              <h2 className="text-xl sm:text-2xl font-bold">Local District News</h2>
               <p className="text-emerald-200 mt-1">
-                Latest news updates from {district || "your district"} (Last 5 Days)
+                Latest updates from {district || "your district"} (Last 5 Days)
               </p>
             </div>
 
@@ -119,7 +121,7 @@ export default function LocalNews() {
             </select>
           </motion.div>
 
-          {/* News Section */}
+          {/* Combined Grid */}
           {loading ? (
             <div className="flex justify-center items-center h-64">
               <Loader2 className="animate-spin text-green-600" size={40} />
@@ -133,47 +135,42 @@ export default function LocalNews() {
               </div>
             )
           ) : (
-            <AnimatePresence>
-              <div className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Featured Large News */}
-                {newsList[0] && (
+            <div className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-6 items-start">
+              {/* Left Side: Large Boxes */}
+              <div className="flex flex-col gap-6">
+                {largeBoxNews.map((news, i) => (
                   <motion.div
-                    key={newsList[0].id}
-                    layout
-                    className="relative lg:col-span-2 rounded-3xl overflow-hidden shadow-lg border border-green-100 cursor-pointer group"
+                    key={news.id || i}
+                    className="relative rounded-3xl overflow-hidden shadow-lg border border-green-100 cursor-pointer group"
+                    onClick={() => handleNewsClick(news.id)}
                     initial={{ opacity: 0, y: 40 }}
                     animate={{ opacity: 1, y: 0 }}
-                    onClick={() => handleNewsClick(newsList[0].id)}
+                    transition={{ delay: i * 0.05 }}
+                    style={{ height: "520px" }} // Height matches combined small boxes
                   >
-                    {Array.isArray(newsList[0].imageUrls) && newsList[0].imageUrls.length > 0 && (
+                    {Array.isArray(news.imageUrls) && news.imageUrls.length > 0 && (
                       <img
-                        src={newsList[0].imageUrls[0]}
-                        alt={newsList[0].title}
-                        className="w-full h-[420px] object-cover transition-transform duration-500 group-hover:scale-105"
+                        src={news.imageUrls[0]}
+                        alt={news.title}
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                       />
                     )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/50 to-transparent" />
-                    <div className="absolute bottom-0 p-6 sm:p-8 text-white w-full">
-                      <h2 className="text-2xl sm:text-3xl font-bold mb-2 capitalize">
-                        {newsList[0].title}
-                      </h2>
-                      <p className="text-sm sm:text-base text-gray-200 mb-3 line-clamp-2">
-                        {newsList[0].content}
-                      </p>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent" />
+                    <div className="absolute bottom-0 p-6 text-white">
+                      <h3 className="text-2xl font-bold mb-2 capitalize">{news.title}</h3>
+                      <p className="text-sm text-gray-200 mb-3 line-clamp-2">{news.content}</p>
                       <div className="flex items-center justify-between text-gray-300 text-sm mb-3">
                         <span>
-                          {newsList[0].author?.firstName} {newsList[0].author?.lastName}
+                          {news.author?.firstName} {news.author?.lastName}
                         </span>
                         <span className="flex items-center gap-1">
-                          <Clock size={14} /> {formatDate(newsList[0].createdAt)}
+                          <Clock size={14} /> {formatDate(news.createdAt)}
                         </span>
                       </div>
-
-                      {/* Comment Button */}
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleCommentClick(newsList[0].id);
+                          handleCommentClick(news.id);
                         }}
                         className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium px-4 py-2 rounded-lg shadow-md transition-all"
                       >
@@ -181,60 +178,52 @@ export default function LocalNews() {
                       </button>
                     </div>
                   </motion.div>
-                )}
-
-                {/* Right-side Smaller News Cards */}
-                <div className="flex flex-col gap-6">
-                  {newsList.slice(1, 4).map((news, i) => (
-                    <motion.div
-                      key={news.id || i}
-                      layout
-                      className="relative rounded-2xl overflow-hidden shadow-md border border-green-100 cursor-pointer group"
-                      initial={{ opacity: 0, y: 40 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: i * 0.05 }}
-                      onClick={() => handleNewsClick(news.id)}
-                    >
-                      {Array.isArray(news.imageUrls) && news.imageUrls.length > 0 && (
-                        <img
-                          src={news.imageUrls[0]}
-                          alt={news.title}
-                          className="w-full h-52 object-cover transition-transform duration-500 group-hover:scale-105"
-                        />
-                      )}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent" />
-                      <div className="absolute bottom-0 p-4 text-white w-full">
-                        <h3 className="text-lg font-semibold capitalize mb-1 line-clamp-1">
-                          {news.title}
-                        </h3>
-                        <p className="text-xs text-gray-200 line-clamp-2 mb-1">
-                          {news.content}
-                        </p>
-                        <div className="flex items-center justify-between text-xs text-gray-300 mb-2">
-                          <span>
-                            {news.author?.firstName} {news.author?.lastName}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Clock size={12} /> {formatDate(news.createdAt)}
-                          </span>
-                        </div>
-
-                        {/* Comment Button */}
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleCommentClick(news.id);
-                          }}
-                          className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium px-3 py-1.5 rounded-md shadow-sm transition-all"
-                        >
-                          <MessageSquare size={14} /> Comment
-                        </button>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
+                ))}
               </div>
-            </AnimatePresence>
+
+              {/* Right Column: Fixed Two Small Boxes */}
+              <div className="hidden lg:flex flex-col gap-6 sticky top-24 h-[520px]">
+                {smallBoxNews.map((news, i) => (
+                  <motion.div
+                    key={news.id || i}
+                    className="relative rounded-2xl overflow-hidden shadow-md border border-green-100 cursor-pointer group flex-1"
+                    onClick={() => handleNewsClick(news.id)}
+                  >
+                    {Array.isArray(news.imageUrls) && news.imageUrls.length > 0 && (
+                      <img
+                        src={news.imageUrls[0]}
+                        alt={news.title}
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      />
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent" />
+                    <div className="absolute bottom-0 p-4 text-white w-full">
+                      <h3 className="text-lg font-semibold capitalize mb-1 line-clamp-1">
+                        {news.title}
+                      </h3>
+                      <p className="text-xs text-gray-200 line-clamp-2 mb-1">{news.content}</p>
+                      <div className="flex items-center justify-between text-xs text-gray-300">
+                        <span>
+                          {news.author?.firstName} {news.author?.lastName}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Clock size={12} /> {formatDate(news.createdAt)}
+                        </span>
+                      </div>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleCommentClick(news.id);
+                        }}
+                        className="mt-2 flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium px-3 py-1.5 rounded-md shadow-sm transition-all"
+                      >
+                        <MessageSquare size={14} /> Comment
+                      </button>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
           )}
         </main>
       </div>

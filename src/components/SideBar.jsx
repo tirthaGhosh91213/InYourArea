@@ -1,3 +1,4 @@
+// src/components/Sidebar.jsx
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
@@ -11,40 +12,21 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import EmailService from "./EmailService";
 
-// List of districts (ensure this matches everywhere)
 const districts = [
-  "Bokaro",
-  "Chatra",
-  "Deoghar",
-  "Dhanbad",
-  "Dumka",
-  "East Singhbhum",
-  "Garhwa",
-  "Giridih",
-  "Godda",
-  "Gumla",
-  "Hazaribagh",
-  "Jamtara",
-  "Jamshedpur",
-  "Khunti",
-  "Koderma",
-  "Latehar",
-  "Lohardaga",
-  "Pakur",
-  "Palamu",
-  "Ramgarh",
-  "Ranchi",
-  "Sahibganj",
-  "Seraikela-Kharsawan",
-  "Simdega",
-  "West Singhbhum",
+  "Bokaro", "Chatra", "Deoghar", "Dhanbad", "Dumka",
+  "East Singhbhum", "Garhwa", "Giridih", "Godda", "Gumla",
+  "Hazaribagh", "Jamtara", "Jamshedpur", "Khunti", "Koderma",
+  "Latehar", "Lohardaga", "Pakur", "Palamu", "Ramgarh",
+  "Ranchi", "Sahibganj", "Seraikela-Kharsawan", "Simdega", "West Singhbhum",
 ];
 
 export default function Sidebar({ sidebarOpen, onClose }) {
   const navigate = useNavigate();
   const location = useLocation();
   const [showModal, setShowModal] = useState(false);
+  const [showEmailService, setShowEmailService] = useState(false);
   const [role, setRole] = useState(null);
   const [selectedDistrict, setSelectedDistrict] = useState(() => {
     return localStorage.getItem("district") || districts[0];
@@ -175,7 +157,6 @@ export default function Sidebar({ sidebarOpen, onClose }) {
                 type="button"
                 onClick={() => setDropdownOpen((prev) => !prev)}
                 className="w-full flex items-center justify-between px-6 py-3 border-2 border-gray-300 rounded-full shadow hover:border-green-600 transition relative bg-white"
-                style={{ minHeight: "48px" }}
               >
                 <span className="flex items-center gap-2 text-lg font-semibold text-gray-700">
                   <MapPin className="text-green-600" size={20} />
@@ -184,20 +165,13 @@ export default function Sidebar({ sidebarOpen, onClose }) {
                 <ChevronDown className="text-gray-500" size={20} />
               </button>
               {dropdownOpen && (
-                <div
-                  className="absolute left-0 right-0 z-40 mt-2 bg-white border border-gray-200 rounded-2xl shadow-xl max-h-60 overflow-y-auto"
-                  style={{ top: "56px" }}
-                >
-                 
+                <div className="absolute left-0 right-0 z-40 mt-2 bg-white border border-gray-200 rounded-2xl shadow-xl max-h-60 overflow-y-auto">
                   {districts.map((district) => (
-
                     <button
                       key={district}
                       onClick={() => handleDistrictSelect(district)}
                       className={`w-full text-left px-6 py-3 hover:bg-green-100 text-gray-700 font-medium ${
-                        selectedDistrict === district
-                          ? "bg-green-50 text-green-700"
-                          : ""
+                        selectedDistrict === district ? "bg-green-50 text-green-700" : ""
                       }`}
                     >
                       {district}
@@ -223,17 +197,15 @@ export default function Sidebar({ sidebarOpen, onClose }) {
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: index * 0.1 }}
                     className={`flex items-center gap-3 py-3 px-4 rounded-xl font-medium text-lg transition-all duration-300
-                      ${
-                        active
-                          ? "bg-red-500 text-white shadow-lg"
-                          : "text-gray-700 hover:bg-green-100 hover:text-green-700"
-                      }`}
+                    ${
+                      active
+                        ? "bg-red-500 text-white shadow-lg"
+                        : "text-gray-700 hover:bg-green-100 hover:text-green-700"
+                    }`}
                   >
                     <Icon
                       size={20}
-                      className={`${
-                        active ? "text-white" : "text-green-600"
-                      }`}
+                      className={`${active ? "text-white" : "text-green-600"}`}
                     />
                     {item.name}
                   </motion.button>
@@ -255,67 +227,66 @@ export default function Sidebar({ sidebarOpen, onClose }) {
                 + Post
               </motion.button>
 
-              {/* Email Service */}
+              {/* Email Service Button */}
               <motion.button
-                onClick={() => navigate("/email-service")}
+                onClick={() => setShowEmailService(true)}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 className="mt-3 w-full flex items-center justify-center gap-2 bg-blue-500 text-white font-semibold rounded-full py-3 shadow-md hover:bg-blue-600 transition-all"
               >
                 <Mail size={18} /> Email Service
               </motion.button>
-
-              <div className="border-t border-gray-200 my-3"></div>
             </nav>
           </div>
 
-          {/* ===== Popup Modal for + Post ===== */}
-         {/* Keep the sidebar code as-is */}
+          {/* Post Modal */}
+          <AnimatePresence>
+            {showModal && (
+              <motion.div
+                className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+              >
+                <motion.div
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.8, opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="bg-white rounded-2xl shadow-2xl w-80 p-6 text-center relative"
+                >
+                  <button
+                    onClick={() => setShowModal(false)}
+                    className="absolute top-3 right-3 text-gray-500 hover:text-gray-700"
+                  >
+                    <X size={20} />
+                  </button>
 
-{/* ===== Popup Modal for + Post ===== */}
-<AnimatePresence>
-  {showModal && (
-    <motion.div
-      className="fixed inset-0 bg-black/50  flex items-center justify-center z-50"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-    >
-      <motion.div
-        initial={{ scale: 0.8, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.8, opacity: 0 }}
-        transition={{ duration: 0.3 }}
-        className="bg-white rounded-2xl shadow-2xl w-80 p-6 text-center relative"
-      >
-        <button
-          onClick={() => setShowModal(false)}
-          className="absolute top-3 right-3 text-gray-500 hover:text-gray-700"
-        >
-          <X size={20} />
-        </button>
+                  <h2 className="text-2xl font-semibold text-green-600 mb-4">
+                    Choose Post Type
+                  </h2>
+                  <div className="flex flex-col gap-3">
+                    {getPostOptions().map((type) => (
+                      <motion.button
+                        key={type}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => handleOptionClick(type)}
+                        className="py-2 bg-green-100 text-green-700 font-medium rounded-xl hover:bg-green-200 transition-all"
+                      >
+                        {type}
+                      </motion.button>
+                    ))}
+                  </div>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-        <h2 className="text-2xl font-semibold text-green-600 mb-4">
-          Choose Post Type
-        </h2>
-        <div className="flex flex-col gap-3">
-          {getPostOptions().map((type) => (
-            <motion.button
-              key={type}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => handleOptionClick(type)}
-              className="py-2 bg-green-100 text-green-700 font-medium rounded-xl hover:bg-green-200 transition-all"
-            >
-              {type}
-            </motion.button>
-          ))}
-        </div>
-      </motion.div>
-    </motion.div>
-  )}
-</AnimatePresence>
-
+          {/* Email Service Modal */}
+          {showEmailService && (
+            <EmailService onClose={() => setShowEmailService(false)} />
+          )}
         </motion.aside>
       )}
     </AnimatePresence>

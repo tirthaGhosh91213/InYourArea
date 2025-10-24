@@ -1,10 +1,8 @@
-// src/pages/CommunityDetails.jsx
 import React, { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   UserCircle,
-  MessageCircle,
   Calendar,
   MapPin,
   ArrowLeft,
@@ -12,8 +10,6 @@ import {
   ChevronRight,
   X,
 } from "lucide-react";
-import Sidebar from "../components/SideBar";
-import RightSidebar from "../components/RightSidebar";
 import axios from "axios";
 import { toast } from "react-toastify";
 
@@ -28,14 +24,15 @@ export default function CommunityDetails() {
   const [currentImage, setCurrentImage] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   const touchStartX = useRef(0);
   const touchEndX = useRef(0);
 
-  // Swipe handlers for fullscreen
   const handleTouchStart = (e) => {
     touchStartX.current = e.changedTouches[0].screenX;
   };
+
   const handleTouchEnd = (e) => {
     touchEndX.current = e.changedTouches[0].screenX;
     const diff = touchStartX.current - touchEndX.current;
@@ -49,6 +46,7 @@ export default function CommunityDetails() {
       prev === 0 ? post.imageUrls.length - 1 : prev - 1
     );
   };
+
   const nextImage = () => {
     if (!post?.imageUrls) return;
     setCurrentImage((prev) =>
@@ -65,14 +63,12 @@ export default function CommunityDetails() {
       minute: "2-digit",
     });
 
-  // Fetch post
   const fetchPost = async () => {
     try {
       setLoading(true);
-      const res = await axios.get(
-        `http://localhost:8000/api/v1/community/${id}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const res = await axios.get(`http://localhost:8000/api/v1/community/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       if (res.data.success) setPost(res.data.data);
     } catch {
       toast.error("Failed to fetch post");
@@ -81,7 +77,6 @@ export default function CommunityDetails() {
     }
   };
 
-  // Fetch comments
   const fetchComments = async () => {
     try {
       const res = await axios.get(
@@ -94,7 +89,6 @@ export default function CommunityDetails() {
     }
   };
 
-  // Send comment
   const sendComment = async () => {
     if (!commentText.trim()) return toast.error("Comment cannot be empty");
     try {
@@ -114,6 +108,7 @@ export default function CommunityDetails() {
   };
 
   useEffect(() => {
+    if (!token) navigate("/login");
     fetchPost();
     fetchComments();
   }, [id]);
@@ -127,17 +122,7 @@ export default function CommunityDetails() {
 
   return (
     <>
-      {/* Top Navbar */}
-      {/* <div className="w-full fixed top-0 left-0 z-50 bg-white shadow-md border-b border-gray-200">
-        <RightSidebar />
-      </div> */}
-
-      <div className="flex h-screen bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden ">
-        {/* Left Sidebar */}
-        {/* <div className="hidden lg:block w-64 bg-white shadow-md border-r border-gray-200">
-          <Sidebar />
-        </div> */}
-
+      <div className="flex h-screen bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden">
         <main className="flex-1 overflow-y-auto p-6 relative">
           {/* Back Button */}
           <motion.button
@@ -183,7 +168,7 @@ export default function CommunityDetails() {
               </div>
             )}
 
-            {/* Author & Location */}
+            {/* Author Info */}
             <div className="flex justify-between items-center text-gray-700">
               <div className="flex items-center gap-3">
                 <UserCircle size={24} className="text-green-600" />
@@ -206,58 +191,104 @@ export default function CommunityDetails() {
             {/* Title */}
             <h1 className="text-3xl font-bold text-gray-800">{post.title}</h1>
 
-            {/* Content */}
-            <p className="text-gray-700 whitespace-pre-line leading-relaxed text-lg">
-              {post.content}
-            </p>
+            {/* Content with See More */}
+            <div className="relative">
+              <div
+                className={`text-gray-700 whitespace-pre-line leading-relaxed text-lg transition-all duration-500 ${
+                  isExpanded ? "" : "line-clamp-4"
+                }`}
+              >
+                {post.content}
+              </div>
+              <button
+                onClick={() => setIsExpanded(!isExpanded)}
+                className="mt-2 text-green-700 font-semibold hover:underline"
+              >
+                {isExpanded ? "See Less" : "See More"}
+              </button>
+            </div>
 
-            {/* Comments */}
-            <div className="mt-6 space-y-3">
-              <div className="flex gap-3">
+            {/* Comments Section */}
+            <div className="mt-8">
+              <h3 className="text-2xl font-semibold text-gray-800 mb-4">
+                💬 Comments
+              </h3>
+
+              {/* Comment Input */}
+              <div className="flex gap-3 mb-6">
                 <input
                   type="text"
                   value={commentText}
                   onChange={(e) => setCommentText(e.target.value)}
                   placeholder="Write a comment..."
-                  className="flex-1 px-4 py-2 border rounded-full focus:outline-none focus:ring-2 focus:ring-green-400"
+                  className="flex-1 px-4 py-3 border border-gray-300 rounded-full focus:ring-2 focus:ring-green-400 transition outline-none"
                 />
                 <button
                   onClick={sendComment}
-                  className="bg-green-600 text-white px-5 py-2 rounded-full hover:bg-green-700 transition"
+                  className="bg-green-600 text-white px-5 py-3 rounded-full hover:bg-green-700 transition shadow"
                 >
-                  Send
+                  Post
                 </button>
               </div>
 
-              <div className="max-h-80 overflow-y-auto space-y-3 mt-3">
-                {comments.length > 0 ? (
-                  comments.map((c) => (
-                    <motion.div
-                      key={c.id}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="flex gap-3 items-start text-gray-700 bg-green-50 rounded-xl p-3 shadow-sm"
-                    >
-                      <UserCircle size={20} className="text-green-500 mt-1" />
-                      <div>
-                        <div className="font-semibold text-gray-800">
-                          {c.author
-                            ? `${c.author.firstName} ${c.author.lastName}`
-                            : "Anonymous"}
+              {/* Comments List */}
+              <AnimatePresence>
+                <motion.div
+                  layout
+                  className="space-y-5"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ staggerChildren: 0.15 }}
+                >
+                  {comments.length > 0 ? (
+                    comments.map((c, index) => (
+                      <motion.div
+                        key={c.id}
+                        initial={{ opacity: 0, y: 30 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{
+                          delay: index * 0.05,
+                          type: "spring",
+                          stiffness: 80,
+                        }}
+                        className="bg-white p-4 rounded-2xl shadow-md flex items-start gap-4 border border-green-100 hover:shadow-lg transition hover:scale-[1.01]"
+                      >
+                        <div className="w-12 h-12 bg-green-100 text-green-700 flex items-center justify-center rounded-full font-bold text-lg shadow-sm">
+                          {(c.author?.firstName?.[0] || "U").toUpperCase()}
                         </div>
-                        <div className="text-gray-700">{c.content}</div>
-                      </div>
-                    </motion.div>
-                  ))
-                ) : (
-                  <p className="text-gray-500">No comments yet.</p>
-                )}
-              </div>
+                        <div className="flex-1">
+                          <div className="flex justify-between items-center">
+                            <h4 className="font-semibold text-gray-800">
+                              {c.author
+                                ? `${c.author.firstName} ${c.author.lastName}`
+                                : "Anonymous"}
+                            </h4>
+                            <span className="text-xs text-gray-500 italic">
+                              {new Date(c.createdAt).toLocaleDateString("en-GB", {
+                                day: "2-digit",
+                                month: "short",
+                                year: "numeric",
+                              })}
+                            </span>
+                          </div>
+                          <p className="text-gray-700 bg-green-50 px-4 py-2 rounded-xl leading-relaxed border border-green-100 mt-2">
+                            {c.content}
+                          </p>
+                        </div>
+                      </motion.div>
+                    ))
+                  ) : (
+                    <p className="text-gray-500 text-center italic">
+                      No comments yet. Be the first to share your thoughts!
+                    </p>
+                  )}
+                </motion.div>
+              </AnimatePresence>
             </div>
           </motion.div>
         </main>
 
-        {/* Fullscreen Image Modal */}
+        {/* Fullscreen Image Viewer */}
         <AnimatePresence>
           {isFullscreen && post.imageUrls?.length > 0 && (
             <motion.div

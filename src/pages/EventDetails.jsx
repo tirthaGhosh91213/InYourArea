@@ -30,11 +30,11 @@ export default function EventDetails() {
   const [currentImage, setCurrentImage] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   const touchStartX = useRef(0);
   const touchEndX = useRef(0);
 
-  // Swipe handlers
   const handleTouchStart = (e) => {
     touchStartX.current = e.changedTouches[0].screenX;
   };
@@ -67,7 +67,6 @@ export default function EventDetails() {
       minute: "2-digit",
     });
 
-  // Fetch event details
   const fetchEvent = async () => {
     try {
       setLoading(true);
@@ -82,7 +81,6 @@ export default function EventDetails() {
     }
   };
 
-  // Fetch comments
   const fetchComments = async () => {
     try {
       const res = await axios.get(
@@ -95,7 +93,6 @@ export default function EventDetails() {
     }
   };
 
-  // Post comment
   const postComment = async () => {
     if (!commentText.trim()) return toast.error("Comment cannot be empty");
     try {
@@ -129,17 +126,8 @@ export default function EventDetails() {
 
   return (
     <>
-      {/* <div className="w-full fixed top-0 left-0 z-50 bg-white shadow-md border-b border-gray-200">
-        <RightSidebar />
-      </div> */}
-
-      <div className="flex h-screen bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden ">
-        {/* <div className="hidden lg:block w-64 bg-white shadow-md border-r border-gray-200">
-          <Sidebar />
-        </div> */}
-
+      <div className="flex h-screen bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden">
         <main className="flex-1 overflow-y-auto p-6 relative">
-          {/* Back Button */}
           <motion.button
             whileHover={{ scale: 1.05 }}
             onClick={() => navigate(-1)}
@@ -148,14 +136,13 @@ export default function EventDetails() {
             <ArrowLeft size={20} /> Back
           </motion.button>
 
-          {/* Event Card */}
           <motion.div
             layout
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
             className="max-w-3xl mx-auto bg-white rounded-3xl shadow-2xl p-6 space-y-6 border border-green-200"
           >
-            {/* Images */}
+            {/* Image Section */}
             {event.imageUrls?.length > 0 && (
               <div className="relative w-full h-64 md:h-80 rounded-2xl overflow-hidden shadow-lg">
                 <img
@@ -204,25 +191,42 @@ export default function EventDetails() {
             </div>
 
             <h1 className="text-3xl font-bold text-gray-800">{event.title}</h1>
-            <p className="text-gray-700 whitespace-pre-line leading-relaxed text-lg">
-              {event.description}
-            </p>
 
-            {/* Buttons: Register + Comment */}
+            {/* Description with "See More" */}
+            <div className="relative">
+              <div
+                className={`text-gray-700 whitespace-pre-line leading-relaxed text-lg transition-all duration-500 ${
+                  isExpanded ? "" : "line-clamp-4"
+                }`}
+              >
+                {event.description}
+              </div>
+              <button
+                onClick={() => setIsExpanded(!isExpanded)}
+                className="mt-2 text-green-700 font-semibold hover:underline"
+              >
+                {isExpanded ? "See Less" : "See More"}
+              </button>
+            </div>
+
+            {/* Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 mt-4">
               {event.portalLink && (
                 <button
-  onClick={() => event.portalLink && window.open(event.portalLink, "_blank")}
-  disabled={!event.portalLink}
-  className={`flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-semibold shadow-lg transition
-    ${event.portalLink ? "bg-blue-600 text-white hover:bg-blue-700" : "bg-gray-300 text-gray-500 cursor-not-allowed"}`}
->
-  <Link2 size={20} /> Register
-</button>
-
+                  onClick={() =>
+                    event.portalLink && window.open(event.portalLink, "_blank")
+                  }
+                  disabled={!event.portalLink}
+                  className={`flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-semibold shadow-lg transition ${
+                    event.portalLink
+                      ? "bg-blue-600 text-white hover:bg-blue-700"
+                      : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                  }`}
+                >
+                  <Link2 size={20} /> Register
+                </button>
               )}
 
-              {/* Comment input & button */}
               <div className="flex-1 flex gap-2 items-center">
                 <input
                   type="text"
@@ -240,31 +244,40 @@ export default function EventDetails() {
               </div>
             </div>
 
-            {/* Comments List */}
-            <div className="mt-6 space-y-3 max-h-80 overflow-y-auto">
-              {comments.length > 0 ? (
-                comments.map((c) => (
-                  <motion.div
-                    key={c.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="flex gap-3 items-start text-gray-700 bg-green-50 rounded-xl p-3 shadow-sm"
-                  >
-                    <UserCircle size={20} className="text-green-500 mt-1" />
-                    <div>
-                      <div className="font-semibold text-gray-800">
-                        {c.author
-                          ? `${c.author.firstName} ${c.author.lastName}`
-                          : "Anonymous"}
+            {/* Animated Comments */}
+            <AnimatePresence>
+              <motion.div
+                layout
+                className="mt-6 space-y-3"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ staggerChildren: 0.1 }}
+              >
+                {comments.length > 0 ? (
+                  comments.map((c, index) => (
+                    <motion.div
+                      key={c.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.05, type: "spring" }}
+                      className="flex gap-3 items-start text-gray-700 bg-green-50 rounded-xl p-3 shadow-sm"
+                    >
+                      <UserCircle size={20} className="text-green-500 mt-1" />
+                      <div>
+                        <div className="font-semibold text-gray-800">
+                          {c.author
+                            ? `${c.author.firstName} ${c.author.lastName}`
+                            : "Anonymous"}
+                        </div>
+                        <div className="text-gray-700">{c.content}</div>
                       </div>
-                      <div className="text-gray-700">{c.content}</div>
-                    </div>
-                  </motion.div>
-                ))
-              ) : (
-                <p className="text-gray-500">No comments yet.</p>
-              )}
-            </div>
+                    </motion.div>
+                  ))
+                ) : (
+                  <p className="text-gray-500">No comments yet.</p>
+                )}
+              </motion.div>
+            </AnimatePresence>
           </motion.div>
         </main>
 

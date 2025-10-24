@@ -1,4 +1,3 @@
-// src/pages/JobDetails.jsx
 import React, { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -7,15 +6,12 @@ import {
   MapPin,
   DollarSign,
   Calendar,
-  MessageCircle,
   ArrowLeft,
   ChevronLeft,
   ChevronRight,
   X,
   UserCircle,
 } from "lucide-react";
-import Sidebar from "../components/SideBar";
-import RightSidebar from "../components/RightSidebar";
 import axios from "axios";
 import { toast } from "react-toastify";
 
@@ -30,14 +26,15 @@ export default function JobDetails() {
   const [currentImage, setCurrentImage] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   const touchStartX = useRef(0);
   const touchEndX = useRef(0);
 
-  // Swipe handlers for fullscreen
   const handleTouchStart = (e) => {
     touchStartX.current = e.changedTouches[0].screenX;
   };
+
   const handleTouchEnd = (e) => {
     touchEndX.current = e.changedTouches[0].screenX;
     const diff = touchStartX.current - touchEndX.current;
@@ -51,6 +48,7 @@ export default function JobDetails() {
       prev === 0 ? job.imageUrls.length - 1 : prev - 1
     );
   };
+
   const nextImage = () => {
     if (!job?.imageUrls) return;
     setCurrentImage((prev) =>
@@ -58,16 +56,6 @@ export default function JobDetails() {
     );
   };
 
-  const formatDate = (date) =>
-    new Date(date).toLocaleString("en-GB", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-
-  // Fetch job
   const fetchJob = async () => {
     try {
       setLoading(true);
@@ -83,7 +71,6 @@ export default function JobDetails() {
     }
   };
 
-  // Fetch comments
   const fetchComments = async () => {
     try {
       const res = await axios.get(
@@ -96,7 +83,6 @@ export default function JobDetails() {
     }
   };
 
-  // Post comment
   const postComment = async () => {
     if (!commentText.trim()) return toast.error("Comment cannot be empty");
     try {
@@ -130,18 +116,8 @@ export default function JobDetails() {
 
   return (
     <>
-      {/* Top Navbar */}
-      {/* <div className="w-full fixed top-0 left-0 z-50 bg-white shadow-md border-b border-gray-200">
-        <RightSidebar />
-      </div> */}
-
-      <div className="flex h-screen bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden ">
-        {/* Left Sidebar */}
-        {/* <div className="hidden lg:block w-64 bg-white shadow-md border-r border-gray-200">
-          <Sidebar />
-        </div> */}
-
-       <main className="flex-1 overflow-y-auto p-6 relative">
+      <div className="flex h-screen bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden">
+        <main className="flex-1 overflow-y-auto p-6 relative">
           <motion.button
             whileHover={{ scale: 1.05 }}
             onClick={() => navigate(-1)}
@@ -150,14 +126,13 @@ export default function JobDetails() {
             <ArrowLeft size={20} /> Back
           </motion.button>
 
-          {/* Job Card */}
           <motion.div
             layout
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
             className="max-w-3xl mx-auto bg-white rounded-3xl shadow-2xl p-6 space-y-6 border border-green-200"
           >
-            {/* Images */}
+            {/* Image Slider */}
             {job.imageUrls?.length > 0 && (
               <div className="relative w-full h-64 md:h-80 rounded-2xl overflow-hidden shadow-lg">
                 <img
@@ -192,8 +167,10 @@ export default function JobDetails() {
                 <div>
                   <div className="font-semibold text-gray-800">{job.company}</div>
                   <div className="text-sm text-gray-500 flex items-center gap-1">
-                    <Calendar size={14} /> Deadline:{" "}
-                    <span className="text-red-500">{job.applicationDeadline}</span>
+                    <Calendar size={14} /> Deadline:
+                    <span className="text-red-500">
+                      {job.applicationDeadline}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -203,66 +180,113 @@ export default function JobDetails() {
             </div>
 
             <h1 className="text-3xl font-bold text-gray-800">{job.title}</h1>
-            <p className="text-gray-700 whitespace-pre-line leading-relaxed text-lg">
-              {job.description}
-            </p>
+
+            {/* Description with See More */}
+            <div className="relative">
+              <div
+                className={`text-gray-700 whitespace-pre-line leading-relaxed text-lg transition-all duration-500 ${
+                  isExpanded ? "" : "line-clamp-4"
+                }`}
+              >
+                {job.description}
+              </div>
+              <button
+                onClick={() => setIsExpanded(!isExpanded)}
+                className="mt-2 text-green-700 font-semibold hover:underline"
+              >
+                {isExpanded ? "See Less" : "See More"}
+              </button>
+            </div>
 
             {/* Apply Button */}
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                window.open(job.applyLink, "_blank");
-              }}
-              className="inline-block bg-emerald-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-emerald-700 transition mb-6"
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => window.open(job.applyLink, "_blank")}
+              className="inline-block bg-emerald-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-emerald-700 transition shadow-md mb-6"
             >
               Apply Now
-            </button>
+            </motion.button>
 
-            {/* Comments */}
-            <div className="mt-6 space-y-3">
-              <div className="flex gap-3">
+            {/* Comments Section */}
+            <div className="mt-8">
+              <h3 className="text-2xl font-semibold text-gray-800 mb-4">
+                💬 Comments
+              </h3>
+
+              <div className="flex gap-3 mb-6">
                 <input
                   type="text"
                   value={commentText}
                   onChange={(e) => setCommentText(e.target.value)}
-                  placeholder="Write a comment..."
-                  className="flex-1 px-4 py-2 border rounded-full focus:outline-none focus:ring-2 focus:ring-green-400"
+                  placeholder="Share your thoughts..."
+                  className="flex-1 px-4 py-3 border border-gray-300 rounded-full focus:ring-2 focus:ring-green-400 transition outline-none"
                 />
                 <button
                   onClick={postComment}
-                  className="bg-green-600 text-white px-5 py-2 rounded-full hover:bg-green-700 transition"
+                  className="bg-green-600 text-white px-5 py-3 rounded-full hover:bg-green-700 transition shadow"
                 >
-                  Send
+                  Post
                 </button>
               </div>
 
-              <div className="max-h-80 overflow-y-auto space-y-3 mt-3">
-                {comments.length > 0 ? (
-                  comments.map((c) => (
-                    <motion.div
-                      key={c.id}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="flex gap-3 items-start text-gray-700 bg-green-50 rounded-xl p-3 shadow-sm"
-                    >
-                      <UserCircle size={20} className="text-green-500 mt-1" />
-                      <div>
-                        <div className="font-semibold text-gray-800">
-                          {c.author ? `${c.author.firstName} ${c.author.lastName}` : "Anonymous"}
+              <AnimatePresence>
+                <motion.div
+                  layout
+                  className="space-y-5"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ staggerChildren: 0.15 }}
+                >
+                  {comments.length > 0 ? (
+                    comments.map((c, index) => (
+                      <motion.div
+                        key={c.id}
+                        initial={{ opacity: 0, y: 30 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{
+                          delay: index * 0.05,
+                          type: "spring",
+                          stiffness: 80,
+                        }}
+                        className="bg-white p-4 rounded-2xl shadow-md flex items-start gap-4 border border-green-100 hover:shadow-lg transition-transform duration-300 hover:scale-[1.01]"
+                      >
+                        <div className="w-12 h-12 bg-green-100 text-green-700 flex items-center justify-center rounded-full font-bold text-lg shadow-sm">
+                          {(c.author?.firstName?.[0] || "U").toUpperCase()}
                         </div>
-                        <div className="text-gray-700">{c.content}</div>
-                      </div>
-                    </motion.div>
-                  ))
-                ) : (
-                  <p className="text-gray-500">No comments yet.</p>
-                )}
-              </div>
+                        <div className="flex-1">
+                          <div className="flex justify-between items-center">
+                            <h4 className="font-semibold text-gray-800">
+                              {c.author
+                                ? `${c.author.firstName} ${c.author.lastName}`
+                                : "Anonymous"}
+                            </h4>
+                            <span className="text-xs text-gray-500 italic">
+                              {new Date(c.createdAt).toLocaleDateString("en-GB", {
+                                day: "2-digit",
+                                month: "short",
+                                year: "numeric",
+                              })}
+                            </span>
+                          </div>
+                          <p className="text-gray-700 bg-green-50 px-4 py-2 rounded-xl leading-relaxed border border-green-100 mt-2">
+                            {c.content}
+                          </p>
+                        </div>
+                      </motion.div>
+                    ))
+                  ) : (
+                    <p className="text-gray-500 text-center italic">
+                      No comments yet. Be the first to share your thoughts!
+                    </p>
+                  )}
+                </motion.div>
+              </AnimatePresence>
             </div>
           </motion.div>
         </main>
 
-        {/* Fullscreen Image */}
+        {/* Fullscreen Viewer */}
         <AnimatePresence>
           {isFullscreen && job.imageUrls?.length > 0 && (
             <motion.div

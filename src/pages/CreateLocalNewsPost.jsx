@@ -123,7 +123,7 @@ export default function CreateLocalNewsPost() {
 
       if (res.data.success) {
         toast.success("News posted successfully!");
-        navigate("/localnews");
+        navigate("/localnews/Bokaro");
       }
     } catch (err) {
       console.error(err);
