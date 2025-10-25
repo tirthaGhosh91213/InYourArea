@@ -20,6 +20,7 @@ import EventDetails from "./pages/EventDetails";
 import UserDashboard from "./components/UserDashboard";
 import RightSidebar from "./components/RightSidebar";
 import LocalNewsDetails from "./pages/LocalNewsDetails";
+import EmailService from "./components/EmailService";
 
 // ✅ Home component
 function Home() {
@@ -63,6 +64,7 @@ export default function App() {
         <Route path="/community" element={<Community />} />
         <Route path="/jobs" element={<Jobs />} />
         <Route path="/events" element={<Events />} />
+        <Route path="/emailservice" element={<EmailService />} />
         <Route path="/login" element={<Login />} />
         <Route path="/dashboard" element={<AdminDashboard />} />
         <Route path="/create/events" element={<EventPostForm />} />
