@@ -228,14 +228,14 @@ export default function Sidebar({ sidebarOpen, onClose }) {
               </motion.button>
 
               {/* Email Service Button */}
-              <motion.button
-                onClick={() => setShowEmailService(true)}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="mt-3 w-full flex items-center justify-center gap-2 bg-blue-500 text-white font-semibold rounded-full py-3 shadow-md hover:bg-blue-600 transition-all"
-              >
-                <Mail size={18} /> Email Service
-              </motion.button>
+        <motion.button
+          onClick={() => navigate("/emailservice")}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          className="mt-3 w-full flex items-center justify-center gap-2 bg-blue-500 text-white font-semibold rounded-full py-3 shadow-md hover:bg-blue-600 transition-all"
+        >
+          <Mail size={18} /> Email Service
+        </motion.button>
             </nav>
           </div>
 
