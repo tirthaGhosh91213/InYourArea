@@ -29,6 +29,30 @@ export default function LocalNewsDetails() {
   const touchStartX = useRef(0);
   const touchEndX = useRef(0);
 
+  // Helper: Render either <img> or <video>
+  const renderMedia = (url, alt, className, isFullscreen = false) => {
+    const isVideo =
+      url &&
+      (url.endsWith(".mp4") ||
+        url.endsWith(".webm") ||
+        url.endsWith(".ogg") ||
+        url.includes("video")); // fallback for URLs with "video" mime
+    if (isVideo) {
+      return (
+        <video
+          src={url}
+          controls
+          autoPlay={isFullscreen}
+          className={className}
+          style={{ background: "#111" }}
+        >
+          Your browser does not support the video tag.
+        </video>
+      );
+    }
+    return <img src={url} alt={alt} className={className} />;
+  };
+
   // Swipe Gesture
   const handleTouchStart = (e) =>
     (touchStartX.current = e.changedTouches[0].screenX);
@@ -150,15 +174,14 @@ export default function LocalNewsDetails() {
             animate={{ opacity: 1, y: 0 }}
             className="max-w-3xl mx-auto bg-white rounded-3xl shadow-2xl p-6 space-y-6 border border-green-200"
           >
-            {/* Image Carousel */}
+            {/* Image/Video Carousel */}
             {news.imageUrls?.length > 0 && (
               <div className="relative w-full h-64 md:h-80 rounded-2xl overflow-hidden shadow-lg">
-                <img
-                  src={news.imageUrls[currentImage]}
-                  alt={news.title}
-                  className="w-full h-full object-cover rounded-2xl cursor-pointer transition-all duration-500"
-                  onClick={() => setIsFullscreen(true)}
-                />
+                {renderMedia(
+                  news.imageUrls[currentImage],
+                  news.title,
+                  "w-full h-full object-cover rounded-2xl cursor-pointer transition-all duration-500 bg-black"
+                )}
                 {news.imageUrls.length > 1 && (
                   <>
                     <button
@@ -200,7 +223,7 @@ export default function LocalNewsDetails() {
             </div>
 
             {/* Title & Content */}
-            <h1 
+            <h1
               className="text-3xl font-bold text-gray-800"
               dangerouslySetInnerHTML={{ __html: news.title }}
             />
@@ -299,7 +322,7 @@ export default function LocalNewsDetails() {
           </motion.div>
         </main>
 
-        {/* Fullscreen Image */}
+        {/* Fullscreen Media */}
         <AnimatePresence>
           {isFullscreen && news.imageUrls?.length > 0 && (
             <motion.div
@@ -332,11 +355,12 @@ export default function LocalNewsDetails() {
                   </button>
                 </>
               )}
-              <img
-                src={news.imageUrls[currentImage]}
-                alt={news.title}
-                className="max-h-full max-w-full object-contain rounded-lg shadow-lg"
-              />
+              {renderMedia(
+                news.imageUrls[currentImage],
+                news.title,
+                "max-h-full max-w-full object-contain rounded-lg shadow-lg bg-black",
+                true // FULLSCREEN: autoPlay video with sound
+              )}
             </motion.div>
           )}
         </AnimatePresence>
