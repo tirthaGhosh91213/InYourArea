@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -16,6 +16,7 @@ import { toast } from "react-toastify";
 
 export default function CreateLocalNewsPost() {
   const navigate = useNavigate();
+  const editorRef = useRef(null);
   const [formData, setFormData] = useState({
     title: "",
     content: "",
@@ -25,6 +26,11 @@ export default function CreateLocalNewsPost() {
   });
   const [loading, setLoading] = useState(false);
   const [existingDistricts, setExistingDistricts] = useState([]);
+  const [activeFormats, setActiveFormats] = useState({
+    bold: false,
+    italic: false,
+    underline: false,
+  });
 
   const token = localStorage.getItem("accessToken");
   if (!token) toast.error("Please login first!");
@@ -57,6 +63,27 @@ export default function CreateLocalNewsPost() {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
+  };
+
+  const handleEditorChange = () => {
+    if (editorRef.current) {
+      setFormData({ ...formData, content: editorRef.current.innerHTML });
+      updateActiveFormats();
+    }
+  };
+
+  const updateActiveFormats = () => {
+    setActiveFormats({
+      bold: document.queryCommandState('bold'),
+      italic: document.queryCommandState('italic'),
+      underline: document.queryCommandState('underline'),
+    });
+  };
+
+  const applyFormat = (command) => {
+    document.execCommand(command, false, null);
+    editorRef.current.focus();
+    updateActiveFormats();
   };
 
   const handleImageUpload = (e) => {
@@ -102,7 +129,6 @@ export default function CreateLocalNewsPost() {
 
     setLoading(true);
     try {
-      // Ensure district exists
       await ensureDistrictExists(formData.districtName);
 
       const newsData = {
@@ -156,7 +182,60 @@ export default function CreateLocalNewsPost() {
             <label className="block font-semibold text-gray-700 mb-1 flex items-center gap-2">
               <FileText size={18} /> Description
             </label>
-            <textarea name="content" value={formData.content} onChange={handleChange} placeholder="Write news content..." rows={6} className="w-full border px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400" required />
+            
+            {/* Formatting Toolbar */}
+            <div className="flex gap-2 mb-2 p-2 bg-gray-100 rounded-t-lg border border-gray-300">
+              <button
+                type="button"
+                onClick={() => applyFormat('bold')}
+                className={`px-3 py-2 rounded transition font-bold ${
+                  activeFormats.bold 
+                    ? 'bg-green-500 text-white' 
+                    : 'hover:bg-gray-200'
+                }`}
+                title="Bold (Ctrl+B)"
+              >
+                B
+              </button>
+              <button
+                type="button"
+                onClick={() => applyFormat('italic')}
+                className={`px-3 py-2 rounded transition italic ${
+                  activeFormats.italic 
+                    ? 'bg-green-500 text-white' 
+                    : 'hover:bg-gray-200'
+                }`}
+                title="Italic (Ctrl+I)"
+              >
+                I
+              </button>
+              <button
+                type="button"
+                onClick={() => applyFormat('underline')}
+                className={`px-3 py-2 rounded transition underline ${
+                  activeFormats.underline 
+                    ? 'bg-green-500 text-white' 
+                    : 'hover:bg-gray-200'
+                }`}
+                title="Underline (Ctrl+U)"
+              >
+                U
+              </button>
+            </div>
+
+            {/* Rich Text Editor */}
+            <div
+              ref={editorRef}
+              contentEditable
+              onInput={handleEditorChange}
+              onMouseUp={updateActiveFormats}
+              onKeyUp={updateActiveFormats}
+              className="w-full border border-gray-300 px-4 py-3 rounded-b-lg focus:outline-none focus:ring-2 focus:ring-green-400 min-h-[250px] overflow-y-auto bg-white"
+              style={{ whiteSpace: 'pre-wrap' }}
+              suppressContentEditableWarning
+            >
+            </div>
+            <p className="text-xs text-gray-500 mt-1">Select text and use the formatting buttons above or keyboard shortcuts</p>
           </div>
 
           <div>

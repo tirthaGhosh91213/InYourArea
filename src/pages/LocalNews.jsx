@@ -146,7 +146,7 @@ export default function LocalNews() {
                     initial={{ opacity: 0, y: 40 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.05 }}
-                    style={{ height: "520px" }} // Height matches combined small boxes
+                    style={{ height: "520px" }}
                   >
                     {Array.isArray(news.imageUrls) && news.imageUrls.length > 0 && (
                       <img
@@ -157,8 +157,14 @@ export default function LocalNews() {
                     )}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent" />
                     <div className="absolute bottom-0 p-6 text-white">
-                      <h3 className="text-2xl font-bold mb-2 capitalize">{news.title}</h3>
-                      <p className="text-sm text-gray-200 mb-3 line-clamp-2">{news.content}</p>
+                      <h3 
+                        className="text-2xl font-bold mb-2 capitalize"
+                        dangerouslySetInnerHTML={{ __html: news.title }}
+                      />
+                      <div 
+                        className="text-sm text-gray-200 mb-3 line-clamp-2"
+                        dangerouslySetInnerHTML={{ __html: news.content }}
+                      />
                       <div className="flex items-center justify-between text-gray-300 text-sm mb-3">
                         <span>
                           {news.author?.firstName} {news.author?.lastName}
@@ -198,10 +204,14 @@ export default function LocalNews() {
                     )}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent" />
                     <div className="absolute bottom-0 p-4 text-white w-full">
-                      <h3 className="text-lg font-semibold capitalize mb-1 line-clamp-1">
-                        {news.title}
-                      </h3>
-                      <p className="text-xs text-gray-200 line-clamp-2 mb-1">{news.content}</p>
+                      <h3 
+                        className="text-lg font-semibold capitalize mb-1 line-clamp-1"
+                        dangerouslySetInnerHTML={{ __html: news.title }}
+                      />
+                      <div 
+                        className="text-xs text-gray-200 line-clamp-2 mb-1"
+                        dangerouslySetInnerHTML={{ __html: news.content }}
+                      />
                       <div className="flex items-center justify-between text-xs text-gray-300">
                         <span>
                           {news.author?.firstName} {news.author?.lastName}
