@@ -21,8 +21,8 @@ export default function CreateLocalNewsPost() {
     title: "",
     content: "",
     districtName: "",
-    images: [],
-    previews: [],
+    media: [],
+    mediaPreviews: [],
   });
   const [loading, setLoading] = useState(false);
   const [existingDistricts, setExistingDistricts] = useState([]);
@@ -86,22 +86,27 @@ export default function CreateLocalNewsPost() {
     updateActiveFormats();
   };
 
-  const handleImageUpload = (e) => {
+  // Handles image and video uploads
+  const handleMediaUpload = (e) => {
     const files = Array.from(e.target.files);
-    const previews = files.map((file) => URL.createObjectURL(file));
-    setFormData({
-      ...formData,
-      images: [...formData.images, ...files],
-      previews: [...formData.previews, ...previews],
-    });
+    const previews = files.map((file) => ({
+      url: URL.createObjectURL(file),
+      type: file.type
+    }));
+    setFormData((prev) => ({
+      ...prev,
+      media: [...prev.media, ...files],
+      mediaPreviews: [...prev.mediaPreviews, ...previews],
+    }));
   };
 
-  const removeImage = (index) => {
-    const newImages = [...formData.images];
-    const newPreviews = [...formData.previews];
-    newImages.splice(index, 1);
+  // Remove function for both images or videos
+  const removeMedia = (index) => {
+    const newMedia = [...formData.media];
+    const newPreviews = [...formData.mediaPreviews];
+    newMedia.splice(index, 1);
     newPreviews.splice(index, 1);
-    setFormData({ ...formData, images: newImages, previews: newPreviews });
+    setFormData({ ...formData, media: newMedia, mediaPreviews: newPreviews });
   };
 
   const ensureDistrictExists = async (districtName) => {
@@ -125,7 +130,7 @@ export default function CreateLocalNewsPost() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.districtName) return toast.error("Select a district!");
-    if (formData.images.length === 0) return toast.error("Upload at least one image!");
+    if (formData.media.length === 0) return toast.error("Upload at least one image or video!");
 
     setLoading(true);
     try {
@@ -139,7 +144,7 @@ export default function CreateLocalNewsPost() {
 
       const form = new FormData();
       form.append("news", JSON.stringify(newsData));
-      formData.images.forEach((img) => form.append("images", img));
+      formData.media.forEach((file) => form.append("images", file));  // <-- always use key "images" for all files
 
       const res = await axios.post(
         "http://localhost:8000/api/v1/district-news",
@@ -164,12 +169,10 @@ export default function CreateLocalNewsPost() {
       <button onClick={() => navigate(-1)} className="self-start flex items-center gap-2 text-green-600 font-semibold mb-6 hover:text-green-800">
         <ArrowLeft size={20} /> Back
       </button>
-
       <motion.div className="w-full max-w-2xl bg-white/90 backdrop-blur-md p-8 rounded-3xl shadow-xl border border-green-100" initial={{ y: 40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ type: "spring", stiffness: 100 }}>
         <h1 className="text-3xl sm:text-4xl font-extrabold text-green-600 text-center mb-8 flex items-center justify-center gap-2">
           <Newspaper size={35} /> Create District News
         </h1>
-
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label className="block font-semibold text-gray-700 mb-1 flex items-center gap-2">
@@ -177,12 +180,10 @@ export default function CreateLocalNewsPost() {
             </label>
             <input name="title" value={formData.title} onChange={handleChange} placeholder="Enter news title" className="w-full border px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400" required />
           </div>
-
           <div>
             <label className="block font-semibold text-gray-700 mb-1 flex items-center gap-2">
               <FileText size={18} /> Description
             </label>
-            
             {/* Formatting Toolbar */}
             <div className="flex gap-2 mb-2 p-2 bg-gray-100 rounded-t-lg border border-gray-300">
               <button
@@ -222,7 +223,6 @@ export default function CreateLocalNewsPost() {
                 U
               </button>
             </div>
-
             {/* Rich Text Editor */}
             <div
               ref={editorRef}
@@ -237,7 +237,6 @@ export default function CreateLocalNewsPost() {
             </div>
             <p className="text-xs text-gray-500 mt-1">Select text and use the formatting buttons above or keyboard shortcuts</p>
           </div>
-
           <div>
             <label className="block font-semibold text-gray-700 mb-1 flex items-center gap-2">
               <MapPin size={18} /> Select District
@@ -251,24 +250,27 @@ export default function CreateLocalNewsPost() {
               ))}
             </select>
           </div>
-
           <div>
             <label className="block font-semibold text-gray-700 mb-2 flex items-center gap-2">
-              <ImagePlus size={20} /> Upload Images
+              <ImagePlus size={20} /> Upload Images or Videos
             </label>
             <label className="flex flex-col items-center justify-center border-2 border-dashed border-green-300 p-6 rounded-2xl cursor-pointer hover:border-green-500 transition text-center">
               <Upload className="text-green-500 mb-2" size={30} />
-              <span className="text-gray-500 text-sm sm:text-base">Click or drag to upload images</span>
-              <input type="file" name="images" multiple onChange={handleImageUpload} className="hidden" />
+              <span className="text-gray-500 text-sm sm:text-base">Click or drag to upload images or videos</span>
+              <input type="file" name="media" multiple accept="image/*,video/*" onChange={handleMediaUpload} className="hidden" />
             </label>
 
             <AnimatePresence>
-              {formData.previews.length > 0 && (
+              {formData.mediaPreviews.length > 0 && (
                 <motion.div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mt-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                  {formData.previews.map((preview, index) => (
+                  {formData.mediaPreviews.map((preview, index) => (
                     <motion.div key={index} className="relative group overflow-hidden rounded-xl shadow-md cursor-pointer" whileHover={{ scale: 1.05 }}>
-                      <img src={preview} alt="Preview" className="w-full h-40 object-cover rounded-xl" />
-                      <button type="button" onClick={() => removeImage(index)} className="absolute top-2 right-2 bg-red-600 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition">
+                      {preview.type.startsWith("image") ? (
+                        <img src={preview.url} alt="Preview" className="w-full h-40 object-cover rounded-xl" />
+                      ) : preview.type.startsWith("video") ? (
+                        <video src={preview.url} controls className="w-full h-40 object-cover rounded-xl" />
+                      ) : null}
+                      <button type="button" onClick={() => removeMedia(index)} className="absolute top-2 right-2 bg-red-600 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition">
                         <XCircle size={20} />
                       </button>
                     </motion.div>
@@ -277,7 +279,6 @@ export default function CreateLocalNewsPost() {
               )}
             </AnimatePresence>
           </div>
-
           <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.97 }} type="submit" disabled={loading} className="w-full flex justify-center items-center gap-2 bg-gradient-to-r from-green-400 to-green-500 text-white py-3 rounded-full font-semibold shadow-md hover:shadow-lg transition">
             {loading ? <><Loader2 className="animate-spin" size={20} /> Posting...</> : "Post District News"}
           </motion.button>

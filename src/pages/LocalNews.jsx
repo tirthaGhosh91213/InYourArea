@@ -11,13 +11,11 @@ export default function LocalNews() {
   const params = useParams();
   const navigate = useNavigate();
   const initialDistrict = params.district ? decodeURIComponent(params.district) : "";
-
   const [district, setDistrict] = useState(initialDistrict);
   const [newsList, setNewsList] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const token = localStorage.getItem("accessToken");
-
   const districts = [
     "Bokaro", "Chatra", "Deoghar", "Dhanbad", "Dumka",
     "East Singhbhum", "Garhwa", "Giridih", "Godda", "Gumla",
@@ -79,6 +77,19 @@ export default function LocalNews() {
   // Split data
   const smallBoxNews = newsList.slice(0, 2);
   const largeBoxNews = newsList.slice(2);
+
+  // Helper to render first media item (image or video)
+  const renderMedia = (url, alt, className) => {
+    // Check file extension or content type for video
+    const isVideo = url &&
+      (url.endsWith(".mp4") || url.endsWith(".webm") || url.endsWith(".ogg") ||
+       url.includes("video") // fallback for URLs with video mime
+      );
+    if (isVideo) {
+      return <video src={url} controls className={className} />;
+    }
+    return <img src={url} alt={alt} className={className} />;
+  };
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -148,13 +159,12 @@ export default function LocalNews() {
                     transition={{ delay: i * 0.05 }}
                     style={{ height: "520px" }}
                   >
-                    {Array.isArray(news.imageUrls) && news.imageUrls.length > 0 && (
-                      <img
-                        src={news.imageUrls[0]}
-                        alt={news.title}
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                      />
-                    )}
+                    {Array.isArray(news.imageUrls) && news.imageUrls.length > 0 &&
+                      renderMedia(
+                        news.imageUrls[0],
+                        news.title,
+                        "w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      )}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent" />
                     <div className="absolute bottom-0 p-6 text-white">
                       <h3 
@@ -195,13 +205,12 @@ export default function LocalNews() {
                     className="relative rounded-2xl overflow-hidden shadow-md border border-green-100 cursor-pointer group flex-1"
                     onClick={() => handleNewsClick(news.id)}
                   >
-                    {Array.isArray(news.imageUrls) && news.imageUrls.length > 0 && (
-                      <img
-                        src={news.imageUrls[0]}
-                        alt={news.title}
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                      />
-                    )}
+                    {Array.isArray(news.imageUrls) && news.imageUrls.length > 0 &&
+                      renderMedia(
+                        news.imageUrls[0],
+                        news.title,
+                        "w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      )}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent" />
                     <div className="absolute bottom-0 p-4 text-white w-full">
                       <h3 
