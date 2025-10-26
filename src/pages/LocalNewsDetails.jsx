@@ -200,15 +200,17 @@ export default function LocalNewsDetails() {
             </div>
 
             {/* Title & Content */}
-            <h1 className="text-3xl font-bold text-gray-800">{news.title}</h1>
+            <h1 
+              className="text-3xl font-bold text-gray-800"
+              dangerouslySetInnerHTML={{ __html: news.title }}
+            />
             <div className="relative">
               <div
                 className={`text-gray-700 whitespace-pre-line leading-relaxed text-lg transition-all duration-500 ${
                   isExpanded ? "" : "line-clamp-4"
                 }`}
-              >
-                {news.content}
-              </div>
+                dangerouslySetInnerHTML={{ __html: news.content }}
+              />
               <button
                 onClick={() => setIsExpanded(!isExpanded)}
                 className="mt-2 text-green-700 font-semibold hover:underline"
