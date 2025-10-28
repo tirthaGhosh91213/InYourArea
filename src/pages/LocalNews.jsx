@@ -10,22 +10,43 @@ import { Clock, Loader2, MessageSquare } from "lucide-react";
 export default function LocalNews() {
   const params = useParams();
   const navigate = useNavigate();
-  const initialDistrict = params.district ? decodeURIComponent(params.district) : "";
-  const [district, setDistrict] = useState(initialDistrict);
-  const [newsList, setNewsList] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const token = localStorage.getItem("accessToken");
+
   const districts = [
+    "----------- Jharkhand -----------",
     "Bokaro", "Chatra", "Deoghar", "Dhanbad", "Dumka",
     "East Singhbhum", "Garhwa", "Giridih", "Godda", "Gumla",
     "Hazaribagh", "Jamtara", "Jamshedpur", "Khunti", "Koderma",
     "Latehar", "Lohardaga", "Pakur", "Palamu", "Ramgarh",
     "Ranchi", "Sahibganj", "Seraikela-Kharsawan", "Simdega", "West Singhbhum",
+    "----------- Bihar -----------",
+    "Araria", "Arwal", "Aurangabad", "Banka", "Begusarai", "Bhagalpur", "Bhojpur", "Buxar",
+    "Darbhanga", "East Champaran (Motihari)", "Gaya", "Gopalganj", "Jamui", "Jehanabad",
+    "Kaimur (Bhabua)", "Katihar", "Khagaria", "Kishanganj", "Lakhisarai", "Madhepura",
+    "Madhubani", "Munger", "Muzaffarpur", "Nalanda", "Nawada", "Patna", "Purnia", "Rohtas",
+    "Saharsa", "Samastipur", "Saran (Chhapra)", "Sheikhpura", "Sheohar", "Sitamarhi",
+    "Siwan", "Supaul", "Vaishali", "West Champaran (Bettiah)",
   ];
 
+  // Prevent heading as selected value
+  const getInitialDistrict = () => {
+    const paramDistrict = params.district ? decodeURIComponent(params.district) : "";
+    if (paramDistrict && !paramDistrict.startsWith("-")) return paramDistrict;
+    const saved = localStorage.getItem("district");
+    if (saved && !saved.startsWith("-")) return saved;
+    return districts.find((d) => !d.startsWith("-")) || "";
+  };
+
+  const [district, setDistrict] = useState(getInitialDistrict());
+  const [newsList, setNewsList] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const token = localStorage.getItem("accessToken");
+
+  // On dropdown select or on param change, always sync to local storage and URL
   useEffect(() => {
-    if (district && params.district !== district) {
+    // Do not sync if the heading is ever set by mistake
+    if (district && !district.startsWith("-") && params.district !== district) {
+      localStorage.setItem("district", district);
       navigate(`/localnews/${encodeURIComponent(district)}`, { replace: true });
     }
   }, [district]);
@@ -40,7 +61,7 @@ export default function LocalNews() {
   };
 
   useEffect(() => {
-    if (!district) return;
+    if (!district || district.startsWith("-")) return;
     const fetchNews = async () => {
       setLoading(true);
       setError("");
@@ -54,7 +75,6 @@ export default function LocalNews() {
           setNewsList(shuffleArray(fetchedNews));
         } else setError("Failed to load news data");
       } catch (err) {
-        console.error("Error fetching news:", err);
         setError("Failed to load local news");
       } finally {
         setLoading(false);
@@ -74,20 +94,22 @@ export default function LocalNews() {
   const handleNewsClick = (id) => navigate(`/localnews/details/${id}`);
   const handleCommentClick = (id) => navigate(`/localnews/details/${id}`);
 
-  // Split data
-  const smallBoxNews = newsList.slice(0, 2);
-  const largeBoxNews = newsList.slice(2);
+  const getDesktopNewsLayout = () => {
+    const len = newsList.length;
+    if (len === 1) return { large: newsList, small: [] };
+    if (len === 2) return { large: newsList, small: [] };
+    if (len === 3) return { large: [newsList[0]], small: [newsList[1], newsList[2]] };
+    if (len >= 4) return { large: [newsList[0], newsList[1]], small: [newsList[2], newsList[3]] };
+    return { large: [], small: [] };
+  };
+
+  const { large: largeBoxNews, small: smallBoxNews } = getDesktopNewsLayout();
 
   // Helper to render first media item (image or video)
   const renderMedia = (url, alt, className) => {
-    // Check file extension or content type for video
     const isVideo = url &&
-      (url.endsWith(".mp4") || url.endsWith(".webm") || url.endsWith(".ogg") ||
-       url.includes("video") // fallback for URLs with video mime
-      );
-    if (isVideo) {
-      return <video src={url} controls className={className} />;
-    }
+      (url.endsWith(".mp4") || url.endsWith(".webm") || url.endsWith(".ogg") || url.includes("video"));
+    if (isVideo) return <video src={url} controls className={className} />;
     return <img src={url} alt={alt} className={className} />;
   };
 
@@ -97,13 +119,11 @@ export default function LocalNews() {
       <div className="hidden lg:block w-64 fixed h-full top-0 left-0 z-20">
         <Sidebar />
       </div>
-
       <div className="flex-1 flex flex-col lg:ml-64">
         {/* Header bar */}
         <div className="fixed top-0 w-full z-30">
           <RightSidebar />
         </div>
-
         <main className="flex-1 flex flex-col gap-6 p-6 pt-24 items-center">
           {/* Header */}
           <motion.div
@@ -117,22 +137,9 @@ export default function LocalNews() {
                 Latest updates from {district || "your district"} (Last 5 Days)
               </p>
             </div>
-
-            <select
-              value={district}
-              onChange={(e) => setDistrict(e.target.value)}
-              className="px-4 py-2 rounded-md text-gray-700 font-medium focus:outline-none focus:ring-2 focus:ring-green-500"
-            >
-              <option value="">-- Select District --</option>
-              {districts.map((d) => (
-                <option key={d} value={d}>
-                  {d}
-                </option>
-              ))}
-            </select>
+            {/* Select input removed as requested */}
           </motion.div>
 
-          {/* Combined Grid */}
           {loading ? (
             <div className="flex justify-center items-center h-64">
               <Loader2 className="animate-spin text-green-600" size={40} />
@@ -140,16 +147,16 @@ export default function LocalNews() {
           ) : error ? (
             <div className="text-center text-red-500 font-semibold">{error}</div>
           ) : newsList.length === 0 ? (
-            district && (
+            district && !district.startsWith("-") && (
               <div className="text-center text-gray-600 font-medium">
                 No district news found.
               </div>
             )
           ) : (
-            <div className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-6 items-start">
-              {/* Left Side: Large Boxes */}
-              <div className="flex flex-col gap-6">
-                {largeBoxNews.map((news, i) => (
+            <>
+              {/* Mobile: show all as same style large boxes, single column */}
+              <div className="w-full max-w-6xl lg:hidden flex flex-col gap-6">
+                {newsList.map((news, i) => (
                   <motion.div
                     key={news.id || i}
                     className="relative rounded-3xl overflow-hidden shadow-lg border border-green-100 cursor-pointer group"
@@ -157,7 +164,7 @@ export default function LocalNews() {
                     initial={{ opacity: 0, y: 40 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.05 }}
-                    style={{ height: "520px" }}
+                    style={{ minHeight: "350px", height: "350px" }}
                   >
                     {Array.isArray(news.imageUrls) && news.imageUrls.length > 0 &&
                       renderMedia(
@@ -167,11 +174,11 @@ export default function LocalNews() {
                       )}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent" />
                     <div className="absolute bottom-0 p-6 text-white">
-                      <h3 
+                      <h3
                         className="text-2xl font-bold mb-2 capitalize"
                         dangerouslySetInnerHTML={{ __html: news.title }}
                       />
-                      <div 
+                      <div
                         className="text-sm text-gray-200 mb-3 line-clamp-2"
                         dangerouslySetInnerHTML={{ __html: news.content }}
                       />
@@ -196,53 +203,109 @@ export default function LocalNews() {
                   </motion.div>
                 ))}
               </div>
-
-              {/* Right Column: Fixed Two Small Boxes */}
-              <div className="hidden lg:flex flex-col gap-6 sticky top-24 h-[520px]">
-                {smallBoxNews.map((news, i) => (
-                  <motion.div
-                    key={news.id || i}
-                    className="relative rounded-2xl overflow-hidden shadow-md border border-green-100 cursor-pointer group flex-1"
-                    onClick={() => handleNewsClick(news.id)}
-                  >
-                    {Array.isArray(news.imageUrls) && news.imageUrls.length > 0 &&
-                      renderMedia(
-                        news.imageUrls[0],
-                        news.title,
-                        "w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                      )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent" />
-                    <div className="absolute bottom-0 p-4 text-white w-full">
-                      <h3 
-                        className="text-lg font-semibold capitalize mb-1 line-clamp-1"
-                        dangerouslySetInnerHTML={{ __html: news.title }}
-                      />
-                      <div 
-                        className="text-xs text-gray-200 line-clamp-2 mb-1"
-                        dangerouslySetInnerHTML={{ __html: news.content }}
-                      />
-                      <div className="flex items-center justify-between text-xs text-gray-300">
-                        <span>
-                          {news.author?.firstName} {news.author?.lastName}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Clock size={12} /> {formatDate(news.createdAt)}
-                        </span>
+              {/* Desktop: two column grid */}
+              <div className="w-full max-w-6xl hidden lg:grid grid-cols-[2fr_1fr] gap-6 items-start">
+                {/* Left Side: Large Boxes */}
+                <div className="flex flex-col gap-6">
+                  {largeBoxNews.map((news, i) => (
+                    <motion.div
+                      key={news.id || i}
+                      className="relative rounded-3xl overflow-hidden shadow-lg border border-green-100 cursor-pointer group"
+                      onClick={() => handleNewsClick(news.id)}
+                      initial={{ opacity: 0, y: 40 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.05 }}
+                      style={{ height: "520px" }}
+                    >
+                      {Array.isArray(news.imageUrls) && news.imageUrls.length > 0 &&
+                        renderMedia(
+                          news.imageUrls[0],
+                          news.title,
+                          "w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        )}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent" />
+                      <div className="absolute bottom-0 p-6 text-white">
+                        <h3
+                          className="text-2xl font-bold mb-2 capitalize"
+                          dangerouslySetInnerHTML={{ __html: news.title }}
+                        />
+                        <div
+                          className="text-sm text-gray-200 mb-3 line-clamp-2"
+                          dangerouslySetInnerHTML={{ __html: news.content }}
+                        />
+                        <div className="flex items-center justify-between text-gray-300 text-sm mb-3">
+                          <span>
+                            {news.author?.firstName} {news.author?.lastName}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Clock size={14} /> {formatDate(news.createdAt)}
+                          </span>
+                        </div>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleCommentClick(news.id);
+                          }}
+                          className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium px-4 py-2 rounded-lg shadow-md transition-all"
+                        >
+                          <MessageSquare size={16} /> Comment
+                        </button>
                       </div>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleCommentClick(news.id);
-                        }}
-                        className="mt-2 flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium px-3 py-1.5 rounded-md shadow-sm transition-all"
+                    </motion.div>
+                  ))}
+                </div>
+                {/* Right Side: Small Boxes */}
+                {smallBoxNews.length > 0 && (
+                  <div className="flex flex-col gap-6 sticky top-24 h-[520px]">
+                    {smallBoxNews.map((news, i) => (
+                      <motion.div
+                        key={news.id || i}
+                        className="relative rounded-2xl overflow-hidden shadow-md border border-green-100 cursor-pointer group flex-1"
+                        onClick={() => handleNewsClick(news.id)}
+                        initial={{ opacity: 0, y: 40 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: i * 0.05 }}
                       >
-                        <MessageSquare size={14} /> Comment
-                      </button>
-                    </div>
-                  </motion.div>
-                ))}
+                        {Array.isArray(news.imageUrls) && news.imageUrls.length > 0 &&
+                          renderMedia(
+                            news.imageUrls[0],
+                            news.title,
+                            "w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                          )}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent" />
+                        <div className="absolute bottom-0 p-4 text-white w-full">
+                          <h3
+                            className="text-lg font-semibold capitalize mb-1 line-clamp-1"
+                            dangerouslySetInnerHTML={{ __html: news.title }}
+                          />
+                          <div
+                            className="text-xs text-gray-200 line-clamp-2 mb-1"
+                            dangerouslySetInnerHTML={{ __html: news.content }}
+                          />
+                          <div className="flex items-center justify-between text-xs text-gray-300">
+                            <span>
+                              {news.author?.firstName} {news.author?.lastName}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Clock size={12} /> {formatDate(news.createdAt)}
+                            </span>
+                          </div>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleCommentClick(news.id);
+                            }}
+                            className="mt-2 flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium px-3 py-1.5 rounded-md shadow-sm transition-all"
+                          >
+                            <MessageSquare size={14} /> Comment
+                          </button>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                )}
               </div>
-            </div>
+            </>
           )}
         </main>
       </div>

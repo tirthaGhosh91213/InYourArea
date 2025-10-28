@@ -152,7 +152,7 @@ export default function RightSidebar() {
           <div className="flex items-center gap-2">
             <MapPin className="font-extrabold w-6 h-6 sm:w-9 sm:h-9 text-green-600" />
             <span className="font-extrabold text-lg sm:text-xl text-green-700">
-              Jharkhand
+              Jharkhand & Bihar
             </span>
           </div>
         </div>

@@ -29,9 +29,10 @@ import { useNavigate } from "react-router-dom";
 export default function UserDashboard() {
   const navigate = useNavigate();
   const token = localStorage.getItem("accessToken");
-  const role = localStorage.getItem("role") || "user";
+  const role = localStorage.getItem("role");
   const headers = { Authorization: `Bearer ${token}` };
 
+  // State variables
   const [profile, setProfile] = useState(null);
   const [stats, setStats] = useState(null);
   const [content, setContent] = useState(null);
@@ -40,57 +41,63 @@ export default function UserDashboard() {
   const [editMode, setEditMode] = useState(false);
   const [formData, setFormData] = useState({ firstName: "", lastName: "" });
   const [loading, setLoading] = useState(false);
-
   const [modalContent, setModalContent] = useState(null);
   const [modalType, setModalType] = useState(null);
   const [showFullContent, setShowFullContent] = useState(false);
 
-  // Image lightbox state
-  const [lightboxImage, setLightboxImage] = useState(null);
-
-  // Profile image states
+  // Image, crop, and modal state
   const [profileImageUrl, setProfileImageUrl] = useState(null);
   const [showImageUpload, setShowImageUpload] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [uploadingImage, setUploadingImage] = useState(false);
 
-  // Image crop states
   const [scale, setScale] = useState(1);
   const [rotation, setRotation] = useState(0);
   const canvasRef = useRef(null);
   const imageRef = useRef(null);
 
-  // Add state for edit modal
+  // Lightbox state
+  const [lightboxImage, setLightboxImage] = useState(null);
+
+  // Edit modal state
   const [editModalOpen, setEditModalOpen] = useState(false);
-  const [editNewsData, setEditNewsData] = useState({
-    title: "",
-    content: "",
-  });
+  const [editNewsData, setEditNewsData] = useState({ title: "", content: "" });
   const [editNewsId, setEditNewsId] = useState(null);
 
-  // Delete confirmation modal state
+  // Delete modal
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  const [deleteTarget, setDeleteTarget] = useState({ type: null, id: null, title: "" });
+  const [deleteTarget, setDeleteTarget] = useState({
+    type: null,
+    id: null,
+    title: "",
+  });
 
   useEffect(() => {
     if (!token) navigate("/login");
     else fetchAll();
     // eslint-disable-next-line
-  }, []);
+  }, [token]);
 
   const fetchAll = async () => {
-    await Promise.all([fetchProfile(), fetchStats(), fetchContent(), fetchComments()]);
+    await Promise.all([
+      fetchProfile(),
+      fetchStats(),
+      fetchContent(),
+      fetchComments(),
+    ]);
   };
 
   const fetchProfile = async () => {
     try {
-      const res = await axios.get("http://localhost:8000/api/v1/user/profile", { headers });
+      const res = await axios.get("http://localhost:8000/api/v1/user/profile", {
+        headers,
+      });
       setProfile(res.data.data);
       setProfileImageUrl(res.data.data.profileImageUrl);
       setFormData({
-        firstName: res.data.data.firstName || "",
-        lastName: res.data.data.lastName || "",
+        firstName: res.data.data.firstName,
+        lastName: res.data.data.lastName,
       });
     } catch (error) {
       toast.error("Failed to fetch profile");
@@ -100,7 +107,9 @@ export default function UserDashboard() {
 
   const fetchStats = async () => {
     try {
-      const res = await axios.get("http://localhost:8000/api/v1/user/stats", { headers });
+      const res = await axios.get("http://localhost:8000/api/v1/user/stats", {
+        headers,
+      });
       setStats(res.data.data);
     } catch (error) {
       toast.error("Failed to fetch stats");
@@ -110,7 +119,10 @@ export default function UserDashboard() {
 
   const fetchContent = async () => {
     try {
-      const res = await axios.get("http://localhost:8000/api/v1/user/my-content", { headers });
+      const res = await axios.get(
+        "http://localhost:8000/api/v1/user/my-content",
+        { headers }
+      );
       setContent(res.data.data);
     } catch (error) {
       toast.error("Failed to fetch content");
@@ -120,20 +132,28 @@ export default function UserDashboard() {
 
   const fetchComments = async () => {
     try {
-      const res = await axios.get("http://localhost:8000/api/v1/user/my-comments", { headers });
-      setComments(res.data.data || []);
+      const res = await axios.get(
+        "http://localhost:8000/api/v1/user/my-comments",
+        { headers }
+      );
+      setComments(res.data.data);
     } catch (error) {
       setComments([]);
       console.error("Comments error:", error);
     }
   };
 
-  const handleChange = (e) => setFormData((p) => ({ ...p, [e.target.name]: e.target.value }));
+  const handleChange = (e) =>
+    setFormData((p) => ({ ...p, [e.target.name]: e.target.value }));
 
   const handleUpdate = async () => {
     setLoading(true);
     try {
-      const res = await axios.put("http://localhost:8000/api/v1/user/profile", formData, { headers });
+      const res = await axios.put(
+        "http://localhost:8000/api/v1/user/profile",
+        formData,
+        { headers }
+      );
       setProfile(res.data.data);
       setEditMode(false);
       toast.success("Profile updated successfully!");
@@ -163,41 +183,23 @@ export default function UserDashboard() {
     }
   };
 
-  // Function to get cropped image as blob
-  const getCroppedImage = () => {
-    return new Promise((resolve) => {
+  // Crop/canvas util
+  const getCroppedImage = () =>
+    new Promise((resolve) => {
       const canvas = canvasRef.current;
       const image = imageRef.current;
-
-      if (!canvas || !image) {
-        resolve(null);
-        return;
-      }
-
+      if (!canvas || !image) return resolve(null);
       const ctx = canvas.getContext("2d");
-      const size = 400; // Output size
+      const size = 400;
       canvas.width = size;
       canvas.height = size;
-
-      // Clear canvas
       ctx.clearRect(0, 0, size, size);
-
-      // Save context state
       ctx.save();
-
-      // Translate to center
       ctx.translate(size / 2, size / 2);
-
-      // Apply rotation
       ctx.rotate((rotation * Math.PI) / 180);
-
-      // Apply scale
       ctx.scale(scale, scale);
-
-      // Draw image centered
       const aspectRatio = image.naturalWidth / image.naturalHeight;
       let drawWidth, drawHeight;
-
       if (aspectRatio > 1) {
         drawHeight = size;
         drawWidth = size * aspectRatio;
@@ -205,88 +207,61 @@ export default function UserDashboard() {
         drawWidth = size;
         drawHeight = size / aspectRatio;
       }
-
-      ctx.drawImage(image, -drawWidth / 2, -drawHeight / 2, drawWidth, drawHeight);
-
-      // Restore context state
+      ctx.drawImage(
+        image,
+        -drawWidth / 2,
+        -drawHeight / 2,
+        drawWidth,
+        drawHeight
+      );
       ctx.restore();
-
-      // Convert to blob
-      canvas.toBlob((blob) => {
-        resolve(blob);
-      }, "image/jpeg", 0.95);
+      canvas.toBlob((blob) => resolve(blob), "image/jpeg", 0.95);
     });
-  };
-
-
-
-  //handle image upload
 
   const handleImageUpload = async () => {
-  if (!selectedImage) {
-    toast.error("Please select an image first");
-    return;
-  }
-
-  setUploadingImage(true);
-  try {
-    const croppedBlob = await getCroppedImage();
-    
-    if (!croppedBlob) {
-      toast.error("Failed to process image");
-      setUploadingImage(false);
+    if (!selectedImage) {
+      toast.error("Please select an image first");
       return;
     }
-
-    const formData = new FormData();
-    formData.append("image", croppedBlob, "profile.jpg");
-
-    await axios.put(
-      "http://localhost:8000/api/v1/user/profile/image",
-      formData,
-      {
-        headers: {
-          ...headers,
-          "Content-Type": "multipart/form-data",
-        },
+    setUploadingImage(true);
+    try {
+      const croppedBlob = await getCroppedImage();
+      if (!croppedBlob) {
+        toast.error("Failed to process image");
+        setUploadingImage(false);
+        return;
       }
-    );
-
-    // Reset all modal states FIRST
+      const formDataObj = new FormData();
+      formDataObj.append("image", croppedBlob, "profile.jpg");
+      await axios.put(
+        "http://localhost:8000/api/v1/user/profile/image",
+        formDataObj,
+        {
+          headers: { ...headers, "Content-Type": "multipart/form-data" },
+        }
+      );
+      toast.success("Profile image updated successfully!");
+      setShowImageUpload(false);
+      setSelectedImage(null);
+      setImagePreview(null);
+      setScale(1);
+      setRotation(0);
+      // Fetch updated profile to get new image
+      const profileRes = await axios.get(
+        "http://localhost:8000/api/v1/user/profile",
+        { headers }
+      );
+      const newImageUrl =
+        profileRes.data.data.profileImageUrl + "?t=" + Date.now();
+      setProfileImageUrl(newImageUrl);
+      setProfile(profileRes.data.data);
+    } catch (error) {
+      setUploadingImage(false);
+      toast.error("Failed to upload image");
+      console.error("Image upload error:", error);
+    }
     setUploadingImage(false);
-    setShowImageUpload(false);
-    setSelectedImage(null);
-    setImagePreview(null);
-    setScale(1);
-    setRotation(0);
-    
-    // Show success message
-    toast.success("Profile image updated successfully!");
-    
-    // Fetch updated profile to get new image URL
-    const profileRes = await axios.get("http://localhost:8000/api/v1/user/profile", { headers });
-    const newImageUrl = profileRes.data.data.profileImageUrl + `?t=${Date.now()}`;
-    
-    setProfileImageUrl(newImageUrl);
-    setProfile(profileRes.data.data);
-    
-  } catch (error) {
-    setUploadingImage(false);
-    toast.error("Failed to upload image");
-    console.error("Image upload error:", error);
-  }
-};
-
-
-
-
-
-
-
-
-
-
-
+  };
 
   const handleCancelImageUpload = () => {
     setShowImageUpload(false);
@@ -296,16 +271,17 @@ export default function UserDashboard() {
     setRotation(0);
   };
 
+  // FIXED: Use correct detail endpoint for local news
   const handleView = async (type, id) => {
     try {
       let url = "";
       if (type === "events") url = `http://localhost:8000/api/v1/events/${id}`;
       else if (type === "jobs") url = `http://localhost:8000/api/v1/jobs/${id}`;
-      else if (type === "community") url = `http://localhost:8000/api/v1/community/${id}`;
-      else if (type === "localNews") url = `http://localhost:8000/api/v1/district-news/${id}`;
-
+      else if (type === "community")
+        url = `http://localhost:8000/api/v1/community/${id}`;
+      else if (type === "localNews")
+        url = `http://localhost:8000/api/v1/district-news/details/${id}`;
       const res = await axios.get(url, { headers });
-
       setModalContent(res.data.data);
       setModalType(type);
       setShowFullContent(false);
@@ -326,9 +302,10 @@ export default function UserDashboard() {
       let url = "";
       if (type === "events") url = `http://localhost:8000/api/v1/events/${id}`;
       if (type === "jobs") url = `http://localhost:8000/api/v1/jobs/${id}`;
-      if (type === "community") url = `http://localhost:8000/api/v1/community/${id}`;
-      if (type === "localNews") url = `http://localhost:8000/api/v1/district-news/${id}`;
-
+      if (type === "community")
+        url = `http://localhost:8000/api/v1/community/${id}`;
+      if (type === "localNews")
+        url = `http://localhost:8000/api/v1/district-news/${id}`;
       await axios.delete(url, { headers });
       toast.success("Deleted successfully!");
       setDeleteConfirmOpen(false);
@@ -341,16 +318,12 @@ export default function UserDashboard() {
 
   const handleOpenEditModal = (item) => {
     setEditNewsId(item.id);
-    setEditNewsData({
-      title: item.title || "",
-      content: item.content || "",
-    });
+    setEditNewsData({ title: item.title, content: item.content });
     setEditModalOpen(true);
   };
 
-  const handleEditNewsChange = (e) => {
+  const handleEditNewsChange = (e) =>
     setEditNewsData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
-  };
 
   const handleUpdateNews = async () => {
     setLoading(true);
@@ -371,27 +344,23 @@ export default function UserDashboard() {
     }
   };
 
+  // Utils
   const truncateText = (text, wordLimit = 50) => {
     if (!text) return "";
-    const words = text.split(/\s+/);
+    const words = text.split(" ");
     if (words.length <= wordLimit) return text;
-    return words.slice(0, wordLimit).join(" ");
+    return words.slice(0, wordLimit).join(" ") + "...";
   };
-
   const needsTruncation = (text, wordLimit = 50) => {
     if (!text) return false;
-    const words = text.split(/\s+/);
-    return words.length > wordLimit;
+    return text.split(" ").length > wordLimit;
   };
 
   const handleImageClick = (url, e) => {
     e.stopPropagation();
     setLightboxImage(url);
   };
-
-  const closeLightbox = () => {
-    setLightboxImage(null);
-  };
+  const closeLightbox = () => setLightboxImage(null);
 
   const getStatusColor = (status) => {
     if (!status) return "bg-gray-100 text-gray-700";
@@ -409,32 +378,41 @@ export default function UserDashboard() {
     navigate("/login");
   };
 
-  const filteredContent = () => {
+  // Content filtering logic
+  const filteredContent = (() => {
     if (!content) return [];
-    if (activeTab === "events") return content.events || [];
-    if (activeTab === "jobs") return content.jobs || [];
-    if (activeTab === "community") return content.communityPosts || [];
-    if (activeTab === "comments") return comments || [];
-    if (activeTab === "localNews") return content.districtNews || [];
+    if (activeTab === "events") return content.events;
+    if (activeTab === "jobs") return content.jobs;
+    if (activeTab === "community") return content.communityPosts;
+    if (activeTab === "comments") return comments;
+    if (activeTab === "localNews") return content.districtNews;
     return [];
-  };
+  })();
 
-  if (!profile || !stats || !content)
-    return <div className="text-center mt-10 text-gray-500">Loading dashboard...</div>;
-
+  // UI Tabs definition
   const tabs = [
     { key: "events", label: "Events", icon: Calendar },
     { key: "jobs", label: "Jobs", icon: Briefcase },
     { key: "community", label: "Community", icon: FileText },
   ];
+  if (role === "admin")
+    tabs.push({ key: "localNews", label: "Local News", icon: FileText });
 
-  if (role === "admin") tabs.push({ key: "localNews", label: "Local News", icon: FileText });
+  if (!profile || !stats || !content) {
+    return (
+      <div className="text-center mt-10 text-gray-500">
+        Loading dashboard...
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-8">
       {/* Header + Logout */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Dashboard</h1>
+        <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
+          Dashboard
+        </h1>
         <button
           onClick={handleLogout}
           className="flex items-center gap-2 bg-red-100 text-red-700 px-4 py-2 rounded-lg hover:bg-red-200 transition"
@@ -449,40 +427,39 @@ export default function UserDashboard() {
         animate={{ opacity: 1, y: 0 }}
         className="bg-white shadow-lg rounded-2xl p-6 flex flex-col md:flex-row gap-6"
       >
-       {/* Profile Image Section */}
-{/* Profile Image Section */}
-<div className="relative group">
-  <div className="rounded-full p-0.5 w-20 h-20 flex items-center justify-center overflow-hidden bg-gradient-to-br from-green-400 to-green-600">
-    <div className="bg-white rounded-full w-full h-full flex items-center justify-center overflow-hidden">
-      {profileImageUrl ? (
-        <img
-          src={profileImageUrl}
-          alt="Profile"
-          className="w-full h-full object-cover rounded-full"
-        />
-      ) : (
-        <User size={56} className="text-indigo-600" />
-      )}
-    </div>
-  </div>
-
-  {/* Hover Edit Button - only show when modal is NOT open */}
-  {!showImageUpload && (
-    <button
-      onClick={() => setShowImageUpload(true)}
-      className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-      title="Change profile picture"
-    >
-      <Camera size={24} className="text-white" />
-    </button>
-  )}
-</div>
-
+        {/* Profile Image + Edit */}
+        <div className="relative group">
+          <div className="rounded-full p-0.5 w-20 h-20 flex items-center justify-center overflow-hidden bg-gradient-to-br from-green-400 to-green-600">
+            <div className="bg-white rounded-full w-full h-full flex items-center justify-center overflow-hidden">
+              {profileImageUrl ? (
+                <img
+                  src={profileImageUrl}
+                  alt="Profile"
+                  className="w-full h-full object-cover rounded-full"
+                />
+              ) : (
+                <User size={56} className="text-indigo-600" />
+              )}
+            </div>
+            {!showImageUpload && (
+              <button
+                onClick={() => setShowImageUpload(true)}
+                className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                title="Change profile picture"
+              >
+                <Camera size={24} className="text-white" />
+              </button>
+            )}
+          </div>
+        </div>
+        {/* Display or edit profile info */}
         <div className="flex-1">
           {!editMode ? (
             <div className="flex justify-between items-center flex-wrap gap-3">
               <div>
-                <h2 className="text-2xl font-semibold text-gray-900">{profile.fullName}</h2>
+                <h2 className="text-2xl font-semibold text-gray-900">
+                  {profile.fullName}
+                </h2>
                 <p className="text-sm text-gray-600">{profile.email}</p>
               </div>
               <button
@@ -493,23 +470,21 @@ export default function UserDashboard() {
               </button>
             </div>
           ) : (
-            <div>
-              <div className="flex flex-col md:flex-row gap-3">
-                <input
-                  name="firstName"
-                  value={formData.firstName}
-                  onChange={handleChange}
-                  className="border rounded-lg p-2 w-full"
-                  placeholder="First Name"
-                />
-                <input
-                  name="lastName"
-                  value={formData.lastName}
-                  onChange={handleChange}
-                  className="border rounded-lg p-2 w-full"
-                  placeholder="Last Name"
-                />
-              </div>
+            <div className="flex flex-col md:flex-row gap-3">
+              <input
+                name="firstName"
+                value={formData.firstName}
+                onChange={handleChange}
+                className="border rounded-lg p-2 w-full"
+                placeholder="First Name"
+              />
+              <input
+                name="lastName"
+                value={formData.lastName}
+                onChange={handleChange}
+                className="border rounded-lg p-2 w-full"
+                placeholder="Last Name"
+              />
               <div className="mt-3 flex gap-3">
                 <button
                   onClick={handleUpdate}
@@ -531,7 +506,7 @@ export default function UserDashboard() {
       </motion.div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+      <motion.div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         {[
           { title: "District News", value: stats.totalDistrictNews },
           { title: "Events", value: stats.totalEvents },
@@ -545,108 +520,128 @@ export default function UserDashboard() {
             <p className="text-xl font-bold text-gray-800">{s.value}</p>
           </div>
         ))}
-      </div>
+      </motion.div>
 
       {/* Tabs */}
       <div className="flex flex-wrap gap-3">
         {tabs.map((tab) => {
           const active = activeTab === tab.key;
+          const TabIcon = tab.icon;
           return (
             <motion.button
               key={tab.key}
               whileHover={{ scale: 1.05 }}
               onClick={() => setActiveTab(tab.key)}
               className={`flex items-center gap-2 px-4 py-2 rounded-full font-semibold transition ${
-                active ? "bg-indigo-600 text-white shadow-lg" : "bg-gray-100 text-gray-700"
+                active
+                  ? "bg-indigo-600 text-white shadow-lg"
+                  : "bg-gray-100 text-gray-700"
               }`}
             >
-              <tab.icon size={16} /> {tab.label}
+              <TabIcon size={16} /> {tab.label}
             </motion.button>
           );
         })}
       </div>
 
-      {/* Content List */}
+      {/* Content */}
       <div className="space-y-4">
-        {filteredContent().length === 0 ? (
+        {filteredContent.length === 0 ? (
           <div className="text-center text-gray-400">No data found</div>
         ) : (
-          filteredContent().map((item) => (
+          filteredContent.map((item) => (
             <motion.div
               key={item.id}
-              whileHover={{ scale: 1.02 }}
               className="bg-white rounded-xl shadow p-4 flex flex-col md:flex-row gap-4"
+              whileHover={{ scale: 1.02 }}
             >
               <div className="flex-1">
-                <div className="flex justify-between items-center flex-wrap gap-3">
-                  <h3 className="text-lg font-semibold text-gray-900">{item.title}</h3>
-                  <span className={`px-3 py-1 text-xs rounded-full ${getStatusColor(item.status)}`}>
+                <div className="flex   items-center flex-wrap gap-3">
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    {item.title}
+                  </h3>
+                  <span
+                    className={`px-3  py-1 text-xs rounded-full ${getStatusColor(
+                      item.status
+                    )}`}
+                  >
                     {item.status || "UNKNOWN"}
                   </span>
                 </div>
                 <p className="text-sm text-gray-500 mt-1 flex flex-wrap items-center gap-7">
-                  {activeTab === "jobs" ? (
-                    <>
-                      <span>• Deadline: {item.applicationDeadline || "N/A"}</span>
-                      <span>• Salary Range: ₹{item.salaryRange || "N/A"}</span>
-                    </>
-                  ) : activeTab === "events" ? (
-                    <span>• Date: {item.eventDate || "N/A"}</span>
-                  ) : activeTab === "community" ? (
-                    <span>• Created: {new Date(item.createdAt).toLocaleDateString()}</span>
-                  ) : activeTab === "localNews" ? (
-                    <>
-                      <span>• District: {item.districtName || "N/A"}</span>
-                      <span>• Created: {new Date(item.createdAt).toLocaleDateString()}</span>
-                    </>
-                  ) : (
-                    ""
+                  {activeTab === "jobs" && (
+                    <span>Deadline: {item.applicationDeadline || "N/A"}</span>
                   )}
+                  {activeTab === "jobs" && (
+                    <span>Salary Range: {item.salaryRange || "N/A"}</span>
+                  )}
+                  {activeTab === "events" && (
+                    <span>Date: {item.eventDate || "N/A"}</span>
+                  )}
+                  {activeTab === "community" && (
+                    <span>
+                      Created: {new Date(item.createdAt).toLocaleDateString()}
+                    </span>
+                  )}
+                  {activeTab === "localNews" && (
+                    <span>District: {item.districtName || "N/A"}</span>
+                  )}
+                  <span>
+                    Created: {new Date(item.createdAt).toLocaleDateString()}
+                  </span>
                 </p>
+              </div>
 
-                {activeTab !== "comments" && (
-                  <div className="flex gap-2 mt-2">
-                    {activeTab !== "localNews" && (
+              {activeTab !== "comments" && (
+                <div className="flex gap-2 mt-2">
+                  {/* View Details button for all */}
+                  <button
+                    onClick={() => handleView(activeTab, item.id)}
+                    className="flex items-center gap-2 bg-indigo-50 text-indigo-700 px-3 py-1 rounded-lg hover:bg-indigo-100 transition"
+                  >
+                    <Eye size={14} /> View Details
+                  </button>
+
+                  {/* Update and Delete for Local News (admin only) */}
+                  {activeTab === "localNews" && role === "admin" && (
+                    <>
                       <button
-                        onClick={() => handleView(activeTab, item.id)}
-                        className="flex items-center gap-2 bg-indigo-50 text-indigo-700 px-3 py-1 rounded-lg hover:bg-indigo-100 transition"
+                        onClick={() => handleOpenEditModal(item)}
+                        className="flex items-center gap-2 bg-yellow-50 text-yellow-700 px-3 py-1 rounded-lg hover:bg-yellow-100 transition"
                       >
-                        <Eye size={14} /> View Details
+                        <Edit2 size={14} /> Update
                       </button>
-                    )}
-
-                    {activeTab === "localNews" && role === "admin" ? (
-                      <>
-                        <button
-                          onClick={() => handleOpenEditModal(item)}
-                          className="flex items-center gap-2 bg-yellow-50 text-yellow-700 px-3 py-1 rounded-lg hover:bg-yellow-100 transition"
-                        >
-                          <Edit2 size={14} /> Update
-                        </button>
-                        <button
-                          onClick={() => handleDeleteConfirm(activeTab, item.id, item.title)}
-                          className="flex items-center gap-2 bg-red-50 text-red-600 px-3 py-1 rounded-lg hover:bg-red-100 transition"
-                        >
-                          <Trash2 size={14} /> Delete
-                        </button>
-                      </>
-                    ) : (
                       <button
-                        onClick={() => handleDeleteConfirm(activeTab, item.id, item.title)}
+                        onClick={() =>
+                          handleDeleteConfirm("localNews", item.id, item.title)
+                        }
+                        className="flex items-center gap-2 bg-red-50 text-red-600 px-3 py-1 rounded-lg hover:bg-red-100 transition"
+                      >
+                        <Trash2 size={14} /> Delete
+                      </button>
+                    </>
+                  )}
+
+                  {/* Delete button for community, events, jobs -- if the post belongs to the current user */}
+                  {["community", "jobs", "events"].includes(activeTab) &&
+                    item.author &&
+                    item.author.id === profile.id && (
+                      <button
+                        onClick={() =>
+                          handleDeleteConfirm(activeTab, item.id, item.title)
+                        }
                         className="flex items-center gap-2 bg-red-50 text-red-600 px-3 py-1 rounded-lg hover:bg-red-100 transition"
                       >
                         <Trash2 size={14} /> Delete
                       </button>
                     )}
-                  </div>
-                )}
-              </div>
+                </div>
+              )}
             </motion.div>
           ))
         )}
       </div>
-
-      {/* Modal for View Details */}
+      {/* View Details Modal */}
       <AnimatePresence>
         {modalContent && (
           <motion.div
@@ -676,9 +671,9 @@ export default function UserDashboard() {
                 ✕
               </button>
 
-              <h2 className="text-2xl font-bold text-gray-900 mb-4 pr-8">{modalContent.title}</h2>
-
-              {/* Content Section with See More functionality */}
+              <h2 className="text-2xl font-bold text-gray-900 mb-4 pr-8">
+                {modalContent.title}
+              </h2>
               <div className="mb-6">
                 <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
                   <FileText size={18} className="text-indigo-600" />
@@ -692,10 +687,10 @@ export default function UserDashboard() {
                   <p className="text-gray-700 whitespace-pre-wrap leading-relaxed">
                     {showFullContent
                       ? modalType === "community"
-                        ? modalContent.content || "No description available"
+                        ? modalContent.content
                         : modalType === "localNews"
-                        ? modalContent.content || "No content available"
-                        : modalContent.description || modalContent.content || "No content available"
+                        ? modalContent.content
+                        : modalContent.description || modalContent.content
                       : truncateText(
                           modalType === "community"
                             ? modalContent.content
@@ -703,9 +698,8 @@ export default function UserDashboard() {
                             ? modalContent.content
                             : modalContent.description || modalContent.content,
                           50
-                        ) || "No content available"}
+                        )}
                   </p>
-
                   {needsTruncation(
                     modalType === "community"
                       ? modalContent.content
@@ -732,29 +726,17 @@ export default function UserDashboard() {
                 </div>
               </div>
 
-              {/* Location (for Community and Events) */}
-              {(modalType === "community" || modalType === "events") && modalContent.location && (
-                <div className="mb-6">
-                  <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                    <MapPin size={18} className="text-indigo-600" />
-                    Location
-                  </h3>
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <p className="text-gray-700">{modalContent.location}</p>
-                  </div>
-                </div>
-              )}
-
-              {/* Additional Fields based on type */}
               {modalType === "localNews" && (
                 <div className="mb-6 space-y-3 bg-purple-50 p-4 rounded-lg">
                   <p className="text-sm text-gray-700">
-                    <span className="font-semibold">District:</span> {modalContent.districtName || "N/A"}
+                    <span className="font-semibold">District:</span>{" "}
+                    {modalContent.districtName || "N/A"}
                   </p>
                   {modalContent.author && (
                     <p className="text-sm text-gray-700">
                       <span className="font-semibold">Author:</span>{" "}
-                      {modalContent.author.firstName} {modalContent.author.lastName}
+                      {modalContent.author.firstName}{" "}
+                      {modalContent.author.lastName}
                       <span className="ml-2 px-2 py-0.5 bg-white rounded text-xs">
                         {modalContent.author.role}
                       </span>
@@ -763,104 +745,6 @@ export default function UserDashboard() {
                 </div>
               )}
 
-              {modalType === "events" && (
-                <div className="mb-6 space-y-3 bg-indigo-50 p-4 rounded-lg">
-                  <p className="text-sm text-gray-700">
-                    <span className="font-semibold">Event Date:</span> {modalContent.eventDate || "N/A"}
-                  </p>
-                  {modalContent.organizer && (
-                    <p className="text-sm text-gray-700">
-                      <span className="font-semibold">Organizer:</span> {modalContent.organizer}
-                    </p>
-                  )}
-                </div>
-              )}
-
-              {modalType === "jobs" && (
-                <div className="mb-6 space-y-3 bg-blue-50 p-4 rounded-lg">
-                  <p className="text-sm text-gray-700">
-                    <span className="font-semibold">Company:</span> {modalContent.company || "N/A"}
-                  </p>
-                  <p className="text-sm text-gray-700">
-                    <span className="font-semibold">Salary Range:</span> ₹{modalContent.salaryRange || "N/A"}
-                  </p>
-                  <p className="text-sm text-gray-700">
-                    <span className="font-semibold">Application Deadline:</span>{" "}
-                    {modalContent.applicationDeadline || "N/A"}
-                  </p>
-                  <p className="text-sm text-gray-700">
-                    <span className="font-semibold">Location:</span> {modalContent.location || "N/A"}
-                  </p>
-                  {modalContent.contactEmail && (
-                    <p className="text-sm text-gray-700">
-                      <span className="font-semibold">Contact:</span> {modalContent.contactEmail}
-                    </p>
-                  )}
-                </div>
-              )}
-
-              {modalType === "community" && (
-                <div className="mb-6 space-y-3 bg-green-50 p-4 rounded-lg">
-                  {modalContent.author && (
-                    <p className="text-sm text-gray-700">
-                      <span className="font-semibold">Posted by:</span>{" "}
-                      {modalContent.author.firstName} {modalContent.author.lastName}
-                      <span className="ml-2 px-2 py-0.5 bg-white rounded text-xs">
-                        {modalContent.author.role}
-                      </span>
-                    </p>
-                  )}
-                  <p className="text-sm text-gray-700">
-                    <span className="font-semibold">Status:</span>{" "}
-                    <span className={`px-2 py-0.5rounded text-xs ${getStatusColor(modalContent.status)}`}>
-                      {modalContent.status}
-                    </span>
-                  </p>
-                </div>
-              )}
-
-              {/* Comments Section (for Community posts) */}
-              {modalType === "community" && modalContent.comments && modalContent.comments.length > 0 && (
-                <div className="mb-6">
-                  <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                    <MessageCircle size={18} className="text-indigo-600" />
-                    Comments ({modalContent.comments.length})
-                  </h3>
-                  <div className="space-y-3 max-h-60 overflow-y-auto">
-                    {modalContent.comments.map((comment) => (
-                      <div key={comment.id} className="bg-gray-50 p-3 rounded-lg">
-                        <div className="flex items-start justify-between mb-2">
-                          <div className="flex items-center gap-2">
-                            <div className="bg-indigo-100 rounded-full p-1">
-                              <User size={14} className="text-indigo-600" />
-                            </div>
-                            <div>
-                              <p className="text-sm font-semibold text-gray-800">
-                                {comment.author.firstName} {comment.author.lastName}
-                              </p>
-                              <p className="text-xs text-gray-500">
-                                {new Date(comment.createdAt).toLocaleDateString("en-IN", {
-                                  month: "short",
-                                  day: "numeric",
-                                  year: "numeric",
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                                })}
-                              </p>
-                            </div>
-                          </div>
-                          <span className="text-xs px-2 py-0.5 bg-white rounded">
-                            {comment.author.role}
-                          </span>
-                        </div>
-                        <p className="text-sm text-gray-700 ml-6">{comment.content}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Images with lightbox functionality */}
               {modalContent.imageUrls && modalContent.imageUrls.length > 0 && (
                 <div className="mt-6">
                   <h3 className="font-semibold text-gray-800 mb-3">Images</h3>
@@ -887,22 +771,26 @@ export default function UserDashboard() {
                     timeStyle: "short",
                   })}
                 </p>
-                {modalContent.updatedAt && modalContent.updatedAt !== modalContent.createdAt && (
-                  <p>
-                    <span className="font-semibold">Last Updated:</span>{" "}
-                    {new Date(modalContent.updatedAt).toLocaleString("en-IN", {
-                      dateStyle: "medium",
-                      timeStyle: "short",
-                    })}
-                  </p>
-                )}
+                {modalContent.updatedAt &&
+                  modalContent.updatedAt !== modalContent.createdAt && (
+                    <p>
+                      <span className="font-semibold">Last Updated:</span>{" "}
+                      {new Date(modalContent.updatedAt).toLocaleString(
+                        "en-IN",
+                        {
+                          dateStyle: "medium",
+                          timeStyle: "short",
+                        }
+                      )}
+                    </p>
+                  )}
               </div>
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Image Lightbox - Full Screen with Close Button */}
+      {/* Image Lightbox */}
       <AnimatePresence>
         {lightboxImage && (
           <motion.div
@@ -919,7 +807,6 @@ export default function UserDashboard() {
             >
               <X size={28} strokeWidth={2.5} />
             </button>
-
             <motion.img
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
@@ -933,7 +820,7 @@ export default function UserDashboard() {
         )}
       </AnimatePresence>
 
-      {/* Image Upload Modal with Crop Functionality */}
+      {/* Image Upload Modal */}
       <AnimatePresence>
         {showImageUpload && (
           <motion.div
@@ -956,14 +843,12 @@ export default function UserDashboard() {
               >
                 ✕
               </button>
-
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">Update Profile Picture</h2>
-
+              <h2 className="text-2xl font-bold text-gray-900 mb-6">
+                Update Profile Picture
+              </h2>
               <div className="space-y-4">
-                {/* Image Preview with Crop Controls */}
                 {imagePreview ? (
                   <div className="flex flex-col items-center">
-                    {/* Canvas for cropped preview */}
                     <div className="relative w-64 h-64 mb-4 bg-gray-100 rounded-lg overflow-hidden">
                       <img
                         ref={imageRef}
@@ -977,10 +862,9 @@ export default function UserDashboard() {
                         }}
                       />
                     </div>
-
-                    {/* Hidden canvas for processing */}
                     <canvas ref={canvasRef} style={{ display: "none" }} />
-
+                    {/* Zoom & rotate controls as in previous code */}
+                    {/* ... */}
                     {/* Crop Controls */}
                     <div className="w-full space-y-3 mb-4">
                       {/* Zoom Control */}
@@ -997,7 +881,9 @@ export default function UserDashboard() {
                           style={{
                             background: `linear-gradient(to right, #4f46e5 0%, #4f46e5 ${
                               ((scale - 0.5) / 2.5) * 100
-                            }%, #e5e7eb ${((scale - 0.5) / 2.5) * 100}%, #e5e7eb 100%)`,
+                            }%, #e5e7eb ${
+                              ((scale - 0.5) / 2.5) * 100
+                            }%, #e5e7eb 100%)`,
                           }}
                         />
                         <ZoomIn size={20} className="text-gray-600" />
@@ -1012,15 +898,21 @@ export default function UserDashboard() {
                           max="360"
                           step="1"
                           value={rotation}
-                          onChange={(e) => setRotation(parseInt(e.target.value))}
+                          onChange={(e) =>
+                            setRotation(parseInt(e.target.value))
+                          }
                           className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
                           style={{
                             background: `linear-gradient(to right, #4f46e5 0%, #4f46e5 ${
                               (rotation / 360) * 100
-                            }%, #e5e7eb ${(rotation / 360) * 100}%, #e5e7eb 100%)`,
+                            }%, #e5e7eb ${
+                              (rotation / 360) * 100
+                            }%, #e5e7eb 100%)`,
                           }}
                         />
-                        <span className="text-sm text-gray-600 min-w-[40px]">{rotation}°</span>
+                        <span className="text-sm text-gray-600 min-w-[40px]">
+                          {rotation}°
+                        </span>
                       </div>
                     </div>
 
@@ -1052,7 +944,9 @@ export default function UserDashboard() {
                 ) : (
                   <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
                     <Upload size={48} className="mx-auto text-gray-400 mb-4" />
-                    <p className="text-gray-600 mb-4">Click to upload your profile picture</p>
+                    <p className="text-gray-600 mb-4">
+                      Click to upload your profile picture
+                    </p>
                     <label className="bg-indigo-600 text-white px-6 py-2 rounded-lg cursor-pointer hover:bg-indigo-700 transition inline-block">
                       Choose Image
                       <input
@@ -1062,11 +956,12 @@ export default function UserDashboard() {
                         className="hidden"
                       />
                     </label>
-                    <p className="text-xs text-gray-500 mt-3">Maximum file size: 5MB</p>
+                    <p className="text-xs text-gray-500 mt-3">
+                      Maximum file size: 5MB
+                    </p>
                   </div>
                 )}
               </div>
-
               <div className="mt-6 flex gap-3 justify-end">
                 <button
                   onClick={handleCancelImageUpload}
@@ -1080,7 +975,8 @@ export default function UserDashboard() {
                   className="flex items-center gap-2 bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 transition disabled:opacity-50"
                   disabled={!selectedImage || uploadingImage}
                 >
-                  <Upload size={16} /> {uploadingImage ? "Uploading..." : "Upload"}
+                  <Upload size={16} />{" "}
+                  {uploadingImage ? "Uploading..." : "Upload"}
                 </button>
               </div>
             </motion.div>
@@ -1088,7 +984,7 @@ export default function UserDashboard() {
         )}
       </AnimatePresence>
 
-      {/* Modal for Edit Local News */}
+      {/* Edit Modal */}
       <AnimatePresence>
         {editModalOpen && (
           <motion.div
@@ -1111,8 +1007,9 @@ export default function UserDashboard() {
               >
                 ✕
               </button>
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">Update Local News</h2>
-
+              <h2 className="text-2xl font-bold text-gray-900 mb-6">
+                Update Local News
+              </h2>
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -1127,7 +1024,6 @@ export default function UserDashboard() {
                     placeholder="Enter news title"
                   />
                 </div>
-
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
                     Content <span className="text-red-500">*</span>
@@ -1142,7 +1038,6 @@ export default function UserDashboard() {
                   />
                 </div>
               </div>
-
               <div className="mt-6 flex gap-3 justify-end">
                 <button
                   onClick={() => setEditModalOpen(false)}
@@ -1185,16 +1080,19 @@ export default function UserDashboard() {
                 <div className="bg-red-100 rounded-full p-3">
                   <AlertTriangle size={24} className="text-red-600" />
                 </div>
-                <h2 className="text-xl font-bold text-gray-900">Confirm Deletion</h2>
+                <h2 className="text-xl font-bold text-gray-900">
+                  Confirm Deletion
+                </h2>
               </div>
-
-              <p className="text-gray-600 mb-2">Are you sure you want to delete this post?</p>
+              <p className="text-gray-600 mb-2">
+                Are you sure you want to delete this post?
+              </p>
               <p className="text-sm font-semibold text-gray-800 bg-gray-50 p-3 rounded-lg mb-6">
                 "{deleteTarget.title}"
               </p>
-
-              <p className="text-sm text-red-600 mb-6">This action cannot be undone.</p>
-
+              <p className="text-sm text-red-600 mb-6">
+                This action cannot be undone.
+              </p>
               <div className="flex gap-3 justify-end">
                 <button
                   onClick={() => setDeleteConfirmOpen(false)}

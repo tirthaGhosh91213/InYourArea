@@ -1,4 +1,3 @@
-// src/components/Sidebar.jsx
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
@@ -13,13 +12,22 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import EmailService from "./EmailService";
+import logo from "../assets/logo.png"; // assume logo.png exists in src/assets
 
 const districts = [
+  "----------- Jharkhand -----------",
   "Bokaro", "Chatra", "Deoghar", "Dhanbad", "Dumka",
   "East Singhbhum", "Garhwa", "Giridih", "Godda", "Gumla",
   "Hazaribagh", "Jamtara", "Jamshedpur", "Khunti", "Koderma",
   "Latehar", "Lohardaga", "Pakur", "Palamu", "Ramgarh",
   "Ranchi", "Sahibganj", "Seraikela-Kharsawan", "Simdega", "West Singhbhum",
+  "----------- Bihar -----------",
+  "Araria","Arwal","Aurangabad","Banka","Begusarai","Bhagalpur","Bhojpur","Buxar",
+  "Darbhanga","East Champaran (Motihari)","Gaya","Gopalganj","Jamui","Jehanabad",
+  "Kaimur (Bhabua)","Katihar","Khagaria","Kishanganj","Lakhisarai","Madhepura",
+  "Madhubani","Munger","Muzaffarpur","Nalanda","Nawada","Patna","Purnia","Rohtas",
+  "Saharsa","Samastipur","Saran (Chhapra)","Sheikhpura","Sheohar","Sitamarhi",
+  "Siwan","Supaul","Vaishali","West Champaran (Bettiah)",
 ];
 
 export default function Sidebar({ sidebarOpen, onClose }) {
@@ -29,7 +37,9 @@ export default function Sidebar({ sidebarOpen, onClose }) {
   const [showEmailService, setShowEmailService] = useState(false);
   const [role, setRole] = useState(null);
   const [selectedDistrict, setSelectedDistrict] = useState(() => {
-    return localStorage.getItem("district") || districts[0];
+    const saved = localStorage.getItem("district");
+    if (saved && !saved.startsWith("-")) return saved;
+    return districts.find((d) => !d.startsWith("-")) || "";
   });
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
@@ -41,7 +51,7 @@ export default function Sidebar({ sidebarOpen, onClose }) {
       if (e.key === "district" && e.newValue && e.newValue !== selectedDistrict) {
         setSelectedDistrict(e.newValue);
         if (location.pathname.startsWith("/localnews")) {
-          navigate(`/localnews/${encodeURIComponent(e.newValue)}`, { replace: true });
+          window.location.replace(`/localnews/${encodeURIComponent(e.newValue)}`);
         }
       }
     };
@@ -49,11 +59,23 @@ export default function Sidebar({ sidebarOpen, onClose }) {
     return () => {
       window.removeEventListener("storage", onStorageChange);
     };
-  }, [selectedDistrict, location.pathname, navigate]);
+  }, [selectedDistrict, location.pathname]);
+
+  const handleDistrictSelect = (district) => {
+    if (district.startsWith("-")) return;
+    setSelectedDistrict(district);
+    setDropdownOpen(false);
+    localStorage.setItem("district", district);
+    window.location.replace(`/localnews/${encodeURIComponent(district)}`);
+  };
 
   useEffect(() => {
-    localStorage.setItem("district", selectedDistrict);
-    if (location.pathname.startsWith("/localnews")) {
+    if (!selectedDistrict.startsWith("-"))
+      localStorage.setItem("district", selectedDistrict);
+    if (
+      location.pathname.startsWith("/localnews") &&
+      !selectedDistrict.startsWith("-")
+    ) {
       navigate(`/localnews/${encodeURIComponent(selectedDistrict)}`, { replace: true });
     }
   }, [selectedDistrict, location.pathname, navigate]);
@@ -87,20 +109,11 @@ export default function Sidebar({ sidebarOpen, onClose }) {
       return;
     }
     switch (type) {
-      case "Jobs":
-        navigate("/create/jobs");
-        break;
-      case "Local News":
-        navigate("/create/localnews");
-        break;
-      case "Community":
-        navigate("/create/community");
-        break;
-      case "Events":
-        navigate("/create/events");
-        break;
-      default:
-        break;
+      case "Jobs": navigate("/create/jobs"); break;
+      case "Local News": navigate("/create/localnews"); break;
+      case "Community": navigate("/create/community"); break;
+      case "Events": navigate("/create/events"); break;
+      default: break;
     }
   };
 
@@ -116,11 +129,6 @@ export default function Sidebar({ sidebarOpen, onClose }) {
     }
   };
 
-  const handleDistrictSelect = (district) => {
-    setSelectedDistrict(district);
-    setDropdownOpen(false);
-  };
-
   return (
     <AnimatePresence>
       {sidebarOpen && (
@@ -133,9 +141,14 @@ export default function Sidebar({ sidebarOpen, onClose }) {
         >
           <div>
             <div className="flex items-center justify-between mb-4">
-              <span className="text-green-600 text-3xl mt-10 font-extrabold tracking-tight select-none">
-                InYourArea
-              </span>
+              {/* LOGO IMAGE INSTEAD OF TEXT */}
+              <img
+                src={logo}
+                alt="Logo"
+                className="max-h-32 w-auto mt-5 select-none"
+                style={{ marginLeft: '40px' }}
+                draggable={false}
+              />
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -145,8 +158,6 @@ export default function Sidebar({ sidebarOpen, onClose }) {
                 <X size={24} />
               </motion.button>
             </div>
-
-            {/* District Dropdown */}
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
@@ -160,33 +171,54 @@ export default function Sidebar({ sidebarOpen, onClose }) {
               >
                 <span className="flex items-center gap-2 text-lg font-semibold text-gray-700">
                   <MapPin className="text-green-600" size={20} />
-                  {selectedDistrict}
+                  {
+                    selectedDistrict.startsWith("-")
+                      ? "Select District"
+                      : selectedDistrict
+                  }
                 </span>
                 <ChevronDown className="text-gray-500" size={20} />
               </button>
               {dropdownOpen && (
                 <div className="absolute left-0 right-0 z-40 mt-2 bg-white border border-gray-200 rounded-2xl shadow-xl max-h-60 overflow-y-auto">
-                  {districts.map((district) => (
-                    <button
-                      key={district}
-                      onClick={() => handleDistrictSelect(district)}
-                      className={`w-full text-left px-6 py-3 hover:bg-green-100 text-gray-700 font-medium ${
-                        selectedDistrict === district ? "bg-green-50 text-green-700" : ""
-                      }`}
-                    >
-                      {district}
-                    </button>
-                  ))}
+                  {districts.map((district) =>
+                    district.startsWith("-----------") ? (
+                      <div
+                        key={district}
+                        className="w-full px-6 py-3 font-bold text-green-600 bg-gray-50 cursor-not-allowed select-none"
+                        style={{
+                          fontWeight: "bold",
+                          color: "#10b981",
+                          background: "#f1f5f9",
+                          fontSize: "1rem",
+                          letterSpacing: "2px",
+                        }}
+                        tabIndex={-1}
+                      >
+                        {district}
+                      </div>
+                    ) : (
+                      <button
+                        key={district}
+                        onClick={() => handleDistrictSelect(district)}
+                        disabled={district.startsWith("-")}
+                        className={`w-full text-left px-6 py-3 hover:bg-green-100 text-gray-700 font-medium ${
+                          selectedDistrict === district
+                            ? "bg-green-50 text-green-700"
+                            : ""
+                        }`}
+                      >
+                        {district}
+                      </button>
+                    )
+                  )}
                 </div>
               )}
             </motion.div>
-
-            {/* Sidebar Menu */}
             <nav className="flex flex-col gap-3 mt-4">
               {menuItems.map((item, index) => {
                 const Icon = item.icon;
                 const active = isActive(item.path);
-
                 return (
                   <motion.button
                     key={item.name}
@@ -211,10 +243,7 @@ export default function Sidebar({ sidebarOpen, onClose }) {
                   </motion.button>
                 );
               })}
-
               <div className="border-t border-gray-200 my-3"></div>
-
-              {/* + Post Button */}
               <motion.button
                 onClick={() => setShowModal(true)}
                 whileHover={{
@@ -226,20 +255,16 @@ export default function Sidebar({ sidebarOpen, onClose }) {
               >
                 + Post
               </motion.button>
-
-              {/* Email Service Button */}
-        <motion.button
-          onClick={() => navigate("/emailservice")}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          className="mt-3 w-full flex items-center justify-center gap-2 bg-blue-500 text-white font-semibold rounded-full py-3 shadow-md hover:bg-blue-600 transition-all"
-        >
-          <Mail size={18} /> Email Service
-        </motion.button>
+              <motion.button
+                onClick={() => navigate("/emailservice")}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="mt-3 w-full flex items-center justify-center gap-2 bg-blue-500 text-white font-semibold rounded-full py-3 shadow-md hover:bg-blue-600 transition-all"
+              >
+                <Mail size={18} /> Email Service
+              </motion.button>
             </nav>
           </div>
-
-          {/* Post Modal */}
           <AnimatePresence>
             {showModal && (
               <motion.div
@@ -261,7 +286,6 @@ export default function Sidebar({ sidebarOpen, onClose }) {
                   >
                     <X size={20} />
                   </button>
-
                   <h2 className="text-2xl font-semibold text-green-600 mb-4">
                     Choose Post Type
                   </h2>
@@ -282,8 +306,6 @@ export default function Sidebar({ sidebarOpen, onClose }) {
               </motion.div>
             )}
           </AnimatePresence>
-
-          {/* Email Service Modal */}
           {showEmailService && (
             <EmailService onClose={() => setShowEmailService(false)} />
           )}
