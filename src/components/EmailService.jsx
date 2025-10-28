@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 
+import Footer from "./Footer";
+
 export default function EmailService() {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState(null);
@@ -77,6 +79,7 @@ export default function EmailService() {
       setUnsubscribeStatus("ERROR");
     }
   };
+  // <Footer />
 
   return (
     <>
@@ -100,6 +103,7 @@ export default function EmailService() {
           }
         }
       `}</style>
+      
 
       <div className="min-h-screen bg-gray-50">
         {/* Success Toast Popup */}
@@ -420,6 +424,8 @@ export default function EmailService() {
           </div>
         </div>
       </div>
+      <Footer />
     </>
   );
+  
 }

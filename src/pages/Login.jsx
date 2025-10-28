@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { FcGoogle } from "react-icons/fc";
@@ -27,6 +27,10 @@ function LogIn() {
   const [isOtpVerified, setIsOtpVerified] = useState(false);
 
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // OAUTH ADDITION: Define the backend URL for Google OAuth2
+  const GOOGLE_AUTH_URL = 'http://localhost:8000/api/v1/oauth2/authorization/google';
 
   // Detect if screen is mobile width
   const isMobile = useMediaQuery("(max-width: 768px)");
@@ -51,6 +55,68 @@ function LogIn() {
   // Toast helper (1.5 seconds)
   const showPopup = (msg, type = "success") =>
     toast[type](msg, { autoClose: 1500, position: "top-center" });
+
+  // OAUTH ADDITION: This function handles the redirect to the backend for Google login
+  const handleGoogleLogin = () => {
+    window.location.href = GOOGLE_AUTH_URL;
+  };
+
+
+
+
+  // OAUTH ADDITION: This useEffect hook runs when the component loads.
+  // It checks if the URL contains tokens from the OAuth2 redirect.
+  // Replace the existing useEffect hook with this improved version:
+
+// OAUTH FIX: Handle OAuth callback - Replace your existing OAuth useEffect with this
+// OAUTH FIX - Handle OAuth callback
+// OAUTH FIX - Handle OAuth callback
+// OAUTH FIX - Handle OAuth callback and store tokens
+// useEffect(() => {
+//   console.log('🔍 Checking for OAuth tokens...');
+//   console.log('Current URL:', window.location.href);
+  
+//   const params = new URLSearchParams(location.search);
+//   const token = params.get('accessToken');
+//   const role = params.get('role');
+
+//   console.log('Token found:', token ? 'Yes' : 'No');
+//   console.log('Role found:', role || 'None');
+
+//   if (token && role) {
+//     console.log('🔑 Storing OAuth tokens...');
+    
+//     try {
+//       // Store the access token
+//       localStorage.setItem('accessToken', token);
+      
+//       // Format and store the role (remove ROLE_ prefix)
+//       const formattedRole = role === 'ROLE_ADMIN' ? 'admin' : 'user';
+//       localStorage.setItem('role', formattedRole);
+
+//       console.log('✅ Successfully stored tokens!');
+//       console.log('   AccessToken in localStorage:', localStorage.getItem('accessToken') ? 'Stored' : 'Failed');
+//       console.log('   Role in localStorage:', localStorage.getItem('role'));
+
+//       // Show success message
+//       showPopup('Login successful!', 'success');
+
+//       // CRITICAL: Navigate to clean the URL and trigger re-render
+//       // This works even if we're already on /jobs because it forces React Router to update
+//       navigate('/jobs', { replace: true });
+      
+//     } catch (error) {
+//       console.error('❌ Error storing tokens:', error);
+//       showPopup('Error saving login data', 'error');
+//     }
+//   } else {
+//     console.log('ℹ️ No OAuth tokens in URL');
+//   }
+// }, [location.search, navigate]);
+
+
+
+
 
   // ===== OTP Flow =====
   const handleSendOtp = async (e) => {
@@ -271,9 +337,10 @@ function LogIn() {
     <span className="flex-grow h-[1px] bg-gray-300" />
   </div>
 
-  {/* Google Sign-In */}
+  {/* OAUTH ADDITION: Google Sign-In */}
   <button
     type="button"
+    onClick={handleGoogleLogin}
     className="w-full flex items-center justify-center gap-2 py-2 border border-gray-300 rounded-lg hover:bg-white hover:shadow-md text-gray-700 text-sm font-medium transition-all"
   >
     <FcGoogle size={20} /> Continue with Google
@@ -303,12 +370,7 @@ function LogIn() {
     </button>
   </div>
 </form>
-
-
-
-
-
-</>
+                  </>
                 ) : (
                   <>
                     {/* ===== SIGN UP / OTP ===== */}
@@ -348,17 +410,20 @@ function LogIn() {
       Send OTP
     </button>
 
-    {/* Resend Link */}
-    <p className="text-xs text-gray-500 mt-1">
-      Didn’t get an OTP?{" "}
-      <button
+    {/* OAUTH ADDITION: Google Sign-In on Sign-up page */}
+    <div className="flex items-center gap-1 text-gray-500 text-xs w-full">
+        <span className="flex-grow h-[1px] bg-gray-300"></span>
+        or
+        <span className="flex-grow h-[1px] bg-gray-300"></span>
+    </div>
+    <button
         type="button"
-        onClick={handleSendOtp}
-        className="text-emerald-600 hover:text-emerald-800 font-medium transition-all"
-      >
-        Resend
-      </button>
-    </p>
+        onClick={handleGoogleLogin}
+        className="w-full flex items-center justify-center gap-2 py-2 border border-gray-300 rounded-lg hover:bg-white hover:shadow-md text-gray-700 text-sm font-medium transition-all"
+    >
+        <FcGoogle size={20} />
+        Continue with Google
+    </button>
 
     {/* Back to Sign In Link */}
     <button
@@ -811,6 +876,7 @@ function LogIn() {
 
                     <button
                       type="button"
+                      onClick={handleGoogleLogin}
                       className="w-full max-w-sm flex items-center justify-center gap-2 py-3 rounded border border-gray-300 hover:bg-white hover:shadow-md transition"
                     >
                       <FcGoogle size={24} /> Sign in with Google
@@ -851,6 +917,19 @@ function LogIn() {
                       >
                         Send OTP
                       </button>
+
+                      <div className="flex items-center gap-2 text-gray-500 text-xs w-full max-w-sm">
+                        <span className="flex-grow h-[1px] bg-gray-300"></span>
+                        or
+                        <span className="flex-grow h-[1px] bg-gray-300"></span>
+                      </div>
+                      <button
+                          type="button"
+                          onClick={handleGoogleLogin}
+                          className="w-full max-w-sm flex items-center justify-center gap-2 py-3 rounded border border-gray-300 hover:bg-white hover:shadow-md transition">
+                          <FcGoogle size={24} /> Sign up with Google
+                      </button>
+
                       <button
                         type="button"
                         onClick={() => setRightPanelActive(false)}
