@@ -14,6 +14,7 @@ export default function CreateJobPost() {
     salaryRange: "",
     description: "",
     applicationDeadline: "",
+    applicationLink: "",
     images: [],
   });
   const [loading, setLoading] = useState(false);
@@ -47,10 +48,14 @@ export default function CreateJobPost() {
       return;
     }
 
+    if (!formData.applicationLink.trim()) {
+      toast.error("Please provide an application link!");
+      return;
+    }
+
     setLoading(true);
     try {
       const data = new FormData();
-      // Append job JSON with time appended to date for LocalDateTime
       const applicationDeadlineWithTime = formData.applicationDeadline
         ? formData.applicationDeadline + "T00:00:00"
         : null;
@@ -64,6 +69,7 @@ export default function CreateJobPost() {
           salaryRange: formData.salaryRange,
           description: formData.description,
           applicationDeadline: applicationDeadlineWithTime,
+          reglink: formData.applicationLink, // backend expects 'reglink'
         })
       );
 
@@ -87,6 +93,7 @@ export default function CreateJobPost() {
           salaryRange: "",
           description: "",
           applicationDeadline: "",
+          applicationLink: "",
           images: [],
         });
       }
@@ -107,9 +114,7 @@ export default function CreateJobPost() {
       </button>
 
       <motion.div className="w-full max-w-lg bg-white p-8 rounded-2xl shadow-2xl border border-gray-100">
-        <h1 className="text-3xl font-bold text-green-600 text-center mb-6">
-          Create Job Post
-        </h1>
+        <h1 className="text-3xl font-bold text-green-600 text-center mb-6">Create Job Post</h1>
         <form onSubmit={handleSubmit} className="space-y-6">
           <input
             name="title"
@@ -143,11 +148,17 @@ export default function CreateJobPost() {
             className="w-full border px-4 py-2 rounded-lg focus:ring-2 focus:ring-green-400"
             required
           />
+          <input
+            name="applicationLink"
+            value={formData.applicationLink}
+            onChange={handleChange}
+            placeholder="Application Link"
+            className="w-full border px-4 py-2 rounded-lg focus:ring-2 focus:ring-green-400"
+            required
+          />
 
           <div>
-            <label className="block text-gray-700 font-medium mb-2">
-              Application Deadline
-            </label>
+            <label className="block text-gray-700 font-medium mb-2">Application Deadline</label>
             <input
               type="date"
               name="applicationDeadline"
@@ -170,15 +181,8 @@ export default function CreateJobPost() {
 
           <div className="flex flex-wrap gap-3">
             {formData.images.map((img, idx) => (
-              <div
-                key={idx}
-                className="relative border rounded-lg overflow-hidden w-28 h-28"
-              >
-                <img
-                  src={img.preview}
-                  alt={`preview-${idx}`}
-                  className="w-full h-full object-cover"
-                />
+              <div key={idx} className="relative border rounded-lg overflow-hidden w-28 h-28">
+                <img src={img.preview} alt={`preview-${idx}`} className="w-full h-full object-cover" />
                 <button
                   type="button"
                   onClick={() => removeImage(idx)}
@@ -188,16 +192,9 @@ export default function CreateJobPost() {
                 </button>
               </div>
             ))}
-            <label
-              className="flex items-center justify-center w-28 h-28 border-2 border-dashed rounded-lg cursor-pointer hover:border-green-400"
-            >
+            <label className="flex items-center justify-center w-28 h-28 border-2 border-dashed rounded-lg cursor-pointer hover:border-green-400">
               <Plus size={30} className="text-green-500" />
-              <input
-                type="file"
-                multiple
-                onChange={handleChange}
-                className="hidden"
-              />
+              <input type="file" multiple onChange={handleChange} className="hidden" />
             </label>
           </div>
 
@@ -227,12 +224,9 @@ export default function CreateJobPost() {
               exit={{ scale: 0.8, opacity: 0 }}
             >
               <CheckCircle size={50} className="text-green-500 mx-auto mb-4" />
-              <h2 className="text-2xl font-semibold text-green-600 mb-2">
-                Success!
-              </h2>
+              <h2 className="text-2xl font-semibold text-green-600 mb-2">Success!</h2>
               <p className="text-gray-700 mb-4">
-                Your job post has been created successfully and is pending
-                approval.
+                Your job post has been created successfully and is pending approval.
               </p>
               <button
                 onClick={() => {

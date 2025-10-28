@@ -1,11 +1,9 @@
-// src/pages/EventDetails.jsx
 import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Calendar,
   MapPin,
-  Clock,
   ArrowLeft,
   ChevronLeft,
   ChevronRight,
@@ -135,7 +133,6 @@ export default function EventDetails() {
           >
             <ArrowLeft size={20} /> Back
           </motion.button>
-
           <motion.div
             layout
             initial={{ opacity: 0, y: 40 }}
@@ -169,7 +166,6 @@ export default function EventDetails() {
                 )}
               </div>
             )}
-
             {/* Event Info */}
             <div className="flex justify-between items-center text-gray-700">
               <div className="flex items-center gap-3">
@@ -180,18 +176,32 @@ export default function EventDetails() {
                       ? `${event.author.firstName} ${event.author.lastName}`
                       : "Unknown Author"}
                   </div>
-                  <div className="text-sm text-gray-500 flex items-center gap-1">
-                    <Calendar size={14} /> {formatDate(event.eventDate)}
-                  </div>
+                  <div className="text-sm text-gray-500 flex items-center gap-2 mt-2">
+  <Calendar size={14} className="mr-1" />
+  {event.eventDate
+    ? new Date(event.eventDate).toLocaleDateString("en-GB", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric"
+      })
+    : "-"}
+  <span>
+    {event.eventDate
+      ? new Date(event.eventDate).toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit"
+        })
+      : "-"}
+  </span>
+</div>
+
                 </div>
               </div>
               <div className="flex items-center gap-1 text-gray-500 text-sm">
                 <MapPin size={16} className="text-green-600" /> {event.location}
               </div>
             </div>
-
             <h1 className="text-3xl font-bold text-gray-800">{event.title}</h1>
-
             {/* Description with "See More" */}
             <div className="relative">
               <div
@@ -208,25 +218,17 @@ export default function EventDetails() {
                 {isExpanded ? "See Less" : "See More"}
               </button>
             </div>
-
-            {/* Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4 mt-4">
-              {event.portalLink && (
-                <button
-                  onClick={() =>
-                    event.portalLink && window.open(event.portalLink, "_blank")
-                  }
-                  disabled={!event.portalLink}
-                  className={`flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-semibold shadow-lg transition ${
-                    event.portalLink
-                      ? "bg-blue-600 text-white hover:bg-blue-700"
-                      : "bg-gray-300 text-gray-500 cursor-not-allowed"
-                  }`}
-                >
-                  <Link2 size={20} /> Register
-                </button>
-              )}
-
+            {/* Register Button directly under description */}
+            {event.reglink && (
+              <button
+                onClick={() => window.open(event.reglink, "_blank")}
+                className="mt-4 w-full flex items-center justify-center gap-2 bg-blue-600 text-white py-3 rounded-xl font-semibold shadow-lg hover:bg-blue-700 transition"
+              >
+                <Link2 size={20} /> Register
+              </button>
+            )}
+            {/* Comments */}
+            <div className="flex flex-1 flex-col gap-6 mt-6">
               <div className="flex-1 flex gap-2 items-center">
                 <input
                   type="text"
@@ -242,45 +244,42 @@ export default function EventDetails() {
                   <MessageCircle size={18} /> Comment
                 </button>
               </div>
-            </div>
-
-            {/* Animated Comments */}
-            <AnimatePresence>
-              <motion.div
-                layout
-                className="mt-6 space-y-3"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ staggerChildren: 0.1 }}
-              >
-                {comments.length > 0 ? (
-                  comments.map((c, index) => (
-                    <motion.div
-                      key={c.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.05, type: "spring" }}
-                      className="flex gap-3 items-start text-gray-700 bg-green-50 rounded-xl p-3 shadow-sm"
-                    >
-                      <UserCircle size={20} className="text-green-500 mt-1" />
-                      <div>
-                        <div className="font-semibold text-gray-800">
-                          {c.author
-                            ? `${c.author.firstName} ${c.author.lastName}`
-                            : "Anonymous"}
+              <AnimatePresence>
+                <motion.div
+                  layout
+                  className="space-y-3"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ staggerChildren: 0.1 }}
+                >
+                  {comments.length > 0 ? (
+                    comments.map((c, index) => (
+                      <motion.div
+                        key={c.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.05, type: "spring" }}
+                        className="flex gap-3 items-start text-gray-700 bg-green-50 rounded-xl p-3 shadow-sm"
+                      >
+                        <UserCircle size={20} className="text-green-500 mt-1" />
+                        <div>
+                          <div className="font-semibold text-gray-800">
+                            {c.author
+                              ? `${c.author.firstName} ${c.author.lastName}`
+                              : "Anonymous"}
+                          </div>
+                          <div className="text-gray-700">{c.content}</div>
                         </div>
-                        <div className="text-gray-700">{c.content}</div>
-                      </div>
-                    </motion.div>
-                  ))
-                ) : (
-                  <p className="text-gray-500">No comments yet.</p>
-                )}
-              </motion.div>
-            </AnimatePresence>
+                      </motion.div>
+                    ))
+                  ) : (
+                    <p className="text-gray-500">No comments yet.</p>
+                  )}
+                </motion.div>
+              </AnimatePresence>
+            </div>
           </motion.div>
         </main>
-
         {/* Fullscreen Image */}
         <AnimatePresence>
           {isFullscreen && event.imageUrls?.length > 0 && (

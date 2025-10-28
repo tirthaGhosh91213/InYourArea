@@ -50,7 +50,15 @@ export default function LocalNewsDetails() {
         </video>
       );
     }
-    return <img src={url} alt={alt} className={className} />;
+    return (
+      <img
+        src={url}
+        alt={alt}
+        className={className}
+        onClick={() => setIsFullscreen(true)} // Show fullscreen when clicked
+        style={{ cursor: "pointer" }}
+      />
+    );
   };
 
   // Swipe Gesture
@@ -180,7 +188,7 @@ export default function LocalNewsDetails() {
                 {renderMedia(
                   news.imageUrls[currentImage],
                   news.title,
-                  "w-full h-full object-cover rounded-2xl cursor-pointer transition-all duration-500 bg-black"
+                  "w-full h-full object-cover rounded-2xl transition-all duration-500 bg-black"
                 )}
                 {news.imageUrls.length > 1 && (
                   <>
@@ -355,11 +363,12 @@ export default function LocalNewsDetails() {
                   </button>
                 </>
               )}
+              {/* Fullscreen: Render media as in carousel, but with autoPlay for video */}
               {renderMedia(
                 news.imageUrls[currentImage],
                 news.title,
                 "max-h-full max-w-full object-contain rounded-lg shadow-lg bg-black",
-                true // FULLSCREEN: autoPlay video with sound
+                true
               )}
             </motion.div>
           )}

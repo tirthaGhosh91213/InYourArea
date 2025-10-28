@@ -55,12 +55,10 @@ export default function Events() {
       <header className="w-full fixed top-0 left-0 z-50 bg-white shadow-md border-b border-gray-200">
         <RightSidebar refreshEvents={fetchEvents} />
       </header>
-
       <div className="flex flex-1 pt-16 overflow-hidden">
         <aside className="hidden lg:block w-64 bg-white shadow-md border-r border-gray-200">
           <Sidebar activePage="events" />
         </aside>
-
         <main className="flex-1 p-4 sm:p-6 overflow-y-auto">
           <div className="flex justify-between items-center mb-6 flex-wrap gap-3">
             <motion.h1
@@ -71,7 +69,6 @@ export default function Events() {
             >
               Upcoming Events
             </motion.h1>
-
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
@@ -81,7 +78,6 @@ export default function Events() {
               <PlusCircle className="w-5 h-5" /> Add Event
             </motion.button>
           </div>
-
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -96,27 +92,23 @@ export default function Events() {
               onChange={(e) => setSearch(e.target.value)}
             />
           </motion.div>
-
           <div className="flex gap-2 sm:gap-3 mb-6 flex-wrap">
-            {["All", "Bokaro"].map(
-              (loc) => (
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  key={loc}
-                  className={`px-3 sm:px-4 py-1 rounded-full border text-sm sm:text-base ${
-                    filterCity === loc
-                      ? "bg-blue-600 text-white border-blue-600"
-                      : "border-gray-300 text-gray-700"
-                  }`}
-                  onClick={() => setFilterCity(loc)}
-                >
-                  {loc}
-                </motion.button>
-              )
-            )}
+            {["All", "Bokaro"].map((loc) => (
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                key={loc}
+                className={`px-3 sm:px-4 py-1 rounded-full border text-sm sm:text-base ${
+                  filterCity === loc
+                    ? "bg-blue-600 text-white border-blue-600"
+                    : "border-gray-300 text-gray-700"
+                }`}
+                onClick={() => setFilterCity(loc)}
+              >
+                {loc}
+              </motion.button>
+            ))}
           </div>
-
           <AnimatePresence>
             {loading ? (
               <motion.div className="text-gray-500 text-center">
@@ -157,7 +149,6 @@ export default function Events() {
                       {event.description?.slice(0, 100)}
                       {event.description && event.description.length > 100 ? "…" : ""}
                     </p>
-
                     <div className="mt-3 text-gray-600 text-sm flex gap-3 items-center flex-wrap">
                       <span className="flex items-center gap-1">
                         <MapPin className="w-4 h-4" /> {event.location}
@@ -178,15 +169,12 @@ export default function Events() {
                           : "-"}
                       </span>
                     </div>
-
                     <p className="text-xs text-gray-400 mt-2">
                       Posted by:{" "}
                       {event.author
                         ? `${event.author.firstName} ${event.author.lastName}`
                         : "Unknown"}
                     </p>
-
-                    {/* Comment & Register Buttons */}
                     <div className="mt-3 flex gap-2">
                       <motion.button
                         whileHover={{ scale: 1.05 }}
@@ -199,13 +187,12 @@ export default function Events() {
                       >
                         <MessageCircle className="w-4 h-4" /> Comment
                       </motion.button>
-
                       <motion.button
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         onClick={(e) => {
                           e.stopPropagation();
-                          window.open(event.registerLink, "_blank");
+                          window.open(event.reglink, "_blank");
                         }}
                         className="flex-1 flex items-center justify-center gap-2 bg-blue-600 text-white py-2 rounded-xl text-sm hover:bg-blue-700 transition"
                       >

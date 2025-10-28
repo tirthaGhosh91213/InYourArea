@@ -7,9 +7,9 @@ import {
   Search as SearchIcon,
   DollarSign,
   Calendar,
-  PlusCircle,
   MessageCircle,
   Send,
+  UserCircle,
 } from "lucide-react";
 import Sidebar from "../components/SideBar";
 import RightSidebar from "../components/RightSidebar";
@@ -67,7 +67,6 @@ export default function Jobs() {
         <div className="hidden lg:block w-64 bg-white shadow-md border-r border-gray-200">
           <Sidebar />
         </div>
-
         {/* Main Content */}
         <main className="flex-1 overflow-y-auto p-6 relative">
           {/* Header */}
@@ -115,7 +114,7 @@ export default function Jobs() {
                     className="relative rounded-2xl overflow-hidden p-5 flex flex-col justify-between bg-white/90 shadow-md border border-green-100 backdrop-blur transition-all cursor-pointer hover:bg-gradient-to-r hover:from-emerald-100 hover:via-green-50 hover:to-teal-100"
                     onClick={() => navigate(`/jobs/${job.id}`)}
                   >
-                    {/* Image slider matching Community.jsx */}
+                    {/* Image slider */}
                     {job.imageUrls?.length > 0 && (
                       <div className="relative w-full h-48 mb-4 rounded-xl overflow-hidden">
                         <img
@@ -123,7 +122,6 @@ export default function Jobs() {
                           alt={job.title}
                           className="w-full h-full object-cover rounded-xl"
                         />
-
                         {job.imageUrls.length > 1 && (
                           <>
                             <button
@@ -147,7 +145,6 @@ export default function Jobs() {
                             >
                               &#8592;
                             </button>
-
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -174,8 +171,23 @@ export default function Jobs() {
                       </div>
                     )}
 
+                    {job.author && (
+                      <div className="mt-2 mb-5 flex items-center gap-2 text-gray-500 ">
+                        <UserCircle size={16} className="text-green-700" />
+                        <span className="">
+                          Posted by:{" "}
+                          <span className="font-semibold text-gray-700">
+                            {job.author.firstName} {job.author.lastName}
+                          </span>
+                          {job.author.role && (
+                            <span className="ml-1 text-emerald-700">({job.author.role})</span>
+                          )}
+                        </span>
+                      </div>
+                    )}
+
                     <div className="mb-3">
-                      <h2 className="text-xl font-semibold text-gray-800">{job.title}</h2>
+                      <h2 className=" pb-5 font-semibold text-gray-800">{job.title}</h2>
                       <p className="text-sm text-emerald-700 flex items-center gap-1">
                         <Building2 size={14} /> {job.company}
                       </p>
@@ -189,25 +201,25 @@ export default function Jobs() {
                         <DollarSign size={16} className="text-yellow-600" /> {job.salaryRange}
                       </p>
                       <p className="flex items-center gap-2">
-                        <Calendar size={16} className="text-blue-600" />{" "}
-                        {formatDate(job.applicationDeadline)}
+                        <Calendar size={16} className="text-blue-600" /> {formatDate(job.applicationDeadline)}
                       </p>
                     </div>
 
-                    {/* Buttons */}
+                    {/* Author */}
+                    
+
                     <div className="mt-4 flex justify-between items-center border-t pt-3 border-emerald-200">
                       <motion.button
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.95 }}
                         onClick={(e) => {
                           e.stopPropagation();
-                          window.open(job.applyLink, "_blank");
+                          window.open(job.reglink || "", "_blank");
                         }}
                         className="flex items-center gap-2 text-green-700 font-semibold hover:text-teal-700 transition"
                       >
                         <Send size={18} /> Apply Now
                       </motion.button>
-
                       <motion.div className="flex items-center gap-2 text-gray-500 hover:text-emerald-600 transition">
                         <MessageCircle size={18} /> Comment
                       </motion.div>
@@ -225,9 +237,6 @@ export default function Jobs() {
               No results found for <span className="font-semibold">"{searchTerm}"</span>
             </motion.p>
           )}
-
-          {/* Floating Post Button */}
-         
         </main>
       </div>
     </>

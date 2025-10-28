@@ -10,7 +10,6 @@ import {
   ChevronLeft,
   ChevronRight,
   X,
-  UserCircle,
 } from "lucide-react";
 import axios from "axios";
 import { toast } from "react-toastify";
@@ -44,16 +43,12 @@ export default function JobDetails() {
 
   const prevImage = () => {
     if (!job?.imageUrls) return;
-    setCurrentImage((prev) =>
-      prev === 0 ? job.imageUrls.length - 1 : prev - 1
-    );
+    setCurrentImage((prev) => (prev === 0 ? job.imageUrls.length - 1 : prev - 1));
   };
 
   const nextImage = () => {
     if (!job?.imageUrls) return;
-    setCurrentImage((prev) =>
-      prev === job.imageUrls.length - 1 ? 0 : prev + 1
-    );
+    setCurrentImage((prev) => (prev === job.imageUrls.length - 1 ? 0 : prev + 1));
   };
 
   const fetchJob = async () => {
@@ -132,7 +127,6 @@ export default function JobDetails() {
             animate={{ opacity: 1, y: 0 }}
             className="max-w-3xl mx-auto bg-white rounded-3xl shadow-2xl p-6 space-y-6 border border-green-200"
           >
-            {/* Image Slider */}
             {job.imageUrls?.length > 0 && (
               <div className="relative w-full h-64 md:h-80 rounded-2xl overflow-hidden shadow-lg">
                 <img
@@ -160,7 +154,6 @@ export default function JobDetails() {
               </div>
             )}
 
-            {/* Job Info */}
             <div className="flex justify-between items-center text-gray-700">
               <div className="flex items-center gap-3">
                 <Building2 size={24} className="text-green-600" />
@@ -168,9 +161,7 @@ export default function JobDetails() {
                   <div className="font-semibold text-gray-800">{job.company}</div>
                   <div className="text-sm text-gray-500 flex items-center gap-1">
                     <Calendar size={14} /> Deadline:
-                    <span className="text-red-500">
-                      {job.applicationDeadline}
-                    </span>
+                    <span className="text-red-500">{job.applicationDeadline}</span>
                   </div>
                 </div>
               </div>
@@ -181,7 +172,6 @@ export default function JobDetails() {
 
             <h1 className="text-3xl font-bold text-gray-800">{job.title}</h1>
 
-            {/* Description with See More */}
             <div className="relative">
               <div
                 className={`text-gray-700 whitespace-pre-line leading-relaxed text-lg transition-all duration-500 ${
@@ -198,21 +188,17 @@ export default function JobDetails() {
               </button>
             </div>
 
-            {/* Apply Button */}
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              onClick={() => window.open(job.applyLink, "_blank")}
+              onClick={() => window.open(job.reglink || "", "_blank")}
               className="inline-block bg-emerald-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-emerald-700 transition shadow-md mb-6"
             >
               Apply Now
             </motion.button>
 
-            {/* Comments Section */}
             <div className="mt-8">
-              <h3 className="text-2xl font-semibold text-gray-800 mb-4">
-                💬 Comments
-              </h3>
+              <h3 className="text-2xl font-semibold text-gray-800 mb-4">💬 Comments</h3>
 
               <div className="flex gap-3 mb-6">
                 <input
@@ -257,9 +243,7 @@ export default function JobDetails() {
                         <div className="flex-1">
                           <div className="flex justify-between items-center">
                             <h4 className="font-semibold text-gray-800">
-                              {c.author
-                                ? `${c.author.firstName} ${c.author.lastName}`
-                                : "Anonymous"}
+                              {c.author ? `${c.author.firstName} ${c.author.lastName}` : "Anonymous"}
                             </h4>
                             <span className="text-xs text-gray-500 italic">
                               {new Date(c.createdAt).toLocaleDateString("en-GB", {
@@ -276,9 +260,7 @@ export default function JobDetails() {
                       </motion.div>
                     ))
                   ) : (
-                    <p className="text-gray-500 text-center italic">
-                      No comments yet. Be the first to share your thoughts!
-                    </p>
+                    <p className="text-gray-500 text-center italic">No comments yet. Be the first to share your thoughts!</p>
                   )}
                 </motion.div>
               </AnimatePresence>
@@ -286,7 +268,6 @@ export default function JobDetails() {
           </motion.div>
         </main>
 
-        {/* Fullscreen Viewer */}
         <AnimatePresence>
           {isFullscreen && job.imageUrls?.length > 0 && (
             <motion.div

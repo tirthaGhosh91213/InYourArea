@@ -77,12 +77,6 @@ export default function Footer() {
         <div className="flex flex-col items-start gap-2">
           <img src={logo} alt="Local News Logo" className="h-20 mb-1 drop-shadow" draggable={false} />
           <span className="text-green-600 text-base font-bold">Jharkhand & Bihar Local News</span>
-          {/* <div className="mt-2 flex items-center gap-2">
-            <a href={companyLinks.linkedin} target="_blank" rel="noopener" title="LinkedIn" className="hover:scale-110 transition"><FaLinkedin size={18} /></a>
-            <a href={companyLinks.website} target="_blank" rel="noopener" title="Website" className="hover:scale-110 transition"><FaGlobe size={18} /></a>
-            <a href={companyLinks.twitter} target="_blank" rel="noopener" title="Twitter" className="hover:scale-110 transition"><FaTwitter size={18} /></a>
-            <a href={companyLinks.instagram} target="_blank" rel="noopener" title="Instagram" className="hover:scale-110 transition"><FaInstagram size={18} /></a>
-          </div> */}
           <ul className="space-y-1 mt-3 text-sm">
             {quickLinks.map((link, i) => (
               <li key={i}>{link}</li>

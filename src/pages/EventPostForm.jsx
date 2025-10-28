@@ -12,6 +12,7 @@ export default function CreateEventPost() {
     location: "",
     date: "",
     time: "",
+    reglink: "",
     description: "",
     images: [],
   });
@@ -25,7 +26,10 @@ export default function CreateEventPost() {
         file,
         preview: URL.createObjectURL(file),
       }));
-      setFormData((prev) => ({ ...prev, images: [...prev.images, ...newImages] }));
+      setFormData((prev) => ({
+        ...prev,
+        images: [...prev.images, ...newImages],
+      }));
     } else {
       setFormData({ ...formData, [name]: value });
     }
@@ -46,6 +50,19 @@ export default function CreateEventPost() {
       return;
     }
 
+    if (!formData.reglink.trim()) {
+      toast.error("Please add a registration link!");
+      return;
+    }
+
+    if (!formData.date || !formData.time) {
+      toast.error("Please provide both date and time!");
+      return;
+    }
+
+    // Combine to ISO 8601 string (e.g., 2025-11-14T19:00:00)
+    const eventDate = `${formData.date}T${formData.time}:00`;
+
     setLoading(true);
     try {
       const data = new FormData();
@@ -54,9 +71,9 @@ export default function CreateEventPost() {
         JSON.stringify({
           title: formData.title,
           location: formData.location,
-          date: formData.date,
-          time: formData.time,
+          eventDate: eventDate,
           description: formData.description,
+          reglink: formData.reglink,
         })
       );
 
@@ -78,6 +95,7 @@ export default function CreateEventPost() {
           location: "",
           date: "",
           time: "",
+          reglink: "",
           description: "",
           images: [],
         });
@@ -116,6 +134,14 @@ export default function CreateEventPost() {
             value={formData.location}
             onChange={handleChange}
             placeholder="Event Location"
+            className="w-full border px-4 py-2 rounded-lg focus:ring-2 focus:ring-green-400"
+            required
+          />
+          <input
+            name="reglink"
+            value={formData.reglink}
+            onChange={handleChange}
+            placeholder="Registration Link"
             className="w-full border px-4 py-2 rounded-lg focus:ring-2 focus:ring-green-400"
             required
           />
