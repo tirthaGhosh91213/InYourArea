@@ -21,6 +21,7 @@ import UserDashboard from "./components/UserDashboard";
 import RightSidebar from "./components/RightSidebar";
 import LocalNewsDetails from "./pages/LocalNewsDetails";
 import EmailService from "./components/EmailService";
+import GoogleCallback from "./pages/GoogleCallback";
 
 // ✅ Home component
 function Home() {
@@ -60,6 +61,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/localnews/:district" element={<LocalNews />} />
+        <Route path="/auth/google/callback" element={<GoogleCallback />} />
 
         <Route path="/community" element={<Community />} />
         <Route path="/jobs" element={<Jobs />} />
