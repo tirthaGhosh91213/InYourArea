@@ -94,16 +94,15 @@ export default function LocalNews() {
   const handleNewsClick = (id) => navigate(`/localnews/details/${id}`);
   const handleCommentClick = (id) => navigate(`/localnews/details/${id}`);
 
+  // NEW: Desktop layout logic changed as per instructions
   const getDesktopNewsLayout = () => {
-    const len = newsList.length;
-    if (len === 1) return { large: newsList, small: [] };
-    if (len === 2) return { large: newsList, small: [] };
-    if (len === 3) return { large: [newsList[0]], small: [newsList[1], newsList[2]] };
-    if (len >= 4) return { large: [newsList[0], newsList[1]], small: [newsList[2], newsList[3]] };
-    return { large: [], small: [] };
+    // First 2 = big boxes, next 2 = small boxes, remaining big boxes below
+    const bigTop = newsList.slice(0, 2); // large first two
+    const smallBoxes = newsList.slice(2, 4); // small next two
+    const bigMore = newsList.slice(4); // remaining as additional big boxes
+    return { bigTop, smallBoxes, bigMore };
   };
-
-  const { large: largeBoxNews, small: smallBoxNews } = getDesktopNewsLayout();
+  const { bigTop, smallBoxes, bigMore } = getDesktopNewsLayout();
 
   // Helper to render first media item (image or video)
   const renderMedia = (url, alt, className) => {
@@ -205,11 +204,11 @@ export default function LocalNews() {
               </div>
               {/* Desktop: two column grid */}
               <div className="w-full max-w-6xl hidden lg:grid grid-cols-[2fr_1fr] gap-6 items-start">
-                {/* Left Side: Large Boxes */}
+                {/* Left Side: Big Boxes - show first 2 + all after 4 */}
                 <div className="flex flex-col gap-6">
-                  {largeBoxNews.map((news, i) => (
+                  {bigTop.map((news, i) => (
                     <motion.div
-                      key={news.id || i}
+                      key={news.id || `big-top-${i}`}
                       className="relative rounded-3xl overflow-hidden shadow-lg border border-green-100 cursor-pointer group"
                       onClick={() => handleNewsClick(news.id)}
                       initial={{ opacity: 0, y: 40 }}
@@ -253,18 +252,64 @@ export default function LocalNews() {
                       </div>
                     </motion.div>
                   ))}
+                  {bigMore.map((news, i) => (
+                    <motion.div
+                      key={news.id || `big-more-${i}`}
+                      className="relative rounded-3xl overflow-hidden shadow-lg border border-green-100 cursor-pointer group"
+                      onClick={() => handleNewsClick(news.id)}
+                      initial={{ opacity: 0, y: 40 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: (bigTop.length + i) * 0.05 }}
+                      style={{ height: "520px" }}
+                    >
+                      {Array.isArray(news.imageUrls) && news.imageUrls.length > 0 &&
+                        renderMedia(
+                          news.imageUrls[0],
+                          news.title,
+                          "w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        )}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent" />
+                      <div className="absolute bottom-0 p-6 text-white">
+                        <h3
+                          className="text-2xl font-bold mb-2 capitalize"
+                          dangerouslySetInnerHTML={{ __html: news.title }}
+                        />
+                        <div
+                          className="text-sm text-gray-200 mb-3 line-clamp-2"
+                          dangerouslySetInnerHTML={{ __html: news.content }}
+                        />
+                        <div className="flex items-center justify-between text-gray-300 text-sm mb-3">
+                          <span>
+                            {news.author?.firstName} {news.author?.lastName}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Clock size={14} /> {formatDate(news.createdAt)}
+                          </span>
+                        </div>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleCommentClick(news.id);
+                          }}
+                          className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium px-4 py-2 rounded-lg shadow-md transition-all"
+                        >
+                          <MessageSquare size={16} /> Comment
+                        </button>
+                      </div>
+                    </motion.div>
+                  ))}
                 </div>
-                {/* Right Side: Small Boxes */}
-                {smallBoxNews.length > 0 && (
+                {/* Right Side: Small Boxes - only news[2] and news[3] */}
+                {smallBoxes.length > 0 && (
                   <div className="flex flex-col gap-6 sticky top-24 h-[520px]">
-                    {smallBoxNews.map((news, i) => (
+                    {smallBoxes.map((news, i) => (
                       <motion.div
-                        key={news.id || i}
+                        key={news.id || `small-${i}`}
                         className="relative rounded-2xl overflow-hidden shadow-md border border-green-100 cursor-pointer group flex-1"
                         onClick={() => handleNewsClick(news.id)}
                         initial={{ opacity: 0, y: 40 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: i * 0.05 }}
+                        transition={{ delay: (bigTop.length + i) * 0.05 }}
                       >
                         {Array.isArray(news.imageUrls) && news.imageUrls.length > 0 &&
                           renderMedia(
