@@ -9,7 +9,7 @@ import {
   UserCircle,
   Calendar,
   MapPin,
-  Send
+  Send,
 } from "lucide-react";
 import axios from "axios";
 import { toast } from "react-toastify";
@@ -31,7 +31,6 @@ export default function CommunityDetails() {
   const touchStartX = useRef(0);
   const touchEndX = useRef(0);
 
-  // Helper: Render either <img> or <video>
   const renderMedia = (url, alt, className, isFullscreen = false) => {
     if (
       url &&
@@ -63,7 +62,6 @@ export default function CommunityDetails() {
     );
   };
 
-  // Swipe Gesture
   const handleTouchStart = (e) =>
     (touchStartX.current = e.changedTouches[0].screenX);
   const handleTouchEnd = (e) => {
@@ -97,10 +95,9 @@ export default function CommunityDetails() {
       month: "short",
       year: "numeric",
       hour: "2-digit",
-      minute: "2-digit"
+      minute: "2-digit",
     });
 
-  // Fetch Community Post
   useEffect(() => {
     const fetchPost = async () => {
       try {
@@ -108,7 +105,7 @@ export default function CommunityDetails() {
         const res = await axios.get(
           `http://jharkhand-alb-221425706.ap-south-1.elb.amazonaws.com/api/v1/community/${id}`,
           {
-            headers: { Authorization: `Bearer ${token}` }
+            headers: { Authorization: `Bearer ${token}` },
           }
         );
         if (res.data.success) setPost(res.data.data);
@@ -126,7 +123,6 @@ export default function CommunityDetails() {
     fetchPost();
   }, [id, token, navigate]);
 
-  // Fetch Comments
   const fetchComments = async () => {
     try {
       const res = await axios.get(
@@ -144,7 +140,6 @@ export default function CommunityDetails() {
     if (token) fetchComments();
   }, [id, token]);
 
-  // Post Comment Handler
   const handlePostComment = async () => {
     if (!commentText.trim()) {
       toast.warning("Comment cannot be empty!");
@@ -183,8 +178,7 @@ export default function CommunityDetails() {
   return (
     <>
       <div className="flex h-screen bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden">
-        <main className="flex-1 overflow-y-auto p-6 relative">
-          {/* Back Button */}
+        <main className="flex-1 overflow-y-auto p-4 md:p-6 relative">
           <motion.button
             whileHover={{ scale: 1.05 }}
             onClick={() => navigate(-1)}
@@ -193,16 +187,14 @@ export default function CommunityDetails() {
             <ArrowLeft size={20} /> Back
           </motion.button>
 
-          {/* Post Card */}
           <motion.div
             layout
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
-            className="max-w-3xl mx-auto bg-white rounded-3xl shadow-2xl p-6 space-y-6 border border-green-200"
+            className="max-w-3xl mx-auto bg-white rounded-3xl shadow-2xl p-4 md:p-6 space-y-6 border border-green-200"
           >
-            {/* Image/Video Carousel */}
             {post.imageUrls?.length > 0 && (
-              <div className="relative w-full h-64 md:h-80 rounded-2xl overflow-hidden shadow-lg">
+              <div className="relative w-full h-60 sm:h-72 md:h-80 rounded-2xl overflow-hidden shadow-lg">
                 {renderMedia(
                   post.imageUrls[currentImage],
                   post.title,
@@ -212,13 +204,13 @@ export default function CommunityDetails() {
                   <>
                     <button
                       onClick={prevImage}
-                      className="absolute top-1/2 left-3 transform -translate-y-1/2 bg-white/70 text-green-700 p-2 rounded-full hover:bg-white/90 transition"
+                      className="absolute top-1/2 left-2 sm:left-3 -translate-y-1/2 bg-white/70 text-green-700 p-2 rounded-full hover:bg-white/90 transition"
                     >
                       <ChevronLeft size={24} />
                     </button>
                     <button
                       onClick={nextImage}
-                      className="absolute top-1/2 right-3 transform -translate-y-1/2 bg-white/70 text-green-700 p-2 rounded-full hover:bg-white/90 transition"
+                      className="absolute top-1/2 right-2 sm:right-3 -translate-y-1/2 bg-white/70 text-green-700 p-2 rounded-full hover:bg-white/90 transition"
                     >
                       <ChevronRight size={24} />
                     </button>
@@ -227,35 +219,35 @@ export default function CommunityDetails() {
               </div>
             )}
 
-            {/* Author Info */}
-            <div className="flex justify-between items-center text-gray-700">
-              <div className="flex items-center gap-3">
-                <UserCircle size={24} className="text-green-600" />
+            {/* AUTHOR INFO responsive: column on mobile, row on md+ */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4 text-gray-700">
+              <div className="flex flex-row items-center gap-3 order-1">
+                <UserCircle size={24} className="text-green-600 flex-shrink-0" />
                 <div>
-                  <div className="font-semibold text-gray-800">
+                  <div className="font-semibold text-gray-800 text-base sm:text-lg">
                     {post.author
                       ? `${post.author.firstName} ${post.author.lastName}`
                       : "Unknown Author"}
                   </div>
                   <div className="text-sm text-gray-500 flex items-center gap-1">
-                    <Calendar size={14} /> {formatDate(post.createdAt)}
+                    <Calendar size={14} className="shrink-0" />
+                    {formatDate(post.createdAt)}
                   </div>
                 </div>
               </div>
-              <div className="flex items-center gap-1 text-gray-500 text-sm">
-                <MapPin size={16} className="text-green-600" />{" "}
+              <div className="flex items-center gap-1 text-sm text-gray-500 order-2 sm:order-3 mt-1 sm:mt-0">
+                <MapPin size={16} className="text-green-600 flex-shrink-0" />
                 {post.location || "Unknown Location"}
               </div>
             </div>
 
-            {/* Title & Content */}
             <h1
-              className="text-3xl font-bold text-gray-800"
+              className="text-2xl md:text-3xl font-bold text-gray-800"
               dangerouslySetInnerHTML={{ __html: post.title }}
             />
             <div className="relative">
               <div
-                className={`text-gray-700 whitespace-pre-line leading-relaxed text-lg transition-all duration-500 ${
+                className={`text-gray-700 whitespace-pre-line leading-relaxed text-base md:text-lg transition-all duration-500 ${
                   isExpanded ? "" : "line-clamp-4"
                 }`}
                 dangerouslySetInnerHTML={{ __html: post.content }}
@@ -268,13 +260,11 @@ export default function CommunityDetails() {
               </button>
             </div>
 
-            {/* Comments Section */}
             <div className="pt-6 border-t border-gray-200">
-              <h2 className="text-2xl font-semibold text-gray-800 mb-4">
+              <h2 className="text-xl md:text-2xl font-semibold text-gray-800 mb-4">
                 💬 Comments
               </h2>
 
-              {/* Comment Input */}
               <div className="flex flex-col sm:flex-row items-center gap-3 mb-6">
                 <textarea
                   value={commentText}
@@ -295,7 +285,6 @@ export default function CommunityDetails() {
                 </motion.button>
               </div>
 
-              {/* Comments List */}
               <AnimatePresence>
                 <motion.div
                   layout
@@ -313,7 +302,7 @@ export default function CommunityDetails() {
                         transition={{
                           delay: index * 0.05,
                           type: "spring",
-                          stiffness: 80
+                          stiffness: 80,
                         }}
                         className="bg-white p-4 rounded-2xl shadow-md flex items-start gap-4 border border-green-100 hover:shadow-lg transition-transform duration-300 hover:scale-[1.01]"
                       >
@@ -321,7 +310,7 @@ export default function CommunityDetails() {
                           {(c.author?.firstName?.[0] || "U").toUpperCase()}
                         </div>
                         <div className="flex-1">
-                          <div className="flex justify-between items-center">
+                          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center">
                             <h4 className="font-semibold text-gray-800">
                               {c.author
                                 ? `${c.author.firstName} ${c.author.lastName}`
@@ -348,7 +337,6 @@ export default function CommunityDetails() {
           </motion.div>
         </main>
 
-        {/* Fullscreen Media */}
         <AnimatePresence>
           {isFullscreen && post.imageUrls?.length > 0 && (
             <motion.div
