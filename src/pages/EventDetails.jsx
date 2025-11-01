@@ -68,7 +68,7 @@ export default function EventDetails() {
   const fetchEvent = async () => {
     try {
       setLoading(true);
-      const res = await axios.get(`http://localhost:8000/api/v1/events/${id}`, {
+      const res = await axios.get(`http://jharkhand-alb-221425706.ap-south-1.elb.amazonaws.com/api/v1/events/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.data.success) setEvent(res.data.data);
@@ -82,7 +82,7 @@ export default function EventDetails() {
   const fetchComments = async () => {
     try {
       const res = await axios.get(
-        `http://localhost:8000/api/v1/comments/events/${id}`,
+        `http://jharkhand-alb-221425706.ap-south-1.elb.amazonaws.com/api/v1/comments/events/${id}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (res.data.success) setComments(res.data.data);
@@ -95,7 +95,7 @@ export default function EventDetails() {
     if (!commentText.trim()) return toast.error("Comment cannot be empty");
     try {
       const res = await axios.post(
-        `http://localhost:8000/api/v1/comments/events/${id}`,
+        `http://jharkhand-alb-221425706.ap-south-1.elb.amazonaws.com/api/v1/comments/events/${id}`,
         { content: commentText },
         { headers: { Authorization: `Bearer ${token}` } }
       );

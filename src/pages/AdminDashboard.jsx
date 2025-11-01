@@ -18,7 +18,7 @@ import {
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 
-const BASE_API = "http://localhost:8000/api/v1";
+const BASE_API = "http://jharkhand-alb-221425706.ap-south-1.elb.amazonaws.com/api/v1";
 const TABS = [
   { key: "events", label: "Events" },
   { key: "jobs", label: "Jobs" },
