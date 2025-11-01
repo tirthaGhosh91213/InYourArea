@@ -96,7 +96,7 @@ export default function LocalNewsDetails() {
       try {
         setLoading(true);
         const res = await axios.get(
-          `http://localhost:8000/api/v1/district-news/details/${id}`
+          `http://jharkhand-alb-221425706.ap-south-1.elb.amazonaws.com/api/v1/district-news/details/${id}`
         );
         if (res.data.success) setNews(res.data.data);
       } catch {
@@ -112,7 +112,7 @@ export default function LocalNewsDetails() {
   const fetchComments = async () => {
     try {
       const res = await axios.get(
-        `http://localhost:8000/api/v1/comments/district-news/${id}`
+        `http://jharkhand-alb-221425706.ap-south-1.elb.amazonaws.com/api/v1/comments/district-news/${id}`
       );
       if (res.data.success) setComments(res.data.data);
     } catch {
@@ -140,7 +140,7 @@ export default function LocalNewsDetails() {
     try {
       setPosting(true);
       const res = await axios.post(
-        `http://localhost:8000/api/v1/comments/district-news/${id}`,
+        `http://jharkhand-alb-221425706.ap-south-1.elb.amazonaws.com/api/v1/comments/district-news/${id}`,
         { content: commentText },
         { headers: { Authorization: `Bearer ${token}` } }
       );

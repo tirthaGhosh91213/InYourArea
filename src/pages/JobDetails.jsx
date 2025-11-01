@@ -54,7 +54,7 @@ export default function JobDetails() {
   const fetchJob = async () => {
     try {
       setLoading(true);
-      const res = await axios.get(`http://localhost:8000/api/v1/jobs`, {
+      const res = await axios.get(`http://jharkhand-alb-221425706.ap-south-1.elb.amazonaws.com/api/v1/jobs`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const foundJob = res.data.data.find((j) => j.id.toString() === id);
@@ -69,7 +69,7 @@ export default function JobDetails() {
   const fetchComments = async () => {
     try {
       const res = await axios.get(
-        `http://localhost:8000/api/v1/comments/jobs/${id}`,
+        `http://jharkhand-alb-221425706.ap-south-1.elb.amazonaws.com/api/v1/comments/jobs/${id}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (res.data.success) setComments(res.data.data);
@@ -82,7 +82,7 @@ export default function JobDetails() {
     if (!commentText.trim()) return toast.error("Comment cannot be empty");
     try {
       const res = await axios.post(
-        `http://localhost:8000/api/v1/comments/jobs/${id}`,
+        `http://jharkhand-alb-221425706.ap-south-1.elb.amazonaws.com/api/v1/comments/jobs/${id}`,
         { content: commentText },
         { headers: { Authorization: `Bearer ${token}` } }
       );

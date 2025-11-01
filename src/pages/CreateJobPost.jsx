@@ -77,7 +77,7 @@ export default function CreateJobPost() {
 
       const accessToken = localStorage.getItem("accessToken");
 
-      const res = await axios.post("http://localhost:8000/api/v1/jobs", data, {
+      const res = await axios.post("http://jharkhand-alb-221425706.ap-south-1.elb.amazonaws.com/api/v1/jobs", data, {
         headers: {
           "Content-Type": "multipart/form-data",
           Authorization: `Bearer ${accessToken}`,

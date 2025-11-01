@@ -4,7 +4,7 @@ import axios from "axios";
 import { ArrowLeft, MapPin, Calendar, User, ChevronLeft, ChevronRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-const BASE_API = "http://localhost:8000/api/v1";
+const BASE_API = "http://jharkhand-alb-221425706.ap-south-1.elb.amazonaws.com/api/v1";
 
 export default function AdminItemDetail() {
   const { type, id } = useParams();

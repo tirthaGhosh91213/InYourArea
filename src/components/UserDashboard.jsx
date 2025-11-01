@@ -90,7 +90,7 @@ export default function UserDashboard() {
 
   const fetchProfile = async () => {
     try {
-      const res = await axios.get("http://localhost:8000/api/v1/user/profile", {
+      const res = await axios.get("http://jharkhand-alb-221425706.ap-south-1.elb.amazonaws.com/api/v1/user/profile", {
         headers,
       });
       setProfile(res.data.data);
@@ -107,7 +107,7 @@ export default function UserDashboard() {
 
   const fetchStats = async () => {
     try {
-      const res = await axios.get("http://localhost:8000/api/v1/user/stats", {
+      const res = await axios.get("http://jharkhand-alb-221425706.ap-south-1.elb.amazonaws.com/api/v1/user/stats", {
         headers,
       });
       setStats(res.data.data);
@@ -120,7 +120,7 @@ export default function UserDashboard() {
   const fetchContent = async () => {
     try {
       const res = await axios.get(
-        "http://localhost:8000/api/v1/user/my-content",
+        "http://jharkhand-alb-221425706.ap-south-1.elb.amazonaws.com/api/v1/user/my-content",
         { headers }
       );
       setContent(res.data.data);
@@ -133,7 +133,7 @@ export default function UserDashboard() {
   const fetchComments = async () => {
     try {
       const res = await axios.get(
-        "http://localhost:8000/api/v1/user/my-comments",
+        "http://jharkhand-alb-221425706.ap-south-1.elb.amazonaws.com/api/v1/user/my-comments",
         { headers }
       );
       setComments(res.data.data);
@@ -150,7 +150,7 @@ export default function UserDashboard() {
     setLoading(true);
     try {
       const res = await axios.put(
-        "http://localhost:8000/api/v1/user/profile",
+        "http://jharkhand-alb-221425706.ap-south-1.elb.amazonaws.com/api/v1/user/profile",
         formData,
         { headers }
       );
@@ -168,8 +168,8 @@ export default function UserDashboard() {
   const handleImageSelect = (e) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error("Image size should be less than 5MB");
+      if (file.size > 20 * 1024 * 1024) {
+        toast.error("Image size should be less than 20MB");
         return;
       }
       setSelectedImage(file);
@@ -234,7 +234,7 @@ export default function UserDashboard() {
       const formDataObj = new FormData();
       formDataObj.append("image", croppedBlob, "profile.jpg");
       await axios.put(
-        "http://localhost:8000/api/v1/user/profile/image",
+        "http://jharkhand-alb-221425706.ap-south-1.elb.amazonaws.com/api/v1/user/profile/image",
         formDataObj,
         {
           headers: { ...headers, "Content-Type": "multipart/form-data" },
@@ -248,7 +248,7 @@ export default function UserDashboard() {
       setRotation(0);
       // Fetch updated profile to get new image
       const profileRes = await axios.get(
-        "http://localhost:8000/api/v1/user/profile",
+        "http://jharkhand-alb-221425706.ap-south-1.elb.amazonaws.com/api/v1/user/profile",
         { headers }
       );
       const newImageUrl =
@@ -275,12 +275,12 @@ export default function UserDashboard() {
   const handleView = async (type, id) => {
     try {
       let url = "";
-      if (type === "events") url = `http://localhost:8000/api/v1/events/${id}`;
-      else if (type === "jobs") url = `http://localhost:8000/api/v1/jobs/${id}`;
+      if (type === "events") url = `http://jharkhand-alb-221425706.ap-south-1.elb.amazonaws.com/api/v1/events/${id}`;
+      else if (type === "jobs") url = `http://jharkhand-alb-221425706.ap-south-1.elb.amazonaws.com/api/v1/jobs/${id}`;
       else if (type === "community")
-        url = `http://localhost:8000/api/v1/community/${id}`;
+        url = `http://jharkhand-alb-221425706.ap-south-1.elb.amazonaws.com/api/v1/community/${id}`;
       else if (type === "localNews")
-        url = `http://localhost:8000/api/v1/district-news/details/${id}`;
+        url = `http://jharkhand-alb-221425706.ap-south-1.elb.amazonaws.com/api/v1/district-news/details/${id}`;
       const res = await axios.get(url, { headers });
       setModalContent(res.data.data);
       setModalType(type);
@@ -300,12 +300,12 @@ export default function UserDashboard() {
     const { type, id } = deleteTarget;
     try {
       let url = "";
-      if (type === "events") url = `http://localhost:8000/api/v1/events/${id}`;
-      if (type === "jobs") url = `http://localhost:8000/api/v1/jobs/${id}`;
+      if (type === "events") url = `http://jharkhand-alb-221425706.ap-south-1.elb.amazonaws.com/api/v1/events/${id}`;
+      if (type === "jobs") url = `http://jharkhand-alb-221425706.ap-south-1.elb.amazonaws.com/api/v1/jobs/${id}`;
       if (type === "community")
-        url = `http://localhost:8000/api/v1/community/${id}`;
+        url = `http://jharkhand-alb-221425706.ap-south-1.elb.amazonaws.com/api/v1/community/${id}`;
       if (type === "localNews")
-        url = `http://localhost:8000/api/v1/district-news/${id}`;
+        url = `http://jharkhand-alb-221425706.ap-south-1.elb.amazonaws.com/api/v1/district-news/${id}`;
       await axios.delete(url, { headers });
       toast.success("Deleted successfully!");
       setDeleteConfirmOpen(false);
@@ -329,7 +329,7 @@ export default function UserDashboard() {
     setLoading(true);
     try {
       await axios.put(
-        `http://localhost:8000/api/v1/district-news/${editNewsId}`,
+        `http://jharkhand-alb-221425706.ap-south-1.elb.amazonaws.com/api/v1/district-news/${editNewsId}`,
         editNewsData,
         { headers }
       );
