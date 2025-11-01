@@ -133,7 +133,7 @@ export default function LocalNews() {
             <div>
               <h2 className="text-xl sm:text-2xl font-bold">Local District News</h2>
               <p className="text-emerald-200 mt-1">
-                Latest updates from {district || "your district"} (Last 5 Days)
+                Latest updates from {district || "your district"}
               </p>
             </div>
             {/* Select input removed as requested */}
