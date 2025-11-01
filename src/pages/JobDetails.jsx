@@ -43,20 +43,27 @@ export default function JobDetails() {
 
   const prevImage = () => {
     if (!job?.imageUrls) return;
-    setCurrentImage((prev) => (prev === 0 ? job.imageUrls.length - 1 : prev - 1));
+    setCurrentImage((prev) =>
+      prev === 0 ? job.imageUrls.length - 1 : prev - 1
+    );
   };
 
   const nextImage = () => {
     if (!job?.imageUrls) return;
-    setCurrentImage((prev) => (prev === job.imageUrls.length - 1 ? 0 : prev + 1));
+    setCurrentImage((prev) =>
+      prev === job.imageUrls.length - 1 ? 0 : prev + 1
+    );
   };
 
   const fetchJob = async () => {
     try {
       setLoading(true);
-      const res = await axios.get(`http://jharkhand-alb-221425706.ap-south-1.elb.amazonaws.com/api/v1/jobs`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await axios.get(
+        `http://jharkhand-alb-221425706.ap-south-1.elb.amazonaws.com/api/v1/jobs`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
       const foundJob = res.data.data.find((j) => j.id.toString() === id);
       setJob(foundJob);
     } catch {
@@ -112,7 +119,7 @@ export default function JobDetails() {
   return (
     <>
       <div className="flex h-screen bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden">
-        <main className="flex-1 overflow-y-auto p-6 relative">
+        <main className="flex-1 overflow-y-auto p-4 md:p-6 relative">
           <motion.button
             whileHover={{ scale: 1.05 }}
             onClick={() => navigate(-1)}
@@ -120,15 +127,14 @@ export default function JobDetails() {
           >
             <ArrowLeft size={20} /> Back
           </motion.button>
-
           <motion.div
             layout
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
-            className="max-w-3xl mx-auto bg-white rounded-3xl shadow-2xl p-6 space-y-6 border border-green-200"
+            className="max-w-3xl mx-auto bg-white rounded-3xl shadow-2xl p-4 md:p-6 space-y-6 border border-green-200"
           >
             {job.imageUrls?.length > 0 && (
-              <div className="relative w-full h-64 md:h-80 rounded-2xl overflow-hidden shadow-lg">
+              <div className="relative w-full h-60 sm:h-72 md:h-80 rounded-2xl overflow-hidden shadow-lg">
                 <img
                   src={job.imageUrls[currentImage]}
                   alt={job.title}
@@ -139,13 +145,13 @@ export default function JobDetails() {
                   <>
                     <button
                       onClick={prevImage}
-                      className="absolute top-1/2 left-3 -translate-y-1/2 bg-white/70 text-green-700 p-2 rounded-full hover:bg-white/90 transition"
+                      className="absolute top-1/2 left-2 sm:left-3 -translate-y-1/2 bg-white/70 text-green-700 p-2 rounded-full hover:bg-white/90 transition"
                     >
                       <ChevronLeft size={24} />
                     </button>
                     <button
                       onClick={nextImage}
-                      className="absolute top-1/2 right-3 -translate-y-1/2 bg-white/70 text-green-700 p-2 rounded-full hover:bg-white/90 transition"
+                      className="absolute top-1/2 right-2 sm:right-3 -translate-y-1/2 bg-white/70 text-green-700 p-2 rounded-full hover:bg-white/90 transition"
                     >
                       <ChevronRight size={24} />
                     </button>
@@ -153,33 +159,46 @@ export default function JobDetails() {
                 )}
               </div>
             )}
-
-            <div className="flex justify-between items-center text-gray-700">
-              <div className="flex items-center gap-3">
-                <Building2 size={24} className="text-green-600" />
+            {/* Responsive Job Info */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4 text-gray-700">
+              <div className="flex flex-row items-center gap-3 order-1">
+                <Building2 size={24} className="text-green-600 flex-shrink-0" />
                 <div>
-                  <div className="font-semibold text-gray-800">{job.company}</div>
+                  <div className="font-semibold text-gray-800 text-base sm:text-lg">
+                    {job.company}
+                  </div>
                   <div className="text-sm text-gray-500 flex items-center gap-1">
-                    <Calendar size={14} /> Deadline:
-                    <span className="text-red-500">{job.applicationDeadline}</span>
+                    <Calendar size={14} className="shrink-0" />
+                    Deadline:
+                    <span className="text-red-500 ml-1">
+                      {job.applicationDeadline}
+                    </span>
                   </div>
                 </div>
               </div>
-              <div className="flex items-center gap-1 text-gray-500 text-sm">
-                <MapPin size={16} className="text-green-600" /> {job.location}
+              <div className="flex items-center gap-1 text-sm text-gray-500 order-2 sm:order-3 mt-1 sm:mt-0">
+                <MapPin size={16} className="text-green-600 flex-shrink-0" />
+                {job.location || "Unknown Location"}
               </div>
             </div>
+            {job.salary && (
+              <div className="flex items-center gap-2 text-sm text-emerald-700 font-semibold mt-1">
+                <DollarSign size={16} className="text-green-600" />
+                {job.salary}
+              </div>
+            )}
 
-            <h1 className="text-3xl font-bold text-gray-800">{job.title}</h1>
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-800">
+              {job.title}
+            </h1>
 
             <div className="relative">
               <div
-                className={`text-gray-700 whitespace-pre-line leading-relaxed text-lg transition-all duration-500 ${
+                className={`text-gray-700 whitespace-pre-line leading-relaxed text-base md:text-lg transition-all duration-500 ${
                   isExpanded ? "" : "line-clamp-4"
                 }`}
-              >
-                {job.description}
-              </div>
+                dangerouslySetInnerHTML={{ __html: job.description }}
+              />
               <button
                 onClick={() => setIsExpanded(!isExpanded)}
                 className="mt-2 text-green-700 font-semibold hover:underline"
@@ -188,34 +207,38 @@ export default function JobDetails() {
               </button>
             </div>
 
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => window.open(job.reglink || "", "_blank")}
-              className="inline-block bg-emerald-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-emerald-700 transition shadow-md mb-6"
-            >
-              Apply Now
-            </motion.button>
+            {job.reglink && (
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => window.open(job.reglink || "", "_blank")}
+                className="inline-block bg-emerald-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-emerald-700 transition shadow-md mb-4 md:mb-6 w-full md:w-auto"
+              >
+                Apply Now
+              </motion.button>
+            )}
 
-            <div className="mt-8">
-              <h3 className="text-2xl font-semibold text-gray-800 mb-4">💬 Comments</h3>
-
-              <div className="flex gap-3 mb-6">
+            <div className="pt-6 border-t border-gray-200">
+              <h3 className="text-xl md:text-2xl font-semibold text-gray-800 mb-4">
+                💬 Comments
+              </h3>
+              <div className="flex flex-col sm:flex-row items-center gap-3 mb-6">
                 <input
                   type="text"
                   value={commentText}
                   onChange={(e) => setCommentText(e.target.value)}
                   placeholder="Share your thoughts..."
-                  className="flex-1 px-4 py-3 border border-gray-300 rounded-full focus:ring-2 focus:ring-green-400 transition outline-none"
+                  className="w-full sm:flex-1 border border-gray-300 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-green-400"
                 />
-                <button
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                   onClick={postComment}
-                  className="bg-green-600 text-white px-5 py-3 rounded-full hover:bg-green-700 transition shadow"
+                  className="bg-green-600 text-white px-5 py-3 rounded-xl font-semibold hover:bg-green-700 transition w-full sm:w-auto"
                 >
                   Post
-                </button>
+                </motion.button>
               </div>
-
               <AnimatePresence>
                 <motion.div
                   layout
@@ -237,13 +260,15 @@ export default function JobDetails() {
                         }}
                         className="bg-white p-4 rounded-2xl shadow-md flex items-start gap-4 border border-green-100 hover:shadow-lg transition-transform duration-300 hover:scale-[1.01]"
                       >
-                        <div className="w-12 h-12 bg-green-100 text-green-700 flex items-center justify-center rounded-full font-bold text-lg shadow-sm">
+                        <div className="w-10 h-10 bg-green-100 text-green-700 flex items-center justify-center rounded-full font-bold text-lg shadow-sm">
                           {(c.author?.firstName?.[0] || "U").toUpperCase()}
                         </div>
                         <div className="flex-1">
-                          <div className="flex justify-between items-center">
+                          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center">
                             <h4 className="font-semibold text-gray-800">
-                              {c.author ? `${c.author.firstName} ${c.author.lastName}` : "Anonymous"}
+                              {c.author
+                                ? `${c.author.firstName} ${c.author.lastName}`
+                                : "Anonymous"}
                             </h4>
                             <span className="text-xs text-gray-500 italic">
                               {new Date(c.createdAt).toLocaleDateString("en-GB", {
@@ -260,14 +285,15 @@ export default function JobDetails() {
                       </motion.div>
                     ))
                   ) : (
-                    <p className="text-gray-500 text-center italic">No comments yet. Be the first to share your thoughts!</p>
+                    <p className="text-gray-500 italic text-center">
+                      No comments yet. Be the first to share your thoughts!
+                    </p>
                   )}
                 </motion.div>
               </AnimatePresence>
             </div>
           </motion.div>
         </main>
-
         <AnimatePresence>
           {isFullscreen && job.imageUrls?.length > 0 && (
             <motion.div
