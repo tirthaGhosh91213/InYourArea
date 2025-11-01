@@ -12,7 +12,7 @@ import {
   Settings,
 } from "lucide-react";
 import NotificationPanel from "./NotificationPanel";
-import Sidebar from "./Sidebar";
+import Sidebar from "./SideBar";
 import axios from "axios";
 
 export default function RightSidebar() {
