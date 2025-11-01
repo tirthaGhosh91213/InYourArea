@@ -67,7 +67,7 @@ export default function LocalNews() {
       setError("");
       try {
         const res = await axios.get(
-          `http://localhost:8000/api/v1/district-news/${district}/recent`,
+          `http://localhost:8000/api/v1/district-news/${district}`,
           token ? { headers: { Authorization: `Bearer ${token}` } } : {}
         );
         if (res.data.success) {
