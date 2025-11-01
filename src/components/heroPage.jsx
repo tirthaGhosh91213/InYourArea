@@ -7,7 +7,7 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Footer from "./Footer.jsx";
 import FeatureRail from "./FeautreRail.jsx";
-import heroImage from "../assets/image.png";
+import heroImage from "../assets/hero.jpg";
 import logo from "../assets/logo.png"; // Import your logo here
 
 export default function InYourArea() {
