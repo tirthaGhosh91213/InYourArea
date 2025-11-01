@@ -2,13 +2,14 @@ import React, { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  UserCircle,
-  Calendar,
-  MapPin,
   ArrowLeft,
   ChevronLeft,
   ChevronRight,
   X,
+  UserCircle,
+  Calendar,
+  MapPin,
+  Send
 } from "lucide-react";
 import axios from "axios";
 import { toast } from "react-toastify";
@@ -21,18 +22,50 @@ export default function CommunityDetails() {
   const [post, setPost] = useState(null);
   const [comments, setComments] = useState([]);
   const [commentText, setCommentText] = useState("");
+  const [posting, setPosting] = useState(false);
   const [currentImage, setCurrentImage] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [loading, setLoading] = useState(true);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const touchStartX = useRef(0);
   const touchEndX = useRef(0);
 
-  const handleTouchStart = (e) => {
-    touchStartX.current = e.changedTouches[0].screenX;
+  // Helper: Render either <img> or <video>
+  const renderMedia = (url, alt, className, isFullscreen = false) => {
+    if (
+      url &&
+      (url.endsWith(".mp4") ||
+        url.endsWith(".webm") ||
+        url.endsWith(".ogg") ||
+        url.includes("video"))
+    ) {
+      return (
+        <video
+          src={url}
+          controls
+          autoPlay={isFullscreen}
+          className={className}
+          style={{ background: "#111" }}
+        >
+          Your browser does not support the video tag.
+        </video>
+      );
+    }
+    return (
+      <img
+        src={url}
+        alt={alt}
+        className={className}
+        onClick={() => setIsFullscreen(true)}
+        style={{ cursor: "pointer" }}
+      />
+    );
   };
 
+  // Swipe Gesture
+  const handleTouchStart = (e) =>
+    (touchStartX.current = e.changedTouches[0].screenX);
   const handleTouchEnd = (e) => {
     touchEndX.current = e.changedTouches[0].screenX;
     const diff = touchStartX.current - touchEndX.current;
@@ -40,19 +73,23 @@ export default function CommunityDetails() {
     if (diff < -50) prevImage();
   };
 
-  const prevImage = () => {
-    if (!post?.imageUrls) return;
+  const prevImage = () =>
     setCurrentImage((prev) =>
-      prev === 0 ? post.imageUrls.length - 1 : prev - 1
+      post && post.imageUrls && post.imageUrls.length
+        ? prev === 0
+          ? post.imageUrls.length - 1
+          : prev - 1
+        : 0
     );
-  };
 
-  const nextImage = () => {
-    if (!post?.imageUrls) return;
+  const nextImage = () =>
     setCurrentImage((prev) =>
-      prev === post.imageUrls.length - 1 ? 0 : prev + 1
+      post && post.imageUrls && post.imageUrls.length
+        ? prev === post.imageUrls.length - 1
+          ? 0
+          : prev + 1
+        : 0
     );
-  };
 
   const formatDate = (date) =>
     new Date(date).toLocaleString("en-GB", {
@@ -60,23 +97,36 @@ export default function CommunityDetails() {
       month: "short",
       year: "numeric",
       hour: "2-digit",
-      minute: "2-digit",
+      minute: "2-digit"
     });
 
-  const fetchPost = async () => {
-    try {
-      setLoading(true);
-      const res = await axios.get(`http://jharkhand-alb-221425706.ap-south-1.elb.amazonaws.com/api/v1/community/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.data.success) setPost(res.data.data);
-    } catch {
-      toast.error("Failed to fetch post");
-    } finally {
-      setLoading(false);
+  // Fetch Community Post
+  useEffect(() => {
+    const fetchPost = async () => {
+      try {
+        setLoading(true);
+        const res = await axios.get(
+          `http://jharkhand-alb-221425706.ap-south-1.elb.amazonaws.com/api/v1/community/${id}`,
+          {
+            headers: { Authorization: `Bearer ${token}` }
+          }
+        );
+        if (res.data.success) setPost(res.data.data);
+        else toast.error("Failed to fetch post");
+      } catch {
+        toast.error("Failed to fetch post");
+      } finally {
+        setLoading(false);
+      }
+    };
+    if (!token) {
+      navigate("/login");
+      return;
     }
-  };
+    fetchPost();
+  }, [id, token, navigate]);
 
+  // Fetch Comments
   const fetchComments = async () => {
     try {
       const res = await axios.get(
@@ -84,34 +134,44 @@ export default function CommunityDetails() {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (res.data.success) setComments(res.data.data);
+      else toast.error("Failed to fetch comments");
     } catch {
       toast.error("Failed to fetch comments");
     }
   };
 
-  const sendComment = async () => {
-    if (!commentText.trim()) return toast.error("Comment cannot be empty");
+  useEffect(() => {
+    if (token) fetchComments();
+  }, [id, token]);
+
+  // Post Comment Handler
+  const handlePostComment = async () => {
+    if (!commentText.trim()) {
+      toast.warning("Comment cannot be empty!");
+      return;
+    }
+    if (!token) {
+      navigate("/login");
+      return;
+    }
     try {
+      setPosting(true);
       const res = await axios.post(
         `http://jharkhand-alb-221425706.ap-south-1.elb.amazonaws.com/api/v1/comments/community-posts/${id}`,
         { content: commentText },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (res.data.success) {
-        setComments((prev) => [...prev, res.data.data]);
+        toast.success("Comment added successfully!");
         setCommentText("");
-        toast.success("Comment added!");
-      }
+        fetchComments();
+      } else toast.error("Failed to add comment.");
     } catch {
-      toast.error("Failed to send comment");
+      toast.error("Error adding comment.");
+    } finally {
+      setPosting(false);
     }
   };
-
-  useEffect(() => {
-    if (!token) navigate("/login");
-    fetchPost();
-    fetchComments();
-  }, [id]);
 
   if (loading || !post)
     return (
@@ -140,26 +200,25 @@ export default function CommunityDetails() {
             animate={{ opacity: 1, y: 0 }}
             className="max-w-3xl mx-auto bg-white rounded-3xl shadow-2xl p-6 space-y-6 border border-green-200"
           >
-            {/* Image Carousel */}
+            {/* Image/Video Carousel */}
             {post.imageUrls?.length > 0 && (
               <div className="relative w-full h-64 md:h-80 rounded-2xl overflow-hidden shadow-lg">
-                <img
-                  src={post.imageUrls[currentImage]}
-                  alt={post.title}
-                  className="w-full h-full object-cover transition-all duration-500 rounded-2xl cursor-pointer"
-                  onClick={() => setIsFullscreen(true)}
-                />
+                {renderMedia(
+                  post.imageUrls[currentImage],
+                  post.title,
+                  "w-full h-full object-cover rounded-2xl transition-all duration-500 bg-black"
+                )}
                 {post.imageUrls.length > 1 && (
                   <>
                     <button
                       onClick={prevImage}
-                      className="absolute top-1/2 left-3 -translate-y-1/2 bg-white/70 text-green-700 p-2 rounded-full hover:bg-white/90 transition"
+                      className="absolute top-1/2 left-3 transform -translate-y-1/2 bg-white/70 text-green-700 p-2 rounded-full hover:bg-white/90 transition"
                     >
                       <ChevronLeft size={24} />
                     </button>
                     <button
                       onClick={nextImage}
-                      className="absolute top-1/2 right-3 -translate-y-1/2 bg-white/70 text-green-700 p-2 rounded-full hover:bg-white/90 transition"
+                      className="absolute top-1/2 right-3 transform -translate-y-1/2 bg-white/70 text-green-700 p-2 rounded-full hover:bg-white/90 transition"
                     >
                       <ChevronRight size={24} />
                     </button>
@@ -184,22 +243,23 @@ export default function CommunityDetails() {
                 </div>
               </div>
               <div className="flex items-center gap-1 text-gray-500 text-sm">
-                <MapPin size={16} className="text-green-600" /> {post.location}
+                <MapPin size={16} className="text-green-600" />{" "}
+                {post.location || "Unknown Location"}
               </div>
             </div>
 
-            {/* Title */}
-            <h1 className="text-3xl font-bold text-gray-800">{post.title}</h1>
-
-            {/* Content with See More */}
+            {/* Title & Content */}
+            <h1
+              className="text-3xl font-bold text-gray-800"
+              dangerouslySetInnerHTML={{ __html: post.title }}
+            />
             <div className="relative">
               <div
                 className={`text-gray-700 whitespace-pre-line leading-relaxed text-lg transition-all duration-500 ${
                   isExpanded ? "" : "line-clamp-4"
                 }`}
-              >
-                {post.content}
-              </div>
+                dangerouslySetInnerHTML={{ __html: post.content }}
+              />
               <button
                 onClick={() => setIsExpanded(!isExpanded)}
                 className="mt-2 text-green-700 font-semibold hover:underline"
@@ -209,26 +269,30 @@ export default function CommunityDetails() {
             </div>
 
             {/* Comments Section */}
-            <div className="mt-8">
-              <h3 className="text-2xl font-semibold text-gray-800 mb-4">
+            <div className="pt-6 border-t border-gray-200">
+              <h2 className="text-2xl font-semibold text-gray-800 mb-4">
                 💬 Comments
-              </h3>
+              </h2>
 
               {/* Comment Input */}
-              <div className="flex gap-3 mb-6">
-                <input
-                  type="text"
+              <div className="flex flex-col sm:flex-row items-center gap-3 mb-6">
+                <textarea
                   value={commentText}
                   onChange={(e) => setCommentText(e.target.value)}
-                  placeholder="Write a comment..."
-                  className="flex-1 px-4 py-3 border border-gray-300 rounded-full focus:ring-2 focus:ring-green-400 transition outline-none"
+                  placeholder="Share your thoughts..."
+                  rows="2"
+                  className="w-full sm:flex-1 border border-gray-300 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-green-400 resize-none"
                 />
-                <button
-                  onClick={sendComment}
-                  className="bg-green-600 text-white px-5 py-3 rounded-full hover:bg-green-700 transition shadow"
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  disabled={posting}
+                  onClick={handlePostComment}
+                  className="flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-xl px-5 py-3 w-full sm:w-auto disabled:opacity-60 transition"
                 >
-                  Post
-                </button>
+                  <Send size={18} />
+                  {posting ? "Posting..." : "Post"}
+                </motion.button>
               </div>
 
               {/* Comments List */}
@@ -249,9 +313,9 @@ export default function CommunityDetails() {
                         transition={{
                           delay: index * 0.05,
                           type: "spring",
-                          stiffness: 80,
+                          stiffness: 80
                         }}
-                        className="bg-white p-4 rounded-2xl shadow-md flex items-start gap-4 border border-green-100 hover:shadow-lg transition hover:scale-[1.01]"
+                        className="bg-white p-4 rounded-2xl shadow-md flex items-start gap-4 border border-green-100 hover:shadow-lg transition-transform duration-300 hover:scale-[1.01]"
                       >
                         <div className="w-12 h-12 bg-green-100 text-green-700 flex items-center justify-center rounded-full font-bold text-lg shadow-sm">
                           {(c.author?.firstName?.[0] || "U").toUpperCase()}
@@ -264,11 +328,7 @@ export default function CommunityDetails() {
                                 : "Anonymous"}
                             </h4>
                             <span className="text-xs text-gray-500 italic">
-                              {new Date(c.createdAt).toLocaleDateString("en-GB", {
-                                day: "2-digit",
-                                month: "short",
-                                year: "numeric",
-                              })}
+                              {formatDate(c.createdAt)}
                             </span>
                           </div>
                           <p className="text-gray-700 bg-green-50 px-4 py-2 rounded-xl leading-relaxed border border-green-100 mt-2">
@@ -278,7 +338,7 @@ export default function CommunityDetails() {
                       </motion.div>
                     ))
                   ) : (
-                    <p className="text-gray-500 text-center italic">
+                    <p className="text-gray-500 italic text-center">
                       No comments yet. Be the first to share your thoughts!
                     </p>
                   )}
@@ -288,7 +348,7 @@ export default function CommunityDetails() {
           </motion.div>
         </main>
 
-        {/* Fullscreen Image Viewer */}
+        {/* Fullscreen Media */}
         <AnimatePresence>
           {isFullscreen && post.imageUrls?.length > 0 && (
             <motion.div
@@ -321,11 +381,12 @@ export default function CommunityDetails() {
                   </button>
                 </>
               )}
-              <img
-                src={post.imageUrls[currentImage]}
-                alt={post.title}
-                className="max-h-full max-w-full object-contain rounded-lg shadow-lg"
-              />
+              {renderMedia(
+                post.imageUrls[currentImage],
+                post.title,
+                "max-h-full max-w-full object-contain rounded-lg shadow-lg bg-black",
+                true
+              )}
             </motion.div>
           )}
         </AnimatePresence>
