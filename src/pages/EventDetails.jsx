@@ -12,8 +12,6 @@ import {
   MessageCircle,
   Link2,
 } from "lucide-react";
-import Sidebar from "../components/SideBar";
-import RightSidebar from "../components/RightSidebar";
 import axios from "axios";
 import { toast } from "react-toastify";
 
@@ -25,6 +23,7 @@ export default function EventDetails() {
   const [event, setEvent] = useState(null);
   const [comments, setComments] = useState([]);
   const [commentText, setCommentText] = useState("");
+  const [posting, setPosting] = useState(false);
   const [currentImage, setCurrentImage] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -65,19 +64,28 @@ export default function EventDetails() {
       minute: "2-digit",
     });
 
-  const fetchEvent = async () => {
-    try {
-      setLoading(true);
-      const res = await axios.get(`http://jharkhand-alb-221425706.ap-south-1.elb.amazonaws.com/api/v1/events/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.data.success) setEvent(res.data.data);
-    } catch {
-      toast.error("Failed to fetch event");
-    } finally {
-      setLoading(false);
-    }
-  };
+  useEffect(() => {
+    if (!token) navigate("/login");
+    const fetchEvent = async () => {
+      try {
+        setLoading(true);
+        const res = await axios.get(
+          `http://jharkhand-alb-221425706.ap-south-1.elb.amazonaws.com/api/v1/events/${id}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        if (res.data.success) setEvent(res.data.data);
+      } catch {
+        toast.error("Failed to fetch event");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchEvent();
+    fetchComments();
+    // eslint-disable-next-line
+  }, [id, token]);
 
   const fetchComments = async () => {
     try {
@@ -94,38 +102,33 @@ export default function EventDetails() {
   const postComment = async () => {
     if (!commentText.trim()) return toast.error("Comment cannot be empty");
     try {
+      setPosting(true);
       const res = await axios.post(
         `http://jharkhand-alb-221425706.ap-south-1.elb.amazonaws.com/api/v1/comments/events/${id}`,
         { content: commentText },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (res.data.success) {
-        setComments((prev) => [...prev, res.data.data]);
         setCommentText("");
+        fetchComments();
         toast.success("Comment added!");
       }
     } catch {
       toast.error("Failed to post comment");
+    } finally {
+      setPosting(false);
     }
   };
 
-  useEffect(() => {
-    if (!token) navigate("/login");
-    fetchEvent();
-    fetchComments();
-  }, [id, token]);
-
   if (loading || !event)
     return (
-      <div className="flex justify-center items-center h-screen text-gray-600 text-lg animate-pulse">
-        Loading...
-      </div>
+      <div className="flex justify-center items-center h-screen text-gray-600 text-lg animate-pulse">Loading...</div>
     );
 
   return (
     <>
       <div className="flex h-screen bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden">
-        <main className="flex-1 overflow-y-auto p-6 relative">
+        <main className="flex-1 overflow-y-auto p-4 md:p-6 relative">
           <motion.button
             whileHover={{ scale: 1.05 }}
             onClick={() => navigate(-1)}
@@ -137,11 +140,11 @@ export default function EventDetails() {
             layout
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
-            className="max-w-3xl mx-auto bg-white rounded-3xl shadow-2xl p-6 space-y-6 border border-green-200"
+            className="max-w-3xl mx-auto bg-white rounded-3xl shadow-2xl p-4 md:p-6 space-y-6 border border-green-200"
           >
-            {/* Image Section */}
+            {/* Images */}
             {event.imageUrls?.length > 0 && (
-              <div className="relative w-full h-64 md:h-80 rounded-2xl overflow-hidden shadow-lg">
+              <div className="relative w-full h-60 sm:h-72 md:h-80 rounded-2xl overflow-hidden shadow-lg">
                 <img
                   src={event.imageUrls[currentImage]}
                   alt={event.title}
@@ -152,13 +155,13 @@ export default function EventDetails() {
                   <>
                     <button
                       onClick={prevImage}
-                      className="absolute top-1/2 left-3 -translate-y-1/2 bg-white/70 text-green-700 p-2 rounded-full hover:bg-white/90 transition"
+                      className="absolute top-1/2 left-2 sm:left-3 -translate-y-1/2 bg-white/70 text-green-700 p-2 rounded-full hover:bg-white/90 transition"
                     >
                       <ChevronLeft size={24} />
                     </button>
                     <button
                       onClick={nextImage}
-                      className="absolute top-1/2 right-3 -translate-y-1/2 bg-white/70 text-green-700 p-2 rounded-full hover:bg-white/90 transition"
+                      className="absolute top-1/2 right-2 sm:right-3 -translate-y-1/2 bg-white/70 text-green-700 p-2 rounded-full hover:bg-white/90 transition"
                     >
                       <ChevronRight size={24} />
                     </button>
@@ -166,51 +169,51 @@ export default function EventDetails() {
                 )}
               </div>
             )}
-            {/* Event Info */}
-            <div className="flex justify-between items-center text-gray-700">
-              <div className="flex items-center gap-3">
-                <UserCircle size={24} className="text-green-600" />
+
+            {/* Author and Event Info */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4 text-gray-700">
+              <div className="flex flex-row items-center gap-3 order-1">
+                <UserCircle size={24} className="text-green-600 flex-shrink-0" />
                 <div>
-                  <div className="font-semibold text-gray-800">
+                  <div className="font-semibold text-gray-800 text-base sm:text-lg">
                     {event.author
                       ? `${event.author.firstName} ${event.author.lastName}`
                       : "Unknown Author"}
                   </div>
-                  <div className="text-sm text-gray-500 flex items-center gap-2 mt-2">
-  <Calendar size={14} className="mr-1" />
-  {event.eventDate
-    ? new Date(event.eventDate).toLocaleDateString("en-GB", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric"
-      })
-    : "-"}
-  <span>
-    {event.eventDate
-      ? new Date(event.eventDate).toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit"
-        })
-      : "-"}
-  </span>
-</div>
-
+                  <div className="text-sm text-gray-500 flex items-center gap-1">
+                    <Calendar size={14} className="shrink-0" />
+                    {event.eventDate
+                      ? new Date(event.eventDate).toLocaleDateString("en-GB", {
+                          day: "2-digit",
+                          month: "short",
+                          year: "numeric"
+                        })
+                      : "-"}
+                    <span>
+                      {event.eventDate
+                        ? new Date(event.eventDate).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit"
+                          })
+                        : "-"}
+                    </span>
+                  </div>
                 </div>
               </div>
-              <div className="flex items-center gap-1 text-gray-500 text-sm">
-                <MapPin size={16} className="text-green-600" /> {event.location}
+              <div className="flex items-center gap-1 text-sm text-gray-500 order-2 sm:order-3 mt-1 sm:mt-0">
+                <MapPin size={16} className="text-green-600 flex-shrink-0" />
+                {event.location || "Unknown Location"}
               </div>
             </div>
-            <h1 className="text-3xl font-bold text-gray-800">{event.title}</h1>
-            {/* Description with "See More" */}
+
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-800" dangerouslySetInnerHTML={{ __html: event.title }} />
             <div className="relative">
               <div
-                className={`text-gray-700 whitespace-pre-line leading-relaxed text-lg transition-all duration-500 ${
+                className={`text-gray-700 whitespace-pre-line leading-relaxed text-base md:text-lg transition-all duration-500 ${
                   isExpanded ? "" : "line-clamp-4"
                 }`}
-              >
-                {event.description}
-              </div>
+                dangerouslySetInnerHTML={{ __html: event.description }}
+              />
               <button
                 onClick={() => setIsExpanded(!isExpanded)}
                 className="mt-2 text-green-700 font-semibold hover:underline"
@@ -218,7 +221,6 @@ export default function EventDetails() {
                 {isExpanded ? "See Less" : "See More"}
               </button>
             </div>
-            {/* Register Button directly under description */}
             {event.reglink && (
               <button
                 onClick={() => window.open(event.reglink, "_blank")}
@@ -227,59 +229,80 @@ export default function EventDetails() {
                 <Link2 size={20} /> Register
               </button>
             )}
-            {/* Comments */}
-            <div className="flex flex-1 flex-col gap-6 mt-6">
-              <div className="flex-1 flex gap-2 items-center">
+
+            <div className="pt-6 border-t border-gray-200">
+              <h2 className="text-xl md:text-2xl font-semibold text-gray-800 mb-4">💬 Comments</h2>
+              <div className="flex flex-col sm:flex-row items-center gap-3 mb-6">
                 <input
                   type="text"
                   value={commentText}
                   onChange={(e) => setCommentText(e.target.value)}
                   placeholder="Write a comment..."
-                  className="flex-1 px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-green-400"
+                  className="w-full sm:flex-1 border border-gray-300 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-green-400"
                 />
-                <button
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  disabled={posting}
                   onClick={postComment}
-                  className="flex items-center gap-2 bg-green-600 text-white px-4 py-3 rounded-xl hover:bg-green-700 transition shadow-lg"
+                  className="flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-xl px-5 py-3 w-full sm:w-auto disabled:opacity-60 transition"
                 >
-                  <MessageCircle size={18} /> Comment
-                </button>
+                  <MessageCircle size={18} />
+                  {posting ? "Posting..." : "Comment"}
+                </motion.button>
               </div>
               <AnimatePresence>
                 <motion.div
                   layout
-                  className="space-y-3"
+                  className="space-y-5"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  transition={{ staggerChildren: 0.1 }}
+                  transition={{ staggerChildren: 0.15 }}
                 >
                   {comments.length > 0 ? (
                     comments.map((c, index) => (
                       <motion.div
                         key={c.id}
-                        initial={{ opacity: 0, y: 20 }}
+                        initial={{ opacity: 0, y: 30 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: index * 0.05, type: "spring" }}
-                        className="flex gap-3 items-start text-gray-700 bg-green-50 rounded-xl p-3 shadow-sm"
+                        transition={{
+                          delay: index * 0.05,
+                          type: "spring",
+                          stiffness: 80,
+                        }}
+                        className="bg-white p-4 rounded-2xl shadow-md flex items-start gap-4 border border-green-100 hover:shadow-lg transition-transform duration-300 hover:scale-[1.01]"
                       >
-                        <UserCircle size={20} className="text-green-500 mt-1" />
-                        <div>
-                          <div className="font-semibold text-gray-800">
-                            {c.author
-                              ? `${c.author.firstName} ${c.author.lastName}`
-                              : "Anonymous"}
+                        <div className="w-10 h-10 bg-green-100 text-green-700 flex items-center justify-center rounded-full font-bold text-lg shadow-sm">
+                          {(c.author?.firstName?.[0] || "U").toUpperCase()}
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center">
+                            <h4 className="font-semibold text-gray-800">
+                              {c.author
+                                ? `${c.author.firstName} ${c.author.lastName}`
+                                : "Anonymous"}
+                            </h4>
+                            <span className="text-xs text-gray-500 italic">
+                              {formatDate(c.createdAt)}
+                            </span>
                           </div>
-                          <div className="text-gray-700">{c.content}</div>
+                          <p className="text-gray-700 bg-green-50 px-4 py-2 rounded-xl leading-relaxed border border-green-100 mt-2">
+                            {c.content}
+                          </p>
                         </div>
                       </motion.div>
                     ))
                   ) : (
-                    <p className="text-gray-500">No comments yet.</p>
+                    <p className="text-gray-500 italic text-center">
+                      No comments yet. Be the first to share your thoughts!
+                    </p>
                   )}
                 </motion.div>
               </AnimatePresence>
             </div>
           </motion.div>
         </main>
+
         {/* Fullscreen Image */}
         <AnimatePresence>
           {isFullscreen && event.imageUrls?.length > 0 && (

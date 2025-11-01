@@ -8,6 +8,7 @@ import "react-toastify/dist/ReactToastify.css";
 import Footer from "./Footer.jsx";
 import FeatureRail from "./FeautreRail.jsx";
 import heroImage from "../assets/image.png";
+import logo from "../assets/logo.png"; // Import your logo here
 
 export default function InYourArea() {
   const navigate = useNavigate();
@@ -49,10 +50,15 @@ export default function InYourArea() {
         className="bg-white shadow-md flex justify-between items-center px-6 sm:px-10 py-4"
       >
         <div className="flex items-center gap-2">
-          <MapPin className="text-green-700 w-6 h-6" />
-          <span className="text-xl sm:text-2xl font-bold text-gray-800 tracking-wide">
-            InYourArea
-          </span>
+          
+          <img
+            src={logo}
+            alt="Platform Logo"
+            className="h-12 sm:h-16 w-auto object-contain"
+            style={{ display: "block" }}
+            loading="eager"
+            decoding="async"
+          />
         </div>
       </motion.header>
 
@@ -115,12 +121,6 @@ export default function InYourArea() {
             Continue →
           </button>
         </motion.div>
-        {/* <motion.p
-          className="mt-4 text-sm text-gray-500 underline cursor-pointer hover:text-green-700 transition-colors"
-          whileHover={{ scale: 1.05 }}
-        >
-          How We Use Your Data
-        </motion.p> */}
       </motion.section>
       {/* Hero Image */}
       <motion.section

@@ -250,24 +250,6 @@ export default function FeatureRailSmall() {
         </p>
 
         {/* Postcode Input — styled like Hero section */}
-        <motion.div
-          className="mt-6 flex justify-center"
-          whileHover={{ scale: 1.03 }}
-          transition={{ type: "spring", stiffness: 100 }}
-        >
-          <div className="flex rounded-xl overflow-hidden shadow-[0_12px_28px_rgba(0,0,0,0.1)] backdrop-blur-xl border border-slate-200">
-            <input
-              type="text"
-              placeholder="Enter your postcode"
-              className="w-72 md:w-96 px-4 py-3 outline-none border-none text-slate-700 placeholder-slate-400"
-            />
-            <button
-              className="px-6 bg-green-700 text-white font-semibold hover:bg-green-800 transition-all"
-            >
-              →
-            </button>
-          </div>
-        </motion.div>
       </motion.section>
 
       {/* Floating gradient animation */}
