@@ -25,7 +25,7 @@ export default function Events() {
   const fetchEvents = async () => {
     try {
       setLoading(true);
-      const res = await axios.get("http://jharkhand-alb-221425706.ap-south-1.elb.amazonaws.com/api/v1/events");
+      const res = await axios.get("https://rehabilitation-cost-additionally-pci.trycloudflare.com/api/v1/events");
       setEvents(res.data.data || []);
     } catch (err) {
       console.error("Error fetching events:", err);

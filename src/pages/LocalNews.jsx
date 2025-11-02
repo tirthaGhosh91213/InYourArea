@@ -67,7 +67,7 @@ export default function LocalNews() {
       setError("");
       try {
         const res = await axios.get(
-          `http://jharkhand-alb-221425706.ap-south-1.elb.amazonaws.com/api/v1/district-news/${district}`,
+          `https://rehabilitation-cost-additionally-pci.trycloudflare.com/api/v1/district-news/${district}`,
           token ? { headers: { Authorization: `Bearer ${token}` } } : {}
         );
         if (res.data.success) {

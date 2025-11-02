@@ -27,7 +27,7 @@ export default function Community() {
   const fetchPosts = async () => {
     try {
       setLoading(true);
-      const res = await axios.get("http://jharkhand-alb-221425706.ap-south-1.elb.amazonaws.com/api/v1/community", {
+      const res = await axios.get("https://rehabilitation-cost-additionally-pci.trycloudflare.com/api/v1/community", {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.data.success) setPosts(res.data.data);
@@ -45,7 +45,7 @@ export default function Community() {
   const fetchComments = async (postId) => {
     try {
       const res = await axios.get(
-        `http://jharkhand-alb-221425706.ap-south-1.elb.amazonaws.com/api/v1/comments/community-posts/${postId}`,
+        `https://rehabilitation-cost-additionally-pci.trycloudflare.com/api/v1/comments/community-posts/${postId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (res.data.success) {
@@ -60,7 +60,7 @@ export default function Community() {
     if (!commentText[postId]) return toast.error("Comment cannot be empty");
     try {
       const res = await axios.post(
-        `http://jharkhand-alb-221425706.ap-south-1.elb.amazonaws.com/api/v1/comments/community-posts/${postId}`,
+        `https://rehabilitation-cost-additionally-pci.trycloudflare.com/api/v1/comments/community-posts/${postId}`,
         { content: commentText[postId] },
         { headers: { Authorization: `Bearer ${token}` } }
       );
