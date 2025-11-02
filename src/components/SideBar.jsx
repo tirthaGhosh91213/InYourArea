@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import EmailService from "./EmailService";
-import logo from "../assets/logo.png"; // assume logo.png exists in src/assets
+import logo from "../assets/logo.png";
 
 const districts = [
   "----------- Jharkhand -----------",
@@ -29,6 +29,8 @@ const districts = [
   "Saharsa","Samastipur","Saran (Chhapra)","Sheikhpura","Sheohar","Sitamarhi",
   "Siwan","Supaul","Vaishali","West Champaran (Bettiah)",
 ];
+
+const MERAKI_LINK = "https://mehraki-website.vercel.app/";
 
 export default function Sidebar({ sidebarOpen, onClose }) {
   const navigate = useNavigate();
@@ -140,12 +142,11 @@ export default function Sidebar({ sidebarOpen, onClose }) {
           className="fixed top-0 left-0 h-screen w-64 px-8 py-14 bg-gradient-to-b from-white/90 via-white/80 to-white/70 backdrop-blur-lg border-r border-gray-200 shadow-lg flex flex-col justify-between z-40"
         >
           <div>
-            <div className="flex items-center justify-between mb-4">
-              {/* LOGO IMAGE INSTEAD OF TEXT */}
+            <div className="flex items-center justify-between ">
               <img
                 src={logo}
                 alt="Logo"
-                className="max-h-32 w-auto mt-5 select-none"
+                className="max-h-28 w-auto mt-3 select-none"
                 style={{ marginLeft: '40px' }}
                 draggable={false}
               />
@@ -162,12 +163,12 @@ export default function Sidebar({ sidebarOpen, onClose }) {
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.2 }}
-              className="py-4 relative"
+              className="py-3 relative"
             >
               <button
                 type="button"
                 onClick={() => setDropdownOpen((prev) => !prev)}
-                className="w-full flex items-center justify-between px-6 py-3 border-2 border-gray-300 rounded-full shadow hover:border-green-600 transition relative bg-white"
+                className="w-full flex items-center justify-between px-6 py-2 border-2 border-gray-300 rounded-full shadow hover:border-green-600 transition relative bg-white"
               >
                 <span className="flex items-center gap-2 text-lg font-semibold text-gray-700">
                   <MapPin className="text-green-600" size={20} />
@@ -243,7 +244,7 @@ export default function Sidebar({ sidebarOpen, onClose }) {
                   </motion.button>
                 );
               })}
-              <div className="border-t border-gray-200 my-3"></div>
+              <div className="border-t border-gray-200 my-2"></div>
               <motion.button
                 onClick={() => setShowModal(true)}
                 whileHover={{
@@ -256,13 +257,28 @@ export default function Sidebar({ sidebarOpen, onClose }) {
                 + Post
               </motion.button>
               <motion.button
-                onClick={() => navigate("/emailservice")}
+                onClick={() => setShowEmailService(true)}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 className="mt-3 w-full flex items-center justify-center gap-2 bg-blue-500 text-white font-semibold rounded-full py-3 shadow-md hover:bg-blue-600 transition-all"
               >
                 <Mail size={18} /> Email Service
               </motion.button>
+              {/* --- NEW: Powered by Meraki section --- */}
+              <div className="w-full mt-3 flex justify-center">
+                <p className="text-xs">
+                  <span className="text-gray-600 font-semibold">Powered by </span>
+                  <a
+                    href={MERAKI_LINK}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-green-600 font-bold underline hover:text-green-800 transition"
+                  >
+                    Meraki 
+                  </a>
+                </p>
+              </div>
+              {/* --- END NEW --- */}
             </nav>
           </div>
           <AnimatePresence>

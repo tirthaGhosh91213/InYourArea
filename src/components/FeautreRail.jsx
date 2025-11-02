@@ -1,275 +1,152 @@
 // src/components/FeatureRailSmall.jsx
-import React, { useRef, useLayoutEffect, useState, forwardRef } from "react";
+
+import React from "react";
 import { motion } from "framer-motion";
-import img1 from "../assets/img1.png";
+import img1 from "../assets/locanewsPost.png";
 import img2 from "../assets/img2.png";
-import img3 from "../assets/img3.png";
-import img4 from "../assets/img4.png";
+import img3 from "../assets/jobPostmain.png";
+import img4 from "../assets/communityPost.png";
 
 const ACCENT = {
-  green: "#0ea77a",
-  line: "#CFE3DC",
+  soft: "#f6f8fa",           // updated to match bg
+  deep: "#0ea77a",
+  text: "#193c3a",
+  shadow: "0 8px 32px rgba(14,167,122,0.12)",
+  border: "#e4e7ea",
+  gradient: "linear-gradient(95deg, #ffffff 75%, #f4f6f8 100%)",
+  grayBg: "#f4f6f8",         // use as main background
 };
 
-// Build curved connector line
-function buildQuadraticPath(sx, sy, ex, ey) {
-  const hook = 30;
-  const mx = (sx + ex) / 2;
-  const my = (sy + ey) / 2;
-  return `M ${sx} ${sy} Q ${sx} ${sy + hook}, ${mx} ${my} T ${ex} ${ey}`;
-}
+const features = [
+  {
+    icon: "📰",
+    title: "Local News",
+    text: "Quickly browse essential updates, right from your neighborhood—never miss what matters, no clutter.",
+    img: img1,
+  },
+  {
+    icon: "👥",
+    title: "Community",
+    text: "Share, ask, belong. A place to see, support, and celebrate locals—together.",
+    img: img2,
+  },
+  {
+    icon: "💼",
+    title: "Jobs",
+    text: "Roles close to home, surfaced simply—find your next step, easily and quickly.",
+    img: img3,
+  },
+  {
+    icon: "📅",
+    title: "Events",
+    text: "The market, the meetup, the moment. All organized, simply. For you.",
+    img: img4,
+  },
+];
 
-// Card Component
-const SmallCard = forwardRef(function SmallCard({ src }, ref) {
+function FeatureCard({ icon, title, text, img, flip }) {
   return (
-    <motion.div
-      ref={ref}
-      whileHover={{ scale: 1.05, rotate: 1 }}
-      transition={{ type: "spring", stiffness: 150, damping: 12 }}
-      className="mx-auto md:mx-0 w-full max-w-[300px] md:max-w-[320px] z-10"
+    <motion.section
+      initial={{ opacity: 0, y: 50 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.8 }}
+      transition={{ duration: 0.8, ease: "easeOut" }}
+      className={`flex flex-col md:flex-row ${flip ? "md:flex-row-reverse" : ""} 
+        items-center gap-8 md:gap-16 bg-white rounded-3xl p-6 md:p-12 shadow-lg`}
+      style={{
+        boxShadow: ACCENT.shadow,
+        border: `1.5px solid ${ACCENT.border}`,
+        marginTop: "0.5rem",
+        marginBottom: "2.6rem",
+        background: ACCENT.gradient,
+      }}
     >
-      <div className="relative bg-white/80 backdrop-blur-lg border border-slate-200 rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.12)] overflow-hidden hover:shadow-[0_25px_80px_rgba(0,0,0,0.15)] transition-all duration-500">
-        <div className="relative aspect-[4/5] min-h-[220px]">
-          <motion.img
-            src={src}
-            alt="Feature preview"
-            className="absolute inset-0 h-full w-full object-cover"
-            initial={{ scale: 1.1, opacity: 0 }}
-            whileInView={{ scale: 1, opacity: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 1, ease: "easeOut" }}
-          />
-        </div>
-        <div className="h-9 bg-white/70 backdrop-blur-sm" />
-      </div>
-    </motion.div>
-  );
-});
-
-// Single feature row
-function FeatureRow({ icon, title, text, flip = false, src, cardRef }) {
-  return (
-    <section className="relative py-10 md:py-20">
       <motion.div
-        className="grid grid-cols-1 md:grid-cols-12 items-center gap-y-10 md:gap-12"
-        initial={{ opacity: 0, y: 60 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8, ease: "easeOut" }}
-        viewport={{ once: true }}
+        className="w-full md:w-2/5 flex justify-center items-center"
+        initial={{ scale: 0.97, opacity: 0.75 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ duration: 1.1, type: "spring", bounce: 0.44 }}
       >
-        <div
-          className={`md:col-span-6 ${flip ? "md:order-2" : "md:order-1"} text-center md:text-left`}
-        >
-          <motion.div
-            className="flex items-center justify-center md:justify-start gap-3 mb-4"
-            initial={{ scale: 0.9, opacity: 0 }}
-            whileInView={{ scale: 1, opacity: 1 }}
-            transition={{ delay: 0.1 }}
-            viewport={{ once: true }}
-          >
-            <span
-              className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-lg font-bold shadow-md"
-              style={{ backgroundColor: ACCENT.green, color: "white" }}
-            >
-              {icon}
-            </span>
-            <h2 className="text-4xl md:text-6xl font-extrabold tracking-tight text-slate-800 bg-gradient-to-r from-teal-600 to-emerald-500 bg-clip-text text-transparent">
-              {title}
-            </h2>
-          </motion.div>
-          <p className="text-slate-600 leading-relaxed text-lg max-w-lg mx-auto md:mx-0">
-            {text}
-          </p>
-        </div>
-        <div className={`md:col-span-6 ${flip ? "md:order-1" : "md:order-2"}`}>
-          <SmallCard src={src} ref={cardRef} />
-        </div>
+        <img
+          src={img}
+          alt={title}
+          className="max-w-[210px] md:max-w-xs rounded-2xl border-2 border-[#e4e7ea] shadow-md"
+          style={{
+            boxShadow: "0 4px 32px rgba(95,209,158,0.09)",
+            background: ACCENT.soft,
+          }}
+        />
       </motion.div>
-    </section>
+      <div className="flex-1 flex flex-col items-center md:items-start">
+        <motion.div
+          className="flex items-center justify-center md:justify-start gap-3 mb-2"
+          initial={{ scale: 0.93, rotate: -8, opacity: 0 }}
+          whileInView={{ scale: 1.13, rotate: 0, opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ type: "spring", stiffness: 110, delay: 0.12 }}
+        >
+          <span
+            className="h-11 w-11 rounded-xl flex items-center justify-center text-2xl md:text-3xl
+            font-bold shadow bg-[#f2f5f7] text-[#0ea77a] border border-[#d4dade]"
+          >
+            {icon}
+          </span>
+          <h2
+            className="text-3xl md:text-4xl font-extrabold tracking-tight"
+            style={{
+              color: ACCENT.text,
+              background: "linear-gradient(90deg, #12b37b 30%, #0ea77a 70%)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+            }}
+          >
+            {title}
+          </h2>
+        </motion.div>
+        <motion.p
+          className="mt-2 text-lg md:text-xl text-[#4b5a57] text-center md:text-left font-semibold opacity-90"
+          transition={{ duration: 0.5, delay: 0.07 }}
+        >
+          {text}
+        </motion.p>
+      </div>
+    </motion.section>
   );
 }
 
-// Main component
 export default function FeatureRailSmall() {
-  const items = [
-    {
-      icon: "📰",
-      title: "Local News",
-      text:
-        "Latest local reporting and social snippets aggregated into quick-glance cards so key updates never get missed.",
-      flip: false,
-      src: img1,
-    },
-    {
-      icon: "👥",
-      title: "Community",
-      text:
-        "Ask, answer, and share with neighbors in a friendly, local-first space designed for everyday updates.",
-      flip: true,
-      src: img2,
-    },
-    {
-      icon: "💼",
-      title: "Jobs",
-      text:
-        "Discover roles from nearby employers with compact listings optimized for quick scanning and saving.",
-      flip: false,
-      src: img3,
-    },
-    {
-      icon: "📅",
-      title: "Events",
-      text:
-        "From meetups to markets, browse upcoming activities with tidy cards that surface what matters soonest.",
-      flip: true,
-      src: img4,
-    },
-  ];
-
-  const containerRef = useRef(null);
-  const cardRefs = useRef(items.map(() => React.createRef()));
-  const [{ w, h }, setSize] = useState({ w: 0, h: 0 });
-  const [paths, setPaths] = useState([]);
-
-  useLayoutEffect(() => {
-    function measure() {
-      const el = containerRef.current;
-      if (!el) return;
-      const cbox = el.getBoundingClientRect();
-      setSize({ w: cbox.width, h: cbox.height });
-
-      const boxes = cardRefs.current.map((r) => r.current?.getBoundingClientRect());
-      if (boxes.some((b) => !b)) return;
-
-      const next = [];
-      for (let i = 0; i < boxes.length - 1; i++) {
-        const a = boxes[i];
-        const b = boxes[i + 1];
-        const sx = a.left - cbox.left + a.width * 0.5;
-        const sy = a.bottom - cbox.top + 12;
-        const ex = b.left - cbox.left + b.width * 0.5;
-        const ey = b.top - cbox.top - 12;
-        next.push({ d: buildQuadraticPath(sx, sy, ex, ey), sx, sy, ex, ey });
-      }
-      setPaths(next);
-    }
-
-    measure();
-    const ro = new ResizeObserver(measure);
-    if (containerRef.current) ro.observe(containerRef.current);
-
-    const imgs = containerRef.current?.querySelectorAll("img") ?? [];
-    imgs.forEach((img) => {
-      if (!img.complete) img.addEventListener("load", measure, { once: true });
-    });
-
-    window.addEventListener("resize", measure);
-    return () => {
-      window.removeEventListener("resize", measure);
-      ro.disconnect();
-    };
-  }, []);
-
   return (
-    <div
-      ref={containerRef}
-      className="relative mx-auto max-w-6xl px-6 md:px-8 py-10 md:py-20"
+    <main
+      className="w-full min-h-screen flex flex-col items-center justify-center py-6 px-3 md:px-0"
+      style={{ background: ACCENT.grayBg }}
     >
-      {/* Animated background gradient */}
-      <div className="absolute inset-0 bg-gradient-to-b from-white via-teal-50 to-white -z-10 animate-gradientMove" />
-
-      {/* Connector lines */}
-      <svg
-        className="pointer-events-none absolute inset-0 z-30"
-        width={w}
-        height={h}
-        viewBox={`0 0 ${w} ${h}`}
-        fill="none"
-      >
-        {paths.map((p, i) => (
-          <motion.g
-            key={i}
-            initial={{ pathLength: 0 }}
-            whileInView={{ pathLength: 1 }}
-            transition={{ duration: 1.5, delay: i * 0.3 }}
-            viewport={{ once: true }}
-            shapeRendering="geometricPrecision"
-          >
-            <motion.path
-              d={p.d}
-              stroke={ACCENT.line}
-              strokeWidth={4}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              fill="none"
-              style={{ filter: "drop-shadow(0 1px 0 rgba(0,0,0,0.06))" }}
-            />
-            <motion.circle
-              cx={p.sx}
-              cy={p.sy}
-              r={6}
-              fill={ACCENT.green}
-              initial={{ scale: 0 }}
-              whileInView={{ scale: 1 }}
-              transition={{ duration: 0.5 }}
-            />
-            <motion.circle
-              cx={p.ex}
-              cy={p.ey}
-              r={6}
-              fill={ACCENT.green}
-              initial={{ scale: 0 }}
-              whileInView={{ scale: 1 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-            />
-          </motion.g>
+      <header className="mb-8 md:mt-7 flex flex-col items-center">
+        <motion.h1
+          className="text-4xl md:text-5xl font-extrabold mb-2 tracking-tight"
+          initial={{ opacity: 0, y: -30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 1, ease: "circOut" }}
+          style={{
+            color: ACCENT.text,
+            letterSpacing: "0.01em",
+          }}
+        >
+          Discover Local <span style={{ color: ACCENT.deep }}>Life</span>
+        </motion.h1>
+        <motion.p
+          className="text-lg md:text-xl text-[#537170]/80 text-center"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 1.1, delay: 0.3 }}
+        >
+          Your home for news, jobs, connection—and belonging.
+        </motion.p>
+      </header>
+      <section className="w-full max-w-4xl">
+        {features.map((f, i) => (
+          <FeatureCard {...f} flip={i % 2 === 1} key={f.title} />
         ))}
-      </svg>
-
-      {/* Feature Rows */}
-      {items.map((it, idx) => (
-        <div key={it.title} className="relative">
-          <FeatureRow {...it} cardRef={cardRefs.current[idx]} />
-        </div>
-      ))}
-
-      {/* CTA Section */}
-      <motion.section
-        className="text-center mt-14 mb-12"
-        initial={{ opacity: 0, y: 40 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.7 }}
-        viewport={{ once: true }}
-      >
-        <h3 className="text-3xl md:text-4xl font-extrabold bg-gradient-to-r from-teal-700 to-emerald-500 bg-clip-text text-transparent">
-          And so much more!
-        </h3>
-        <p className="mt-3 text-slate-600 max-w-3xl mx-auto px-4 text-lg">
-          There is so much more we can list… It would be a lot easier to see
-          what’s on offer by simply entering your postcode!
-        </p>
-
-        {/* Postcode Input — styled like Hero section */}
-      </motion.section>
-
-      {/* Floating gradient animation */}
-      <style jsx>{`
-        @keyframes gradientMove {
-          0% {
-            background-position: 0% 50%;
-          }
-          50% {
-            background-position: 100% 50%;
-          }
-          100% {
-            background-position: 0% 50%;
-          }
-        }
-        .animate-gradientMove {
-          background-size: 400% 400%;
-          animation: gradientMove 15s ease infinite;
-        }
-      `}</style>
-    </div>
+      </section>
+    </main>
   );
 }

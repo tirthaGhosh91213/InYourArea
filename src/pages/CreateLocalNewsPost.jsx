@@ -35,11 +35,20 @@ export default function CreateLocalNewsPost() {
   const token = localStorage.getItem("accessToken");
   if (!token) toast.error("Please login first!");
 
-  const allDistricts = [
+  // District lists
+  const jharkhandDistricts = [
     "Bokaro","Chatra","Deoghar","Dhanbad","Dumka","East Singhbhum","Garhwa",
     "Giridih","Godda","Gumla","Hazaribagh","Jamtara","Khunti","Koderma","Latehar",
     "Lohardaga","Pakur","Palamu","Ramgarh","Ranchi","Sahibganj","Seraikela Kharsawan",
     "Simdega","West Singhbhum"
+  ];
+  const biharDistricts = [
+    "Araria","Arwal","Aurangabad","Banka","Begusarai","Bhagalpur","Bhojpur","Buxar",
+    "Darbhanga","East Champaran (Motihari)","Gaya","Gopalganj","Jamui","Jehanabad",
+    "Kaimur (Bhabua)","Katihar","Khagaria","Kishanganj","Lakhisarai","Madhepura",
+    "Madhubani","Munger","Muzaffarpur","Nalanda","Nawada","Patna","Purnia","Rohtas",
+    "Saharsa","Samastipur","Saran (Chhapra)","Sheikhpura","Sheohar","Sitamarhi",
+    "Siwan","Supaul","Vaishali","West Champaran (Bettiah)"
   ];
 
   useEffect(() => {
@@ -144,7 +153,7 @@ export default function CreateLocalNewsPost() {
 
       const form = new FormData();
       form.append("news", JSON.stringify(newsData));
-      formData.media.forEach((file) => form.append("images", file));  // <-- always use key "images" for all files
+      formData.media.forEach((file) => form.append("images", file)); // <-- always use key "images" for all files
 
       const res = await axios.post(
         "https://cached-nursery-kevin-advances.trycloudflare.com/api/v1/district-news",
@@ -154,7 +163,7 @@ export default function CreateLocalNewsPost() {
 
       if (res.data.success) {
         toast.success("News posted successfully!");
-        navigate("/localnews/Bokaro");
+        navigate(`/localnews/${encodeURIComponent(formData.districtName)}`);
       }
     } catch (err) {
       console.error(err);
@@ -241,13 +250,29 @@ export default function CreateLocalNewsPost() {
             <label className="block font-semibold text-gray-700 mb-1 flex items-center gap-2">
               <MapPin size={18} /> Select District
             </label>
-            <select name="districtName" value={formData.districtName} onChange={handleChange} className="w-full border px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400" required>
+            {/* --- Fixed select with headings --- */}
+            <select
+              name="districtName"
+              value={formData.districtName}
+              onChange={handleChange}
+              className="w-full border px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400"
+              required
+            >
               <option value="">-- Choose a District --</option>
-              {allDistricts.map((d) => (
-                <option key={d} value={d}>
-                  {d} {!existingDistricts.includes(d) ? "(Will be created)" : ""}
-                </option>
-              ))}
+              <optgroup label="Jharkhand Districts">
+                {jharkhandDistricts.map((d) => (
+                  <option key={d} value={d}>
+                    {d} {!existingDistricts.includes(d) ? "(Will be created)" : ""}
+                  </option>
+                ))}
+              </optgroup>
+              <optgroup label="Bihar Districts">
+                {biharDistricts.map((d) => (
+                  <option key={d} value={d}>
+                    {d} {!existingDistricts.includes(d) ? "(Will be created)" : ""}
+                  </option>
+                ))}
+              </optgroup>
             </select>
           </div>
           <div>

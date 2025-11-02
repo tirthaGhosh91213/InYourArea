@@ -61,63 +61,6 @@ function LogIn() {
     window.location.href = GOOGLE_AUTH_URL;
   };
 
-
-
-
-  // OAUTH ADDITION: This useEffect hook runs when the component loads.
-  // It checks if the URL contains tokens from the OAuth2 redirect.
-  // Replace the existing useEffect hook with this improved version:
-
-// OAUTH FIX: Handle OAuth callback - Replace your existing OAuth useEffect with this
-// OAUTH FIX - Handle OAuth callback
-// OAUTH FIX - Handle OAuth callback
-// OAUTH FIX - Handle OAuth callback and store tokens
-// useEffect(() => {
-//   console.log('🔍 Checking for OAuth tokens...');
-//   console.log('Current URL:', window.location.href);
-  
-//   const params = new URLSearchParams(location.search);
-//   const token = params.get('accessToken');
-//   const role = params.get('role');
-
-//   console.log('Token found:', token ? 'Yes' : 'No');
-//   console.log('Role found:', role || 'None');
-
-//   if (token && role) {
-//     console.log('🔑 Storing OAuth tokens...');
-    
-//     try {
-//       // Store the access token
-//       localStorage.setItem('accessToken', token);
-      
-//       // Format and store the role (remove ROLE_ prefix)
-//       const formattedRole = role === 'ROLE_ADMIN' ? 'admin' : 'user';
-//       localStorage.setItem('role', formattedRole);
-
-//       console.log('✅ Successfully stored tokens!');
-//       console.log('   AccessToken in localStorage:', localStorage.getItem('accessToken') ? 'Stored' : 'Failed');
-//       console.log('   Role in localStorage:', localStorage.getItem('role'));
-
-//       // Show success message
-//       showPopup('Login successful!', 'success');
-
-//       // CRITICAL: Navigate to clean the URL and trigger re-render
-//       // This works even if we're already on /jobs because it forces React Router to update
-//       navigate('/jobs', { replace: true });
-      
-//     } catch (error) {
-//       console.error('❌ Error storing tokens:', error);
-//       showPopup('Error saving login data', 'error');
-//     }
-//   } else {
-//     console.log('ℹ️ No OAuth tokens in URL');
-//   }
-// }, [location.search, navigate]);
-
-
-
-
-
   // ===== OTP Flow =====
   const handleSendOtp = async (e) => {
     e.preventDefault();
