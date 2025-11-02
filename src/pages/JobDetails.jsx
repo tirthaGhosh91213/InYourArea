@@ -59,7 +59,7 @@ export default function JobDetails() {
     try {
       setLoading(true);
       const res = await axios.get(
-        `https://miami-only-great-buf.trycloudflare.com/api/v1/jobs`,
+        `https://cached-nursery-kevin-advances.trycloudflare.com//api/v1/jobs`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -76,7 +76,7 @@ export default function JobDetails() {
   const fetchComments = async () => {
     try {
       const res = await axios.get(
-        `https://miami-only-great-buf.trycloudflare.com/api/v1/comments/jobs/${id}`,
+        `https://cached-nursery-kevin-advances.trycloudflare.com//api/v1/comments/jobs/${id}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (res.data.success) setComments(res.data.data);
@@ -89,7 +89,7 @@ export default function JobDetails() {
     if (!commentText.trim()) return toast.error("Comment cannot be empty");
     try {
       const res = await axios.post(
-        `https://miami-only-great-buf.trycloudflare.com/api/v1/comments/jobs/${id}`,
+        `https://cached-nursery-kevin-advances.trycloudflare.com//api/v1/comments/jobs/${id}`,
         { content: commentText },
         { headers: { Authorization: `Bearer ${token}` } }
       );

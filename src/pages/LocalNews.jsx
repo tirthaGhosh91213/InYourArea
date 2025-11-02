@@ -67,7 +67,7 @@ export default function LocalNews() {
       setError("");
       try {
         const res = await axios.get(
-          `https://miami-only-great-buf.trycloudflare.com/api/v1/district-news/${district}`,
+          `https://cached-nursery-kevin-advances.trycloudflare.com//api/v1/district-news/${district}`,
           token ? { headers: { Authorization: `Bearer ${token}` } } : {}
         );
         if (res.data.success) {

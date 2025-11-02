@@ -81,7 +81,7 @@ export default function CreateEventPost() {
 
       const accessToken = localStorage.getItem("accessToken");
 
-      const res = await axios.post("https://miami-only-great-buf.trycloudflare.com/api/v1/events", data, {
+      const res = await axios.post("https://cached-nursery-kevin-advances.trycloudflare.com//api/v1/events", data, {
         headers: {
           "Content-Type": "multipart/form-data",
           Authorization: `Bearer ${accessToken}`,
