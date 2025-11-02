@@ -75,7 +75,7 @@ export default function CreateCommunityPost() {
       // Append images
       formData.images.forEach((img) => multipartData.append("images", img));
 
-      const res = await axios.post("https://rehabilitation-cost-additionally-pci.trycloudflare.com/api/v1/community", multipartData, {
+      const res = await axios.post("https://miami-only-great-buf.trycloudflare.com/api/v1/community", multipartData, {
         headers: {
           "Content-Type": "multipart/form-data",
           Authorization: `Bearer ${token}`,

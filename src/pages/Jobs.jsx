@@ -26,7 +26,7 @@ export default function Jobs() {
   const fetchJobs = async () => {
     try {
       setLoading(true);
-      const res = await axios.get("https://rehabilitation-cost-additionally-pci.trycloudflare.com/api/v1/jobs");
+      const res = await axios.get("https://miami-only-great-buf.trycloudflare.com/api/v1/jobs");
       if (res.data.success) {
         setJobs(res.data.data.filter((job) => job.status === "APPROVED"));
       }

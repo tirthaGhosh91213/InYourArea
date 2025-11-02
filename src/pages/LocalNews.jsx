@@ -67,7 +67,7 @@ export default function LocalNews() {
       setError("");
       try {
         const res = await axios.get(
-          `https://rehabilitation-cost-additionally-pci.trycloudflare.com/api/v1/district-news/${district}`,
+          `https://miami-only-great-buf.trycloudflare.com/api/v1/district-news/${district}`,
           token ? { headers: { Authorization: `Bearer ${token}` } } : {}
         );
         if (res.data.success) {
