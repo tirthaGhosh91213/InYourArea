@@ -41,7 +41,7 @@ export default function EmailService() {
 
     try {
       // Send email as URL query parameter, matching your Postman request
-      const response = await fetch(`http://jharkhand-alb-221425706.ap-south-1.elb.amazonaws.com/api/v1/subscribe?email=${encodeURIComponent(email)}`, {
+      const response = await fetch(`https://rehabilitation-cost-additionally-pci.trycloudflare.com/api/v1/subscribe?email=${encodeURIComponent(email)}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
       });
@@ -64,7 +64,7 @@ export default function EmailService() {
     }
 
     try {
-      const response = await fetch(`http://jharkhand-alb-221425706.ap-south-1.elb.amazonaws.com/api/v1/subscribe?email=${encodeURIComponent(unsubscribeEmail)}`, {
+      const response = await fetch(`https://rehabilitation-cost-additionally-pci.trycloudflare.com/api/v1/subscribe?email=${encodeURIComponent(unsubscribeEmail)}`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
       });
