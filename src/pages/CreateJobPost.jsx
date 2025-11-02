@@ -77,7 +77,7 @@ export default function CreateJobPost() {
 
       const accessToken = localStorage.getItem("accessToken");
 
-      const res = await axios.post("https://rehabilitation-cost-additionally-pci.trycloudflare.com/api/v1/jobs", data, {
+      const res = await axios.post("https://miami-only-great-buf.trycloudflare.com/api/v1/jobs", data, {
         headers: {
           "Content-Type": "multipart/form-data",
           Authorization: `Bearer ${accessToken}`,

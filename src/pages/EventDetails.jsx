@@ -70,7 +70,7 @@ export default function EventDetails() {
       try {
         setLoading(true);
         const res = await axios.get(
-          `https://rehabilitation-cost-additionally-pci.trycloudflare.com/api/v1/events/${id}`,
+          `https://miami-only-great-buf.trycloudflare.com/api/v1/events/${id}`,
           {
             headers: { Authorization: `Bearer ${token}` },
           }
@@ -90,7 +90,7 @@ export default function EventDetails() {
   const fetchComments = async () => {
     try {
       const res = await axios.get(
-        `https://rehabilitation-cost-additionally-pci.trycloudflare.com/api/v1/comments/events/${id}`,
+        `https://miami-only-great-buf.trycloudflare.com/api/v1/comments/events/${id}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (res.data.success) setComments(res.data.data);
@@ -104,7 +104,7 @@ export default function EventDetails() {
     try {
       setPosting(true);
       const res = await axios.post(
-        `https://rehabilitation-cost-additionally-pci.trycloudflare.com/api/v1/comments/events/${id}`,
+        `https://miami-only-great-buf.trycloudflare.com/api/v1/comments/events/${id}`,
         { content: commentText },
         { headers: { Authorization: `Bearer ${token}` } }
       );
