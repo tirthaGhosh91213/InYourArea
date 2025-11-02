@@ -41,7 +41,7 @@ export default function EmailService() {
 
     try {
       // Send email as URL query parameter, matching your Postman request
-      const response = await fetch(`https://cached-nursery-kevin-advances.trycloudflare.com//api/v1/subscribe?email=${encodeURIComponent(email)}`, {
+      const response = await fetch(`https://cached-nursery-kevin-advances.trycloudflare.com/api/v1/subscribe?email=${encodeURIComponent(email)}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
       });
@@ -64,7 +64,7 @@ export default function EmailService() {
     }
 
     try {
-      const response = await fetch(`https://cached-nursery-kevin-advances.trycloudflare.com//api/v1/subscribe?email=${encodeURIComponent(unsubscribeEmail)}`, {
+      const response = await fetch(`https://cached-nursery-kevin-advances.trycloudflare.com/api/v1/subscribe?email=${encodeURIComponent(unsubscribeEmail)}`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
       });

@@ -30,7 +30,7 @@ function LogIn() {
   const location = useLocation();
 
   // OAUTH ADDITION: Define the backend URL for Google OAuth2
-  const GOOGLE_AUTH_URL = 'https://cached-nursery-kevin-advances.trycloudflare.com//api/v1/oauth2/authorization/google';
+  const GOOGLE_AUTH_URL = 'https://cached-nursery-kevin-advances.trycloudflare.com/api/v1/oauth2/authorization/google';
 
   // Detect if screen is mobile width
   const isMobile = useMediaQuery("(max-width: 768px)");
@@ -122,7 +122,7 @@ function LogIn() {
   const handleSendOtp = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch("https://cached-nursery-kevin-advances.trycloudflare.com//api/v1/auth/send-otp", {
+      const res = await fetch("https://cached-nursery-kevin-advances.trycloudflare.com/api/v1/auth/send-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: otpForm.email }),
@@ -140,7 +140,7 @@ function LogIn() {
   const handleVerifyOtp = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch("https://cached-nursery-kevin-advances.trycloudflare.com//api/v1/auth/verify-otp", {
+      const res = await fetch("https://cached-nursery-kevin-advances.trycloudflare.com/api/v1/auth/verify-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(otpForm),
@@ -159,7 +159,7 @@ function LogIn() {
   const handleSignup = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch("https://cached-nursery-kevin-advances.trycloudflare.com//api/v1/auth/signup", {
+      const res = await fetch("https://cached-nursery-kevin-advances.trycloudflare.com/api/v1/auth/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(signupForm),
@@ -180,7 +180,7 @@ function LogIn() {
   const handleSignin = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch("https://cached-nursery-kevin-advances.trycloudflare.com//api/v1/auth/login", {
+      const res = await fetch("https://cached-nursery-kevin-advances.trycloudflare.com/api/v1/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(signinForm),
@@ -211,7 +211,7 @@ function LogIn() {
     e.preventDefault();
     try {
       const res = await fetch(
-        "https://cached-nursery-kevin-advances.trycloudflare.com//api/v1/auth/forgot-password",
+        "https://cached-nursery-kevin-advances.trycloudflare.com/api/v1/auth/forgot-password",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -234,7 +234,7 @@ function LogIn() {
     e.preventDefault();
     try {
       const res = await fetch(
-        "https://cached-nursery-kevin-advances.trycloudflare.com//api/v1/auth/reset-password",
+        "https://cached-nursery-kevin-advances.trycloudflare.com/api/v1/auth/reset-password",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
