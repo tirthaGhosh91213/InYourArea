@@ -23,7 +23,7 @@ export default function NotificationPanel({
       }
 
       const res = await axios.get(
-        "https://miami-only-great-buf.trycloudflare.com/api/v1/notifications/recent?limit=50",
+        "https://cached-nursery-kevin-advances.trycloudflare.com//api/v1/notifications/recent?limit=50",
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -51,7 +51,7 @@ export default function NotificationPanel({
         return;
       }
 
-      await axios.delete("https://miami-only-great-buf.trycloudflare.com/api/v1/notifications/clear-all", {
+      await axios.delete("https://cached-nursery-kevin-advances.trycloudflare.com//api/v1/notifications/clear-all", {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -70,7 +70,7 @@ export default function NotificationPanel({
         return;
       }
 
-      await axios.delete(`https://miami-only-great-buf.trycloudflare.com/api/v1/notifications/${id}`, {
+      await axios.delete(`https://cached-nursery-kevin-advances.trycloudflare.com//api/v1/notifications/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
