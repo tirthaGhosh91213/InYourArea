@@ -6,16 +6,24 @@ import RightSidebar from "../components/RightSidebar";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
+import { IoPersonCircleOutline } from "react-icons/io5"; // Ionicons profile image
 
 // Helper: fetch avatar for any user ID
 const fetchProfileImage = async (userId) => {
   try {
-    const res = await axios.get(`https://cached-nursery-kevin-advances.trycloudflare.com/api/v1/user/profile/${userId}`);
-    if (res.data && res.data.success && res.data.data && res.data.data.profileImageUrl) {
+    const res = await axios.get(
+      `https://cached-nursery-kevin-advances.trycloudflare.com/api/v1/user/profile/${userId}`
+    );
+    if (
+      res.data &&
+      res.data.success &&
+      res.data.data &&
+      res.data.data.profileImageUrl
+    ) {
       return res.data.data.profileImageUrl;
     }
   } catch (error) {}
-  return "/default-avatar.png";
+  return null; // Return null instead of a string
 };
 
 export default function Community() {
@@ -83,7 +91,10 @@ export default function Community() {
         const avatarList = await Promise.all(fetchAvatars);
         setCommentAvatars((prev) => ({
           ...prev,
-          ...avatarList.reduce((acc, { userId, avatar }) => { acc[userId] = avatar; return acc; }, {})
+          ...avatarList.reduce((acc, { userId, avatar }) => {
+            acc[userId] = avatar;
+            return acc;
+          }, {}),
         }));
       }
     } catch {
@@ -92,7 +103,8 @@ export default function Community() {
   };
 
   const sendComment = async (postId) => {
-    if (!commentText[postId]) return toast.error("Comment cannot be empty");
+    if (!commentText[postId])
+      return toast.error("Comment cannot be empty");
     try {
       const res = await axios.post(
         `https://cached-nursery-kevin-advances.trycloudflare.com/api/v1/comments/community-posts/${postId}`,
@@ -143,6 +155,23 @@ export default function Community() {
     return words.length <= 25 ? content : words.slice(0, 25).join(" ") + "...";
   };
 
+  // Profile image component fallback
+  const ProfileImage = ({ src, alt, size, className = "" }) =>
+    src ? (
+      <img
+        src={src}
+        alt={alt}
+        className={`rounded-full object-cover border border-gray-200 ${size} ${className}`}
+      />
+    ) : (
+      <IoPersonCircleOutline
+        size={size.replace("w-", "").replace("h-", "") * 8 || 40}
+        color="#b2b2b2"
+        className={`bg-gray-200 rounded-full ${className}`}
+        style={{ minWidth: "2rem", minHeight: "2rem" }}
+      />
+    );
+
   return (
     <>
       <div className="w-full fixed top-0 left-0 z-50 bg-white shadow-md border-b border-gray-200">
@@ -162,8 +191,8 @@ export default function Community() {
             <h2 className="text-2xl font-semibold text-center mb-4">
               Community Posts
             </h2>
-            <div className="flex justify-center">
-              <div className="relative w-full sm:w-96">
+            <div className="flex justify-center sm:wl-10 ">
+              <div className="relative w-full sm:w-96 ">
                 <div className="absolute inset-y-0 left-2 flex items-center justify-center pointer-events-none">
                   <Search size={18} className="text-emerald-700" />
                 </div>
@@ -178,7 +207,9 @@ export default function Community() {
             </div>
           </motion.div>
           {loading ? (
-            <div className="flex justify-center py-12 text-gray-600">Loading...</div>
+            <div className="flex justify-center py-12 text-gray-600">
+              Loading...
+            </div>
           ) : filteredPosts.length > 0 ? (
             <AnimatePresence>
               <div className="space-y-5 mx-0 sm:mx-4">
@@ -199,15 +230,19 @@ export default function Community() {
                       boxShadow: "0 10px 24px rgba(52, 211, 153, 0.10)",
                     }}
                     className="relative rounded-xl overflow-hidden bg-white/90 shadow-md border border-green-50 transition-all cursor-pointer hover:bg-gradient-to-l hover:from-emerald-100 hover:via-green-50 hover:to-teal-50"
-                    onClick={() => window.innerWidth < 640 ? null : navigate(`/community/${post.id}`)}
+                    onClick={() =>
+                      window.innerWidth < 640
+                        ? null
+                        : navigate(`/community/${post.id}`)
+                    }
                   >
                     {/* DESKTOP+TABLET layout untouched */}
                     <div className="hidden sm:flex">
                       <div className="flex flex-col items-center px-4 py-4 min-w-[90px]">
-                        <img
-                          src={authorAvatars[post.author.id] || "/default-avatar.png"}
+                        <ProfileImage
+                          src={authorAvatars[post.author.id]}
                           alt="author"
-                          className="rounded-full w-12 h-12 object-cover border border-gray-200 mb-2"
+                          size="w-12 h-12"
                         />
                         <span className="font-semibold text-gray-900 text-[15px] text-center max-w-[80px] truncate">
                           {post.author.firstName} {post.author.lastName}
@@ -244,10 +279,11 @@ export default function Community() {
                                 key={c.id}
                                 className="flex gap-2 items-center text-gray-700"
                               >
-                                <img
-                                  src={commentAvatars[c.author.id] || "/default-avatar.png"}
+                                <ProfileImage
+                                  src={commentAvatars[c.author.id]}
                                   alt="profile"
-                                  className="rounded-full w-8 h-8 object-cover border border-gray-300"
+                                  size="w-8 h-8"
+                                  className="border border-gray-300"
                                 />
                                 <span className="font-semibold text-gray-800 mr-1">
                                   {c.author.firstName} {c.author.lastName}
@@ -282,7 +318,9 @@ export default function Community() {
                         <div className="flex flex-col justify-center items-center px-4 py-4 min-w-[140px]">
                           <div className="relative w-32 h-32 sm:w-44 sm:h-44 rounded-lg overflow-hidden flex-shrink-0">
                             <img
-                              src={post.imageUrls[post.currentImageIndex || 0]}
+                              src={
+                                post.imageUrls[post.currentImageIndex || 0]
+                              }
                               alt={post.title}
                               className="w-full h-full object-cover rounded-lg"
                             />
@@ -297,9 +335,11 @@ export default function Community() {
                                           ? {
                                               ...p,
                                               currentImageIndex:
-                                                (p.currentImageIndex || 0) - 1 < 0
+                                                (p.currentImageIndex || 0) - 1 <
+                                                0
                                                   ? p.imageUrls.length - 1
-                                                  : (p.currentImageIndex || 0) - 1,
+                                                  : (p.currentImageIndex || 0) -
+                                                    1,
                                             }
                                           : p
                                       )
@@ -318,7 +358,8 @@ export default function Community() {
                                           ? {
                                               ...p,
                                               currentImageIndex:
-                                                (p.currentImageIndex || 0) + 1 >= p.imageUrls.length
+                                                (p.currentImageIndex || 0) + 1 >=
+                                                p.imageUrls.length
                                                   ? 0
                                                   : (p.currentImageIndex || 0) + 1,
                                             }
@@ -337,7 +378,7 @@ export default function Community() {
                       )}
                     </div>
                     {/* MOBILE RESPONSIVE LAYOUT (sm:hidden) */}
-                    <div className="flex sm:hidden flex-col w-full p-4 gap-2">
+                    <div className="flex sm:hidden flex-col w-full p-4 gap-2 m-3">
                       {/* Title truncated to 6 words */}
                       <span className="text-base font-bold w-full text-center mb-2">
                         {truncateWords(post.title, 6)}
@@ -345,10 +386,10 @@ export default function Community() {
                       <div className="flex flex-row items-center w-full">
                         {/* Avatar, firstName and date/desc block, now at left */}
                         <div className="flex flex-col items-center mr-2">
-                          <img
-                            src={authorAvatars[post.author.id] || "/default-avatar.png"}
+                          <ProfileImage
+                            src={authorAvatars[post.author.id]}
                             alt="author"
-                            className="rounded-full w-10 h-10 object-cover border border-gray-200"
+                            size="w-10 h-10"
                           />
                           <span className="text-[15px] font-semibold text-center text-gray-700 mt-1">
                             {post.author.firstName}
@@ -397,10 +438,11 @@ export default function Community() {
                               key={c.id}
                               className="flex gap-2 items-center text-gray-700"
                             >
-                              <img
-                                src={commentAvatars[c.author.id] || "/default-avatar.png"}
+                              <ProfileImage
+                                src={commentAvatars[c.author.id]}
                                 alt="profile"
-                                className="rounded-full w-8 h-8 object-cover border border-gray-300"
+                                size="w-8 h-8"
+                                className="border border-gray-300"
                               />
                               <span className="font-semibold text-gray-800 mr-1">
                                 {c.author.firstName} {c.author.lastName}
