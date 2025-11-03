@@ -15,10 +15,12 @@ import {
 import axios from "axios";
 import { toast } from "react-toastify";
 
+
 export default function EventDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
   const token = localStorage.getItem("accessToken");
+
 
   const [event, setEvent] = useState(null);
   const [comments, setComments] = useState([]);
@@ -29,8 +31,10 @@ export default function EventDetails() {
   const [loading, setLoading] = useState(true);
   const [isExpanded, setIsExpanded] = useState(false);
 
+
   const touchStartX = useRef(0);
   const touchEndX = useRef(0);
+
 
   const handleTouchStart = (e) => {
     touchStartX.current = e.changedTouches[0].screenX;
@@ -41,6 +45,7 @@ export default function EventDetails() {
     if (diff > 50) nextImage();
     if (diff < -50) prevImage();
   };
+
 
   const prevImage = () => {
     if (!event?.imageUrls) return;
@@ -55,6 +60,7 @@ export default function EventDetails() {
     );
   };
 
+
   const formatDate = (date) =>
     new Date(date).toLocaleString("en-GB", {
       day: "2-digit",
@@ -63,6 +69,7 @@ export default function EventDetails() {
       hour: "2-digit",
       minute: "2-digit",
     });
+
 
   useEffect(() => {
     if (!token) navigate("/login");
@@ -87,6 +94,7 @@ export default function EventDetails() {
     // eslint-disable-next-line
   }, [id, token]);
 
+
   const fetchComments = async () => {
     try {
       const res = await axios.get(
@@ -98,6 +106,7 @@ export default function EventDetails() {
       toast.error("Failed to fetch comments");
     }
   };
+
 
   const postComment = async () => {
     if (!commentText.trim()) return toast.error("Comment cannot be empty");
@@ -120,10 +129,12 @@ export default function EventDetails() {
     }
   };
 
+
   if (loading || !event)
     return (
       <div className="flex justify-center items-center h-screen text-gray-600 text-lg animate-pulse">Loading...</div>
     );
+
 
   return (
     <>
@@ -170,10 +181,28 @@ export default function EventDetails() {
               </div>
             )}
 
+
             {/* Author and Event Info */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4 text-gray-700">
               <div className="flex flex-row items-center gap-3 order-1">
-                <UserCircle size={24} className="text-green-600 flex-shrink-0" />
+                {event.author?.profileImageUrl ? (
+                  <img
+                    src={event.author.profileImageUrl}
+                    alt={`${event.author.firstName} ${event.author.lastName}`}
+                    className="w-12 h-12 rounded-full object-cover border-2 border-green-200 flex-shrink-0"
+                    onError={(e) => {
+                      e.target.style.display = "none";
+                      e.target.nextSibling.style.display = "block";
+                    }}
+                  />
+                ) : null}
+                <UserCircle
+                  size={48}
+                  className="text-green-600 flex-shrink-0"
+                  style={{
+                    display: event.author?.profileImageUrl ? "none" : "block",
+                  }}
+                />
                 <div>
                   <div className="font-semibold text-gray-800 text-base sm:text-lg">
                     {event.author
@@ -206,6 +235,7 @@ export default function EventDetails() {
               </div>
             </div>
 
+
             <h1 className="text-2xl md:text-3xl font-bold text-gray-800" dangerouslySetInnerHTML={{ __html: event.title }} />
             <div className="relative">
               <div
@@ -229,6 +259,7 @@ export default function EventDetails() {
                 <Link2 size={20} /> Register
               </button>
             )}
+
 
             <div className="pt-6 border-t border-gray-200">
               <h2 className="text-xl md:text-2xl font-semibold text-gray-800 mb-4">💬 Comments</h2>
@@ -272,7 +303,23 @@ export default function EventDetails() {
                         }}
                         className="bg-white p-4 rounded-2xl shadow-md flex items-start gap-4 border border-green-100 hover:shadow-lg transition-transform duration-300 hover:scale-[1.01]"
                       >
-                        <div className="w-10 h-10 bg-green-100 text-green-700 flex items-center justify-center rounded-full font-bold text-lg shadow-sm">
+                        {c.author?.profileImageUrl ? (
+                          <img
+                            src={c.author.profileImageUrl}
+                            alt={`${c.author.firstName} ${c.author.lastName}`}
+                            className="w-10 h-10 rounded-full object-cover border-2 border-green-200 shadow-sm flex-shrink-0"
+                            onError={(e) => {
+                              e.target.style.display = "none";
+                              e.target.nextSibling.style.display = "flex";
+                            }}
+                          />
+                        ) : null}
+                        <div
+                          className="w-10 h-10 bg-green-100 text-green-700 flex items-center justify-center rounded-full font-bold text-lg shadow-sm flex-shrink-0"
+                          style={{
+                            display: c.author?.profileImageUrl ? "none" : "flex",
+                          }}
+                        >
                           {(c.author?.firstName?.[0] || "U").toUpperCase()}
                         </div>
                         <div className="flex-1">
@@ -302,6 +349,7 @@ export default function EventDetails() {
             </div>
           </motion.div>
         </main>
+
 
         {/* Fullscreen Image */}
         <AnimatePresence>
