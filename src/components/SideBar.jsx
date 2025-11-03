@@ -11,7 +11,6 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import EmailService from "./EmailService";
 import logo from "../assets/logo.png";
 
 const districts = [
@@ -36,7 +35,6 @@ export default function Sidebar({ sidebarOpen, onClose }) {
   const navigate = useNavigate();
   const location = useLocation();
   const [showModal, setShowModal] = useState(false);
-  const [showEmailService, setShowEmailService] = useState(false);
   const [role, setRole] = useState(null);
   const [selectedDistrict, setSelectedDistrict] = useState(() => {
     const saved = localStorage.getItem("district");
@@ -143,13 +141,14 @@ export default function Sidebar({ sidebarOpen, onClose }) {
         >
           <div>
             <div className="flex items-center justify-between ">
-              <img
-                src={logo}
-                alt="Logo"
-                className="max-h-28 w-auto mt-3 select-none"
-                style={{ marginLeft: '40px' }}
-                draggable={false}
-              />
+             <img
+  src={logo}
+  alt="Logo"
+  className="max-h-32 w-auto mt-3 select-none sm:max-h-28 md:max-h-28"
+  style={{ marginLeft: '40px' }} // Optionally, you can remove this for better centering on small screens
+  draggable={false}
+/>
+
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -257,14 +256,13 @@ export default function Sidebar({ sidebarOpen, onClose }) {
                 + Post
               </motion.button>
               <motion.button
-                onClick={() => setShowEmailService(true)}
+                onClick={() => navigate("/emailservice")}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 className="mt-3 w-full flex items-center justify-center gap-2 bg-blue-500 text-white font-semibold rounded-full py-3 shadow-md hover:bg-blue-600 transition-all"
               >
                 <Mail size={18} /> Email Service
               </motion.button>
-              {/* --- NEW: Powered by Meraki section --- */}
               <div className="w-full mt-3 flex justify-center">
                 <p className="text-xs">
                   <span className="text-gray-600 font-semibold">Powered by </span>
@@ -274,11 +272,10 @@ export default function Sidebar({ sidebarOpen, onClose }) {
                     rel="noopener noreferrer"
                     className="text-green-600 font-bold underline hover:text-green-800 transition"
                   >
-                    Meraki 
+                    Meraki
                   </a>
                 </p>
               </div>
-              {/* --- END NEW --- */}
             </nav>
           </div>
           <AnimatePresence>
@@ -322,9 +319,6 @@ export default function Sidebar({ sidebarOpen, onClose }) {
               </motion.div>
             )}
           </AnimatePresence>
-          {showEmailService && (
-            <EmailService onClose={() => setShowEmailService(false)} />
-          )}
         </motion.aside>
       )}
     </AnimatePresence>
