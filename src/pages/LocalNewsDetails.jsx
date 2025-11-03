@@ -14,6 +14,7 @@ import {
 import axios from "axios";
 import { toast } from "react-toastify";
 
+
 export default function LocalNewsDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -26,8 +27,10 @@ export default function LocalNewsDetails() {
   const [isExpanded, setIsExpanded] = useState(false);
   const [loading, setLoading] = useState(true);
 
+
   const touchStartX = useRef(0);
   const touchEndX = useRef(0);
+
 
   // Helper: Render either <img> or <video>
   const renderMedia = (url, alt, className, isFullscreen = false) => {
@@ -61,6 +64,7 @@ export default function LocalNewsDetails() {
     );
   };
 
+
   // Swipe Gesture
   const handleTouchStart = (e) =>
     (touchStartX.current = e.changedTouches[0].screenX);
@@ -71,15 +75,18 @@ export default function LocalNewsDetails() {
     if (diff < -50) prevImage();
   };
 
+
   const prevImage = () =>
     setCurrentImage((prev) =>
       prev === 0 ? news.imageUrls.length - 1 : prev - 1
     );
 
+
   const nextImage = () =>
     setCurrentImage((prev) =>
       prev === news.imageUrls.length - 1 ? 0 : prev + 1
     );
+
 
   const formatDate = (date) =>
     new Date(date).toLocaleString("en-GB", {
@@ -89,6 +96,7 @@ export default function LocalNewsDetails() {
       hour: "2-digit",
       minute: "2-digit",
     });
+
 
   // Fetch News Details
   useEffect(() => {
@@ -108,6 +116,7 @@ export default function LocalNewsDetails() {
     fetchNews();
   }, [id]);
 
+
   // Fetch Comments
   const fetchComments = async () => {
     try {
@@ -120,9 +129,11 @@ export default function LocalNewsDetails() {
     }
   };
 
+
   useEffect(() => {
     fetchComments();
   }, [id]);
+
 
   // Post Comment
   const handlePostComment = async () => {
@@ -131,11 +142,13 @@ export default function LocalNewsDetails() {
       return;
     }
 
+
     const token = localStorage.getItem("accessToken");
     if (!token) {
       navigate("/login");
       return;
     }
+
 
     try {
       setPosting(true);
@@ -144,6 +157,7 @@ export default function LocalNewsDetails() {
         { content: commentText },
         { headers: { Authorization: `Bearer ${token}` } }
       );
+
 
       if (res.data.success) {
         toast.success("Comment added successfully!");
@@ -157,12 +171,14 @@ export default function LocalNewsDetails() {
     }
   };
 
+
   if (loading || !news)
     return (
       <div className="flex justify-center items-center h-screen text-gray-600 text-lg animate-pulse">
         Loading...
       </div>
     );
+
 
   return (
     <>
@@ -175,6 +191,7 @@ export default function LocalNewsDetails() {
           >
             <ArrowLeft size={20} /> Back
           </motion.button>
+
 
           <motion.div
             layout
@@ -209,10 +226,28 @@ export default function LocalNewsDetails() {
               </div>
             )}
 
+
             {/* Author Info */}
-            <div className="flex justify-between items-center text-gray-700">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4 text-gray-700">
               <div className="flex items-center gap-3">
-                <UserCircle size={24} className="text-green-600" />
+                {news.author?.profileImageUrl ? (
+                  <img
+                    src={news.author.profileImageUrl}
+                    alt={`${news.author.firstName} ${news.author.lastName}`}
+                    className="w-12 h-12 rounded-full object-cover border-2 border-green-200"
+                    onError={(e) => {
+                      e.target.style.display = "none";
+                      e.target.nextSibling.style.display = "block";
+                    }}
+                  />
+                ) : null}
+                <UserCircle
+                  size={48}
+                  className="text-green-600"
+                  style={{
+                    display: news.author?.profileImageUrl ? "none" : "block",
+                  }}
+                />
                 <div>
                   <div className="font-semibold text-gray-800">
                     {news.author
@@ -229,6 +264,7 @@ export default function LocalNewsDetails() {
                 {news.districtName || "Unknown District"}
               </div>
             </div>
+
 
             {/* Title & Content */}
             <h1
@@ -250,11 +286,13 @@ export default function LocalNewsDetails() {
               </button>
             </div>
 
+
             {/* Comments Section */}
             <div className="pt-6 border-t border-gray-200">
               <h2 className="text-2xl font-semibold text-gray-800 mb-4">
                 💬 Comments
               </h2>
+
 
               {/* Comment Input */}
               <div className="flex flex-col sm:flex-row items-center gap-3 mb-6">
@@ -276,6 +314,7 @@ export default function LocalNewsDetails() {
                   {posting ? "Posting..." : "Post"}
                 </motion.button>
               </div>
+
 
               {/* Comments List */}
               <AnimatePresence>
@@ -299,11 +338,27 @@ export default function LocalNewsDetails() {
                         }}
                         className="bg-white p-4 rounded-2xl shadow-md flex items-start gap-4 border border-green-100 hover:shadow-lg transition-transform duration-300 hover:scale-[1.01]"
                       >
-                        <div className="w-12 h-12 bg-green-100 text-green-700 flex items-center justify-center rounded-full font-bold text-lg shadow-sm">
+                        {c.author?.profileImageUrl ? (
+                          <img
+                            src={c.author.profileImageUrl}
+                            alt={`${c.author.firstName} ${c.author.lastName}`}
+                            className="w-12 h-12 rounded-full object-cover border-2 border-green-200 shadow-sm flex-shrink-0"
+                            onError={(e) => {
+                              e.target.style.display = "none";
+                              e.target.nextSibling.style.display = "flex";
+                            }}
+                          />
+                        ) : null}
+                        <div
+                          className="w-12 h-12 bg-green-100 text-green-700 flex items-center justify-center rounded-full font-bold text-lg shadow-sm flex-shrink-0"
+                          style={{
+                            display: c.author?.profileImageUrl ? "none" : "flex",
+                          }}
+                        >
                           {(c.author?.firstName?.[0] || "U").toUpperCase()}
                         </div>
                         <div className="flex-1">
-                          <div className="flex justify-between items-center">
+                          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center">
                             <h4 className="font-semibold text-gray-800">
                               {c.author
                                 ? `${c.author.firstName} ${c.author.lastName}`
@@ -329,6 +384,7 @@ export default function LocalNewsDetails() {
             </div>
           </motion.div>
         </main>
+
 
         {/* Fullscreen Media */}
         <AnimatePresence>
@@ -363,7 +419,6 @@ export default function LocalNewsDetails() {
                   </button>
                 </>
               )}
-              {/* Fullscreen: Render media as in carousel, but with autoPlay for video */}
               {renderMedia(
                 news.imageUrls[currentImage],
                 news.title,

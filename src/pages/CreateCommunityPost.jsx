@@ -6,16 +6,18 @@ import { ArrowLeft, Upload, XCircle } from "lucide-react";
 import { toast } from "react-toastify";
 import axios from "axios";
 
+
 export default function CreateCommunityPost() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     title: "",
-    description: "",
+    content: "",
     location: "",
     images: [],
     imagePreviews: [],
   });
   const [loading, setLoading] = useState(false);
+
 
   // Redirect to /login if no token
   useEffect(() => {
@@ -25,6 +27,7 @@ export default function CreateCommunityPost() {
       navigate("/login");
     }
   }, [navigate]);
+
 
   const handleChange = (e) => {
     const { name, value, files } = e.target;
@@ -37,14 +40,17 @@ export default function CreateCommunityPost() {
     }
   };
 
+
   const removeImage = (index) => {
     const newImages = formData.images.filter((_, i) => i !== index);
     const newPreviews = formData.imagePreviews.filter((_, i) => i !== index);
     setFormData({ ...formData, images: newImages, imagePreviews: newPreviews });
   };
 
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+
 
     const token = localStorage.getItem("accessToken");
     if (!token) {
@@ -53,18 +59,21 @@ export default function CreateCommunityPost() {
       return;
     }
 
-    if (!formData.title || !formData.description)
+
+    if (!formData.title || !formData.content)
       return toast.error("Please fill all fields!");
     if (formData.images.length === 0) return toast.error("Please upload at least one image!");
+
 
     setLoading(true);
     try {
       const multipartData = new FormData();
 
+
       // Append post as JSON Blob
       const postPayload = {
         title: formData.title,
-        description: formData.description,
+        content: formData.content,
         location: formData.location,
       };
       multipartData.append(
@@ -72,8 +81,10 @@ export default function CreateCommunityPost() {
         new Blob([JSON.stringify(postPayload)], { type: "application/json" })
       );
 
+
       // Append images
       formData.images.forEach((img) => multipartData.append("images", img));
+
 
       const res = await axios.post("https://cached-nursery-kevin-advances.trycloudflare.com/api/v1/community", multipartData, {
         headers: {
@@ -81,6 +92,7 @@ export default function CreateCommunityPost() {
           Authorization: `Bearer ${token}`,
         },
       });
+
 
       if (res.data.success) {
         toast.success("Community post created successfully and pending approval!");
@@ -94,6 +106,7 @@ export default function CreateCommunityPost() {
     }
   };
 
+
   return (
     <motion.div className="min-h-screen bg-gray-50 flex flex-col md:flex-row">
       {/* Right Sidebar as Navbar */}
@@ -104,6 +117,7 @@ export default function CreateCommunityPost() {
         </div>
       </aside>
 
+
       {/* Main Content */}
       <main className="flex-1 p-6 md:p-10">
         <button
@@ -113,8 +127,10 @@ export default function CreateCommunityPost() {
           <ArrowLeft size={20} /> Back
         </button>
 
+
         <motion.div className="max-w-3xl mx-auto bg-white p-8 rounded-2xl shadow-lg border border-gray-100">
           <h1 className="text-3xl font-bold text-green-600 text-center mb-6">Create Community Post</h1>
+
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <input
@@ -126,10 +142,10 @@ export default function CreateCommunityPost() {
               required
             />
             <textarea
-              name="description"
-              value={formData.description}
+              name="content"
+              value={formData.content}
               onChange={handleChange}
-              placeholder="Description"
+              placeholder="Content"
               rows={5}
               className="w-full border px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400"
               required
@@ -142,6 +158,7 @@ export default function CreateCommunityPost() {
               className="w-full border px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400"
               required
             />
+
 
             <div className="grid grid-cols-2 gap-4">
               {formData.imagePreviews.map((src, idx) => (
@@ -162,6 +179,7 @@ export default function CreateCommunityPost() {
                 <input type="file" multiple accept="image/*" onChange={handleChange} className="hidden" />
               </label>
             </div>
+
 
             <motion.button
               whileHover={{ scale: 1.05 }}

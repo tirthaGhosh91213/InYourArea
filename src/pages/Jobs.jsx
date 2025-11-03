@@ -17,11 +17,13 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 
+
 export default function Jobs() {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
+
 
   const fetchJobs = async () => {
     try {
@@ -37,15 +39,18 @@ export default function Jobs() {
     }
   };
 
+
   useEffect(() => {
     fetchJobs();
   }, []);
+
 
   const filteredJobs = jobs.filter((job) =>
     [job.title, job.company, job.location].some((field) =>
       field?.toLowerCase().includes(searchTerm.toLowerCase())
     )
   );
+
 
   const formatDate = (date) =>
     new Date(date).toLocaleString("en-GB", {
@@ -54,12 +59,14 @@ export default function Jobs() {
       year: "numeric",
     });
 
+
   return (
     <>
       {/* Top Navbar */}
       <div className="w-full fixed top-0 left-0 z-50 bg-white shadow-md border-b border-gray-200">
         <RightSidebar refreshJobs={fetchJobs} />
       </div>
+
 
       {/* Page Layout */}
       <div className="flex h-screen bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden pt-16">
@@ -92,6 +99,7 @@ export default function Jobs() {
               </div>
             </div>
           </motion.div>
+
 
           {/* Job Cards */}
           {loading ? (
@@ -171,9 +179,27 @@ export default function Jobs() {
                       </div>
                     )}
 
+
                     {job.author && (
                       <div className="mt-2 mb-5 flex items-center gap-2 text-gray-500 ">
-                        <UserCircle size={16} className="text-green-700" />
+                        {job.author.profileImageUrl ? (
+                          <img
+                            src={job.author.profileImageUrl}
+                            alt={`${job.author.firstName} ${job.author.lastName}`}
+                            className="w-6 h-6 rounded-full object-cover border border-green-300 flex-shrink-0"
+                            onError={(e) => {
+                              e.target.style.display = "none";
+                              e.target.nextSibling.style.display = "block";
+                            }}
+                          />
+                        ) : null}
+                        <UserCircle
+                          size={16}
+                          className="text-green-700 flex-shrink-0"
+                          style={{
+                            display: job.author.profileImageUrl ? "none" : "block",
+                          }}
+                        />
                         <span className="">
                           Posted by:{" "}
                           <span className="font-semibold text-gray-700">
@@ -186,12 +212,14 @@ export default function Jobs() {
                       </div>
                     )}
 
+
                     <div className="mb-3">
                       <h2 className=" pb-5 font-semibold text-gray-800">{job.title}</h2>
                       <p className="text-sm text-emerald-700 flex items-center gap-1">
                         <Building2 size={14} /> {job.company}
                       </p>
                     </div>
+
 
                     <div className="space-y-2 text-gray-700">
                       <p className="flex items-center gap-2">
@@ -205,8 +233,6 @@ export default function Jobs() {
                       </p>
                     </div>
 
-                    {/* Author */}
-                    
 
                     <div className="mt-4 flex justify-between items-center border-t pt-3 border-emerald-200">
                       <motion.button

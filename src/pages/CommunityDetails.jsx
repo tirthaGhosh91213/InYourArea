@@ -14,10 +14,12 @@ import {
 import axios from "axios";
 import { toast } from "react-toastify";
 
+
 export default function CommunityDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
   const token = localStorage.getItem("accessToken");
+
 
   const [post, setPost] = useState(null);
   const [comments, setComments] = useState([]);
@@ -28,8 +30,10 @@ export default function CommunityDetails() {
   const [isExpanded, setIsExpanded] = useState(false);
   const [loading, setLoading] = useState(true);
 
+
   const touchStartX = useRef(0);
   const touchEndX = useRef(0);
+
 
   const renderMedia = (url, alt, className, isFullscreen = false) => {
     if (
@@ -62,6 +66,7 @@ export default function CommunityDetails() {
     );
   };
 
+
   const handleTouchStart = (e) =>
     (touchStartX.current = e.changedTouches[0].screenX);
   const handleTouchEnd = (e) => {
@@ -70,6 +75,7 @@ export default function CommunityDetails() {
     if (diff > 50) nextImage();
     if (diff < -50) prevImage();
   };
+
 
   const prevImage = () =>
     setCurrentImage((prev) =>
@@ -80,6 +86,7 @@ export default function CommunityDetails() {
         : 0
     );
 
+
   const nextImage = () =>
     setCurrentImage((prev) =>
       post && post.imageUrls && post.imageUrls.length
@@ -89,6 +96,7 @@ export default function CommunityDetails() {
         : 0
     );
 
+
   const formatDate = (date) =>
     new Date(date).toLocaleString("en-GB", {
       day: "2-digit",
@@ -97,6 +105,7 @@ export default function CommunityDetails() {
       hour: "2-digit",
       minute: "2-digit",
     });
+
 
   useEffect(() => {
     const fetchPost = async () => {
@@ -123,6 +132,7 @@ export default function CommunityDetails() {
     fetchPost();
   }, [id, token, navigate]);
 
+
   const fetchComments = async () => {
     try {
       const res = await axios.get(
@@ -136,9 +146,11 @@ export default function CommunityDetails() {
     }
   };
 
+
   useEffect(() => {
     if (token) fetchComments();
   }, [id, token]);
+
 
   const handlePostComment = async () => {
     if (!commentText.trim()) {
@@ -168,12 +180,14 @@ export default function CommunityDetails() {
     }
   };
 
+
   if (loading || !post)
     return (
       <div className="flex justify-center items-center h-screen text-gray-600 text-lg animate-pulse">
         Loading...
       </div>
     );
+
 
   return (
     <>
@@ -186,6 +200,7 @@ export default function CommunityDetails() {
           >
             <ArrowLeft size={20} /> Back
           </motion.button>
+
 
           <motion.div
             layout
@@ -219,10 +234,28 @@ export default function CommunityDetails() {
               </div>
             )}
 
+
             {/* AUTHOR INFO responsive: column on mobile, row on md+ */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4 text-gray-700">
               <div className="flex flex-row items-center gap-3 order-1">
-                <UserCircle size={24} className="text-green-600 flex-shrink-0" />
+                {post.author?.profileImageUrl ? (
+                  <img
+                    src={post.author.profileImageUrl}
+                    alt={`${post.author.firstName} ${post.author.lastName}`}
+                    className="w-12 h-12 rounded-full object-cover flex-shrink-0 border-2 border-green-200"
+                    onError={(e) => {
+                      e.target.style.display = "none";
+                      e.target.nextSibling.style.display = "block";
+                    }}
+                  />
+                ) : null}
+                <UserCircle
+                  size={48}
+                  className="text-green-600 flex-shrink-0"
+                  style={{
+                    display: post.author?.profileImageUrl ? "none" : "block",
+                  }}
+                />
                 <div>
                   <div className="font-semibold text-gray-800 text-base sm:text-lg">
                     {post.author
@@ -240,6 +273,7 @@ export default function CommunityDetails() {
                 {post.location || "Unknown Location"}
               </div>
             </div>
+
 
             <h1
               className="text-2xl md:text-3xl font-bold text-gray-800"
@@ -260,10 +294,12 @@ export default function CommunityDetails() {
               </button>
             </div>
 
+
             <div className="pt-6 border-t border-gray-200">
               <h2 className="text-xl md:text-2xl font-semibold text-gray-800 mb-4">
                 💬 Comments
               </h2>
+
 
               <div className="flex flex-col sm:flex-row items-center gap-3 mb-6">
                 <textarea
@@ -284,6 +320,7 @@ export default function CommunityDetails() {
                   {posting ? "Posting..." : "Post"}
                 </motion.button>
               </div>
+
 
               <AnimatePresence>
                 <motion.div
@@ -306,7 +343,23 @@ export default function CommunityDetails() {
                         }}
                         className="bg-white p-4 rounded-2xl shadow-md flex items-start gap-4 border border-green-100 hover:shadow-lg transition-transform duration-300 hover:scale-[1.01]"
                       >
-                        <div className="w-12 h-12 bg-green-100 text-green-700 flex items-center justify-center rounded-full font-bold text-lg shadow-sm">
+                        {c.author?.profileImageUrl ? (
+                          <img
+                            src={c.author.profileImageUrl}
+                            alt={`${c.author.firstName} ${c.author.lastName}`}
+                            className="w-12 h-12 rounded-full object-cover flex-shrink-0 border-2 border-green-200 shadow-sm"
+                            onError={(e) => {
+                              e.target.style.display = "none";
+                              e.target.nextSibling.style.display = "flex";
+                            }}
+                          />
+                        ) : null}
+                        <div
+                          className="w-12 h-12 bg-green-100 text-green-700 flex items-center justify-center rounded-full font-bold text-lg shadow-sm flex-shrink-0"
+                          style={{
+                            display: c.author?.profileImageUrl ? "none" : "flex",
+                          }}
+                        >
                           {(c.author?.firstName?.[0] || "U").toUpperCase()}
                         </div>
                         <div className="flex-1">
@@ -336,6 +389,7 @@ export default function CommunityDetails() {
             </div>
           </motion.div>
         </main>
+
 
         <AnimatePresence>
           {isFullscreen && post.imageUrls?.length > 0 && (

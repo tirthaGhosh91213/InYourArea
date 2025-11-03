@@ -14,10 +14,12 @@ import {
 import axios from "axios";
 import { toast } from "react-toastify";
 
+
 export default function JobDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
   const token = localStorage.getItem("accessToken");
+
 
   const [job, setJob] = useState(null);
   const [comments, setComments] = useState([]);
@@ -27,12 +29,15 @@ export default function JobDetails() {
   const [loading, setLoading] = useState(true);
   const [isExpanded, setIsExpanded] = useState(false);
 
+
   const touchStartX = useRef(0);
   const touchEndX = useRef(0);
+
 
   const handleTouchStart = (e) => {
     touchStartX.current = e.changedTouches[0].screenX;
   };
+
 
   const handleTouchEnd = (e) => {
     touchEndX.current = e.changedTouches[0].screenX;
@@ -41,6 +46,7 @@ export default function JobDetails() {
     if (diff < -50) prevImage();
   };
 
+
   const prevImage = () => {
     if (!job?.imageUrls) return;
     setCurrentImage((prev) =>
@@ -48,12 +54,14 @@ export default function JobDetails() {
     );
   };
 
+
   const nextImage = () => {
     if (!job?.imageUrls) return;
     setCurrentImage((prev) =>
       prev === job.imageUrls.length - 1 ? 0 : prev + 1
     );
   };
+
 
   const fetchJob = async () => {
     try {
@@ -73,6 +81,7 @@ export default function JobDetails() {
     }
   };
 
+
   const fetchComments = async () => {
     try {
       const res = await axios.get(
@@ -84,6 +93,7 @@ export default function JobDetails() {
       toast.error("Failed to fetch comments");
     }
   };
+
 
   const postComment = async () => {
     if (!commentText.trim()) return toast.error("Comment cannot be empty");
@@ -103,11 +113,13 @@ export default function JobDetails() {
     }
   };
 
+
   useEffect(() => {
     if (!token) navigate("/login");
     fetchJob();
     fetchComments();
   }, [id, token]);
+
 
   if (loading || !job)
     return (
@@ -115,6 +127,7 @@ export default function JobDetails() {
         Loading...
       </div>
     );
+
 
   return (
     <>
@@ -188,9 +201,11 @@ export default function JobDetails() {
               </div>
             )}
 
+
             <h1 className="text-2xl md:text-3xl font-bold text-gray-800">
               {job.title}
             </h1>
+
 
             <div className="relative">
               <div
@@ -207,6 +222,7 @@ export default function JobDetails() {
               </button>
             </div>
 
+
             {job.reglink && (
               <motion.button
                 whileHover={{ scale: 1.05 }}
@@ -217,6 +233,7 @@ export default function JobDetails() {
                 Apply Now
               </motion.button>
             )}
+
 
             <div className="pt-6 border-t border-gray-200">
               <h3 className="text-xl md:text-2xl font-semibold text-gray-800 mb-4">
@@ -260,7 +277,23 @@ export default function JobDetails() {
                         }}
                         className="bg-white p-4 rounded-2xl shadow-md flex items-start gap-4 border border-green-100 hover:shadow-lg transition-transform duration-300 hover:scale-[1.01]"
                       >
-                        <div className="w-10 h-10 bg-green-100 text-green-700 flex items-center justify-center rounded-full font-bold text-lg shadow-sm">
+                        {c.author?.profileImageUrl ? (
+                          <img
+                            src={c.author.profileImageUrl}
+                            alt={`${c.author.firstName} ${c.author.lastName}`}
+                            className="w-10 h-10 rounded-full object-cover border-2 border-green-200 shadow-sm flex-shrink-0"
+                            onError={(e) => {
+                              e.target.style.display = "none";
+                              e.target.nextSibling.style.display = "flex";
+                            }}
+                          />
+                        ) : null}
+                        <div
+                          className="w-10 h-10 bg-green-100 text-green-700 flex items-center justify-center rounded-full font-bold text-lg shadow-sm flex-shrink-0"
+                          style={{
+                            display: c.author?.profileImageUrl ? "none" : "flex",
+                          }}
+                        >
                           {(c.author?.firstName?.[0] || "U").toUpperCase()}
                         </div>
                         <div className="flex-1">
