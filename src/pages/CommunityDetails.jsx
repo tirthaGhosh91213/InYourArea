@@ -10,16 +10,18 @@ import {
   Calendar,
   MapPin,
   Send,
+  Edit2,
+  Trash2,
+  Save,
+  XCircle,
 } from "lucide-react";
 import axios from "axios";
 import { toast } from "react-toastify";
-
 
 export default function CommunityDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
   const token = localStorage.getItem("accessToken");
-
 
   const [post, setPost] = useState(null);
   const [comments, setComments] = useState([]);
@@ -29,11 +31,14 @@ export default function CommunityDetails() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [loading, setLoading] = useState(true);
-
+  const [currentUser, setCurrentUser] = useState(null);
+  const [editingCommentId, setEditingCommentId] = useState(null);
+  const [editCommentText, setEditCommentText] = useState("");
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletingCommentId, setDeletingCommentId] = useState(null);
 
   const touchStartX = useRef(0);
   const touchEndX = useRef(0);
-
 
   const renderMedia = (url, alt, className, isFullscreen = false) => {
     if (
@@ -66,7 +71,6 @@ export default function CommunityDetails() {
     );
   };
 
-
   const handleTouchStart = (e) =>
     (touchStartX.current = e.changedTouches[0].screenX);
   const handleTouchEnd = (e) => {
@@ -75,7 +79,6 @@ export default function CommunityDetails() {
     if (diff > 50) nextImage();
     if (diff < -50) prevImage();
   };
-
 
   const prevImage = () =>
     setCurrentImage((prev) =>
@@ -86,7 +89,6 @@ export default function CommunityDetails() {
         : 0
     );
 
-
   const nextImage = () =>
     setCurrentImage((prev) =>
       post && post.imageUrls && post.imageUrls.length
@@ -95,7 +97,6 @@ export default function CommunityDetails() {
           : prev + 1
         : 0
     );
-
 
   const formatDate = (date) =>
     new Date(date).toLocaleString("en-GB", {
@@ -106,6 +107,22 @@ export default function CommunityDetails() {
       minute: "2-digit",
     });
 
+  // Fetch Current User
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      if (!token) return;
+
+      try {
+        const res = await axios.get("https://cached-nursery-kevin-advances.trycloudflare.com/api/v1/user/profile", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.data.success) setCurrentUser(res.data.data);
+      } catch (error) {
+        console.error("Failed to fetch current user", error);
+      }
+    };
+    fetchCurrentUser();
+  }, [token]);
 
   useEffect(() => {
     const fetchPost = async () => {
@@ -132,7 +149,6 @@ export default function CommunityDetails() {
     fetchPost();
   }, [id, token, navigate]);
 
-
   const fetchComments = async () => {
     try {
       const res = await axios.get(
@@ -146,11 +162,9 @@ export default function CommunityDetails() {
     }
   };
 
-
   useEffect(() => {
     if (token) fetchComments();
   }, [id, token]);
-
 
   const handlePostComment = async () => {
     if (!commentText.trim()) {
@@ -180,6 +194,97 @@ export default function CommunityDetails() {
     }
   };
 
+  // Start Edit Comment
+  const handleStartEdit = (comment) => {
+    setEditingCommentId(comment.id);
+    setEditCommentText(comment.content);
+  };
+
+  // Cancel Edit
+  const handleCancelEdit = () => {
+    setEditingCommentId(null);
+    setEditCommentText("");
+  };
+
+  // Update Comment
+  const handleUpdateComment = async (commentId) => {
+    if (!editCommentText.trim()) {
+      toast.warning("Comment cannot be empty!");
+      return;
+    }
+
+    try {
+      const res = await axios.put(
+        `https://cached-nursery-kevin-advances.trycloudflare.com/api/v1/comments/${commentId}`,
+        { content: editCommentText },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (res.data.success) {
+        toast.success("Comment updated successfully!");
+        setEditingCommentId(null);
+        setEditCommentText("");
+        fetchComments();
+      } else {
+        toast.error("Failed to update comment.");
+      }
+    } catch (error) {
+      if (error.response?.status === 403) {
+        toast.error("You are not authorized to update this comment.");
+      } else {
+        toast.error("Error updating comment.");
+      }
+    }
+  };
+
+  // Open Delete Modal
+  const handleOpenDeleteModal = (commentId) => {
+    setDeletingCommentId(commentId);
+    setShowDeleteModal(true);
+  };
+
+  // Close Delete Modal
+  const handleCloseDeleteModal = () => {
+    setShowDeleteModal(false);
+    setDeletingCommentId(null);
+  };
+
+  // Delete Comment
+  const handleDeleteComment = async () => {
+    try {
+      const res = await axios.delete(
+        `https://cached-nursery-kevin-advances.trycloudflare.com/api/v1/comments/${deletingCommentId}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (res.data.success) {
+        toast.success("Comment deleted successfully!");
+        handleCloseDeleteModal();
+        fetchComments();
+      } else {
+        toast.error("Failed to delete comment.");
+      }
+    } catch (error) {
+      if (error.response?.status === 403) {
+        toast.error("You are not authorized to delete this comment.");
+      } else {
+        toast.error("Error deleting comment.");
+      }
+    }
+  };
+
+  // Check if user can edit comment (only comment owner)
+  const canEditComment = (comment) => {
+    return currentUser && comment.author?.id === currentUser.id;
+  };
+
+  // Check if user can delete comment (comment owner or post owner)
+  const canDeleteComment = (comment) => {
+    if (!currentUser) return false;
+    const isCommentOwner = comment.author?.id === currentUser.id;
+    const isPostOwner = post?.author?.id === currentUser.id;
+    return isCommentOwner || isPostOwner;
+  };
 
   if (loading || !post)
     return (
@@ -187,7 +292,6 @@ export default function CommunityDetails() {
         Loading...
       </div>
     );
-
 
   return (
     <>
@@ -200,7 +304,6 @@ export default function CommunityDetails() {
           >
             <ArrowLeft size={20} /> Back
           </motion.button>
-
 
           <motion.div
             layout
@@ -233,7 +336,6 @@ export default function CommunityDetails() {
                 )}
               </div>
             )}
-
 
             {/* AUTHOR INFO responsive: column on mobile, row on md+ */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4 text-gray-700">
@@ -274,7 +376,6 @@ export default function CommunityDetails() {
               </div>
             </div>
 
-
             <h1
               className="text-2xl md:text-3xl font-bold text-gray-800"
               dangerouslySetInnerHTML={{ __html: post.title }}
@@ -294,12 +395,10 @@ export default function CommunityDetails() {
               </button>
             </div>
 
-
             <div className="pt-6 border-t border-gray-200">
               <h2 className="text-xl md:text-2xl font-semibold text-gray-800 mb-4">
                 💬 Comments
               </h2>
-
 
               <div className="flex flex-col sm:flex-row items-center gap-3 mb-6">
                 <textarea
@@ -320,7 +419,6 @@ export default function CommunityDetails() {
                   {posting ? "Posting..." : "Post"}
                 </motion.button>
               </div>
-
 
               <AnimatePresence>
                 <motion.div
@@ -363,19 +461,89 @@ export default function CommunityDetails() {
                           {(c.author?.firstName?.[0] || "U").toUpperCase()}
                         </div>
                         <div className="flex-1">
-                          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center">
-                            <h4 className="font-semibold text-gray-800">
-                              {c.author
-                                ? `${c.author.firstName} ${c.author.lastName}`
-                                : "Anonymous"}
-                            </h4>
-                            <span className="text-xs text-gray-500 italic">
-                              {formatDate(c.createdAt)}
-                            </span>
+                          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2">
+                            <div className="flex-1">
+                              <h4 className="font-semibold text-gray-800">
+                                {c.author
+                                  ? `${c.author.firstName} ${c.author.lastName}`
+                                  : "Anonymous"}
+                              </h4>
+                              <span className="text-xs text-gray-500 italic">
+                                {formatDate(c.createdAt)}
+                              </span>
+                            </div>
+
+                            {/* Action Buttons */}
+                            {currentUser &&
+                              (canEditComment(c) || canDeleteComment(c)) && (
+                                <div className="flex items-center gap-2">
+                                  {canEditComment(c) &&
+                                    editingCommentId !== c.id && (
+                                      <motion.button
+                                        whileHover={{ scale: 1.1 }}
+                                        whileTap={{ scale: 0.95 }}
+                                        onClick={() => handleStartEdit(c)}
+                                        className="text-blue-600 hover:text-blue-700 p-1.5 rounded-lg hover:bg-blue-50 transition"
+                                        title="Edit comment"
+                                      >
+                                        <Edit2 size={16} />
+                                      </motion.button>
+                                    )}
+                                  {canDeleteComment(c) &&
+                                    editingCommentId !== c.id && (
+                                      <motion.button
+                                        whileHover={{ scale: 1.1 }}
+                                        whileTap={{ scale: 0.95 }}
+                                        onClick={() =>
+                                          handleOpenDeleteModal(c.id)
+                                        }
+                                        className="text-red-600 hover:text-red-700 p-1.5 rounded-lg hover:bg-red-50 transition"
+                                        title="Delete comment"
+                                      >
+                                        <Trash2 size={16} />
+                                      </motion.button>
+                                    )}
+                                </div>
+                              )}
                           </div>
-                          <p className="text-gray-700 bg-green-50 px-4 py-2 rounded-xl leading-relaxed border border-green-100 mt-2">
-                            {c.content}
-                          </p>
+
+                          {/* Edit Mode */}
+                          {editingCommentId === c.id ? (
+                            <div className="mt-2 space-y-2">
+                              <textarea
+                                value={editCommentText}
+                                onChange={(e) =>
+                                  setEditCommentText(e.target.value)
+                                }
+                                className="w-full border border-gray-300 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
+                                rows="3"
+                              />
+                              <div className="flex items-center gap-2">
+                                <motion.button
+                                  whileHover={{ scale: 1.05 }}
+                                  whileTap={{ scale: 0.95 }}
+                                  onClick={() => handleUpdateComment(c.id)}
+                                  className="flex items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg px-4 py-2 text-sm transition"
+                                >
+                                  <Save size={14} />
+                                  Save
+                                </motion.button>
+                                <motion.button
+                                  whileHover={{ scale: 1.05 }}
+                                  whileTap={{ scale: 0.95 }}
+                                  onClick={handleCancelEdit}
+                                  className="flex items-center gap-1 bg-gray-300 hover:bg-gray-400 text-gray-700 font-semibold rounded-lg px-4 py-2 text-sm transition"
+                                >
+                                  <XCircle size={14} />
+                                  Cancel
+                                </motion.button>
+                              </div>
+                            </div>
+                          ) : (
+                            <p className="text-gray-700 bg-green-50 px-4 py-2 rounded-xl leading-relaxed border border-green-100 mt-2">
+                              {c.content}
+                            </p>
+                          )}
                         </div>
                       </motion.div>
                     ))
@@ -389,7 +557,6 @@ export default function CommunityDetails() {
             </div>
           </motion.div>
         </main>
-
 
         <AnimatePresence>
           {isFullscreen && post.imageUrls?.length > 0 && (
@@ -429,6 +596,53 @@ export default function CommunityDetails() {
                 "max-h-full max-w-full object-contain rounded-lg shadow-lg bg-black",
                 true
               )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Delete Confirmation Modal */}
+        <AnimatePresence>
+          {showDeleteModal && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+              onClick={handleCloseDeleteModal}
+            >
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                className="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <h3 className="text-xl font-bold text-gray-800 mb-3">
+                  Delete Comment
+                </h3>
+                <p className="text-gray-600 mb-6">
+                  Are you sure you want to delete this comment? This action
+                  cannot be undone.
+                </p>
+                <div className="flex gap-3 justify-end">
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={handleCloseDeleteModal}
+                    className="px-5 py-2 bg-gray-300 hover:bg-gray-400 text-gray-700 font-semibold rounded-lg transition"
+                  >
+                    Cancel
+                  </motion.button>
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={handleDeleteComment}
+                    className="px-5 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition"
+                  >
+                    Delete
+                  </motion.button>
+                </div>
+              </motion.div>
             </motion.div>
           )}
         </AnimatePresence>

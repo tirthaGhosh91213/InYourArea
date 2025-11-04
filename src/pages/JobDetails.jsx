@@ -10,16 +10,18 @@ import {
   ChevronLeft,
   ChevronRight,
   X,
+  Edit2,
+  Trash2,
+  Save,
+  XCircle,
 } from "lucide-react";
 import axios from "axios";
 import { toast } from "react-toastify";
-
 
 export default function JobDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
   const token = localStorage.getItem("accessToken");
-
 
   const [job, setJob] = useState(null);
   const [comments, setComments] = useState([]);
@@ -28,16 +30,18 @@ export default function JobDetails() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [isExpanded, setIsExpanded] = useState(false);
-
+  const [currentUser, setCurrentUser] = useState(null);
+  const [editingCommentId, setEditingCommentId] = useState(null);
+  const [editCommentText, setEditCommentText] = useState("");
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletingCommentId, setDeletingCommentId] = useState(null);
 
   const touchStartX = useRef(0);
   const touchEndX = useRef(0);
 
-
   const handleTouchStart = (e) => {
     touchStartX.current = e.changedTouches[0].screenX;
   };
-
 
   const handleTouchEnd = (e) => {
     touchEndX.current = e.changedTouches[0].screenX;
@@ -46,14 +50,12 @@ export default function JobDetails() {
     if (diff < -50) prevImage();
   };
 
-
   const prevImage = () => {
     if (!job?.imageUrls) return;
     setCurrentImage((prev) =>
       prev === 0 ? job.imageUrls.length - 1 : prev - 1
     );
   };
-
 
   const nextImage = () => {
     if (!job?.imageUrls) return;
@@ -62,6 +64,22 @@ export default function JobDetails() {
     );
   };
 
+  // Fetch Current User
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      if (!token) return;
+
+      try {
+        const res = await axios.get("https://cached-nursery-kevin-advances.trycloudflare.com/api/v1/user/profile", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.data.success) setCurrentUser(res.data.data);
+      } catch (error) {
+        console.error("Failed to fetch current user", error);
+      }
+    };
+    fetchCurrentUser();
+  }, [token]);
 
   const fetchJob = async () => {
     try {
@@ -81,7 +99,6 @@ export default function JobDetails() {
     }
   };
 
-
   const fetchComments = async () => {
     try {
       const res = await axios.get(
@@ -93,7 +110,6 @@ export default function JobDetails() {
       toast.error("Failed to fetch comments");
     }
   };
-
 
   const postComment = async () => {
     if (!commentText.trim()) return toast.error("Comment cannot be empty");
@@ -113,6 +129,97 @@ export default function JobDetails() {
     }
   };
 
+  // Start Edit Comment
+  const handleStartEdit = (comment) => {
+    setEditingCommentId(comment.id);
+    setEditCommentText(comment.content);
+  };
+
+  // Cancel Edit
+  const handleCancelEdit = () => {
+    setEditingCommentId(null);
+    setEditCommentText("");
+  };
+
+  // Update Comment
+  const handleUpdateComment = async (commentId) => {
+    if (!editCommentText.trim()) {
+      toast.warning("Comment cannot be empty!");
+      return;
+    }
+
+    try {
+      const res = await axios.put(
+        `https://cached-nursery-kevin-advances.trycloudflare.com/api/v1/comments/${commentId}`,
+        { content: editCommentText },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (res.data.success) {
+        toast.success("Comment updated successfully!");
+        setEditingCommentId(null);
+        setEditCommentText("");
+        fetchComments();
+      } else {
+        toast.error("Failed to update comment.");
+      }
+    } catch (error) {
+      if (error.response?.status === 403) {
+        toast.error("You are not authorized to update this comment.");
+      } else {
+        toast.error("Error updating comment.");
+      }
+    }
+  };
+
+  // Open Delete Modal
+  const handleOpenDeleteModal = (commentId) => {
+    setDeletingCommentId(commentId);
+    setShowDeleteModal(true);
+  };
+
+  // Close Delete Modal
+  const handleCloseDeleteModal = () => {
+    setShowDeleteModal(false);
+    setDeletingCommentId(null);
+  };
+
+  // Delete Comment
+  const handleDeleteComment = async () => {
+    try {
+      const res = await axios.delete(
+        `https://cached-nursery-kevin-advances.trycloudflare.com/api/v1/comments/${deletingCommentId}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (res.data.success) {
+        toast.success("Comment deleted successfully!");
+        handleCloseDeleteModal();
+        fetchComments();
+      } else {
+        toast.error("Failed to delete comment.");
+      }
+    } catch (error) {
+      if (error.response?.status === 403) {
+        toast.error("You are not authorized to delete this comment.");
+      } else {
+        toast.error("Error deleting comment.");
+      }
+    }
+  };
+
+  // Check if user can edit comment (only comment owner)
+  const canEditComment = (comment) => {
+    return currentUser && comment.author?.id === currentUser.id;
+  };
+
+  // Check if user can delete comment (comment owner or post owner)
+  const canDeleteComment = (comment) => {
+    if (!currentUser) return false;
+    const isCommentOwner = comment.author?.id === currentUser.id;
+    const isPostOwner = job?.author?.id === currentUser.id;
+    return isCommentOwner || isPostOwner;
+  };
 
   useEffect(() => {
     if (!token) navigate("/login");
@@ -120,14 +227,12 @@ export default function JobDetails() {
     fetchComments();
   }, [id, token]);
 
-
   if (loading || !job)
     return (
       <div className="flex justify-center items-center h-screen text-gray-600 text-lg animate-pulse">
         Loading...
       </div>
     );
-
 
   return (
     <>
@@ -201,11 +306,9 @@ export default function JobDetails() {
               </div>
             )}
 
-
             <h1 className="text-2xl md:text-3xl font-bold text-gray-800">
               {job.title}
             </h1>
-
 
             <div className="relative">
               <div
@@ -222,7 +325,6 @@ export default function JobDetails() {
               </button>
             </div>
 
-
             {job.reglink && (
               <motion.button
                 whileHover={{ scale: 1.05 }}
@@ -233,7 +335,6 @@ export default function JobDetails() {
                 Apply Now
               </motion.button>
             )}
-
 
             <div className="pt-6 border-t border-gray-200">
               <h3 className="text-xl md:text-2xl font-semibold text-gray-800 mb-4">
@@ -297,23 +398,86 @@ export default function JobDetails() {
                           {(c.author?.firstName?.[0] || "U").toUpperCase()}
                         </div>
                         <div className="flex-1">
-                          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center">
-                            <h4 className="font-semibold text-gray-800">
-                              {c.author
-                                ? `${c.author.firstName} ${c.author.lastName}`
-                                : "Anonymous"}
-                            </h4>
-                            <span className="text-xs text-gray-500 italic">
-                              {new Date(c.createdAt).toLocaleDateString("en-GB", {
-                                day: "2-digit",
-                                month: "short",
-                                year: "numeric",
-                              })}
-                            </span>
+                          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2">
+                            <div className="flex-1">
+                              <h4 className="font-semibold text-gray-800">
+                                {c.author
+                                  ? `${c.author.firstName} ${c.author.lastName}`
+                                  : "Anonymous"}
+                              </h4>
+                              <span className="text-xs text-gray-500 italic">
+                                {new Date(c.createdAt).toLocaleDateString("en-GB", {
+                                  day: "2-digit",
+                                  month: "short",
+                                  year: "numeric",
+                                })}
+                              </span>
+                            </div>
+
+                            {/* Action Buttons */}
+                            {currentUser && (canEditComment(c) || canDeleteComment(c)) && (
+                              <div className="flex items-center gap-2">
+                                {canEditComment(c) && editingCommentId !== c.id && (
+                                  <motion.button
+                                    whileHover={{ scale: 1.1 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    onClick={() => handleStartEdit(c)}
+                                    className="text-blue-600 hover:text-blue-700 p-1.5 rounded-lg hover:bg-blue-50 transition"
+                                    title="Edit comment"
+                                  >
+                                    <Edit2 size={16} />
+                                  </motion.button>
+                                )}
+                                {canDeleteComment(c) && editingCommentId !== c.id && (
+                                  <motion.button
+                                    whileHover={{ scale: 1.1 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    onClick={() => handleOpenDeleteModal(c.id)}
+                                    className="text-red-600 hover:text-red-700 p-1.5 rounded-lg hover:bg-red-50 transition"
+                                    title="Delete comment"
+                                  >
+                                    <Trash2 size={16} />
+                                  </motion.button>
+                                )}
+                              </div>
+                            )}
                           </div>
-                          <p className="text-gray-700 bg-green-50 px-4 py-2 rounded-xl leading-relaxed border border-green-100 mt-2">
-                            {c.content}
-                          </p>
+
+                          {/* Edit Mode */}
+                          {editingCommentId === c.id ? (
+                            <div className="mt-2 space-y-2">
+                              <textarea
+                                value={editCommentText}
+                                onChange={(e) => setEditCommentText(e.target.value)}
+                                className="w-full border border-gray-300 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
+                                rows="3"
+                              />
+                              <div className="flex items-center gap-2">
+                                <motion.button
+                                  whileHover={{ scale: 1.05 }}
+                                  whileTap={{ scale: 0.95 }}
+                                  onClick={() => handleUpdateComment(c.id)}
+                                  className="flex items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg px-4 py-2 text-sm transition"
+                                >
+                                  <Save size={14} />
+                                  Save
+                                </motion.button>
+                                <motion.button
+                                  whileHover={{ scale: 1.05 }}
+                                  whileTap={{ scale: 0.95 }}
+                                  onClick={handleCancelEdit}
+                                  className="flex items-center gap-1 bg-gray-300 hover:bg-gray-400 text-gray-700 font-semibold rounded-lg px-4 py-2 text-sm transition"
+                                >
+                                  <XCircle size={14} />
+                                  Cancel
+                                </motion.button>
+                              </div>
+                            </div>
+                          ) : (
+                            <p className="text-gray-700 bg-green-50 px-4 py-2 rounded-xl leading-relaxed border border-green-100 mt-2">
+                              {c.content}
+                            </p>
+                          )}
                         </div>
                       </motion.div>
                     ))
@@ -364,6 +528,52 @@ export default function JobDetails() {
                 alt={job.title}
                 className="max-h-full max-w-full object-contain rounded-lg shadow-lg"
               />
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Delete Confirmation Modal */}
+        <AnimatePresence>
+          {showDeleteModal && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+              onClick={handleCloseDeleteModal}
+            >
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                className="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <h3 className="text-xl font-bold text-gray-800 mb-3">
+                  Delete Comment
+                </h3>
+                <p className="text-gray-600 mb-6">
+                  Are you sure you want to delete this comment? This action cannot be undone.
+                </p>
+                <div className="flex gap-3 justify-end">
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={handleCloseDeleteModal}
+                    className="px-5 py-2 bg-gray-300 hover:bg-gray-400 text-gray-700 font-semibold rounded-lg transition"
+                  >
+                    Cancel
+                  </motion.button>
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={handleDeleteComment}
+                    className="px-5 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition"
+                  >
+                    Delete
+                  </motion.button>
+                </div>
+              </motion.div>
             </motion.div>
           )}
         </AnimatePresence>
