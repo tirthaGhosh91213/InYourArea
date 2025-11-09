@@ -12,7 +12,7 @@ import { IoPersonCircleOutline } from "react-icons/io5"; // Ionicons profile ima
 const fetchProfileImage = async (userId) => {
   try {
     const res = await axios.get(
-      `https://cached-nursery-kevin-advances.trycloudflare.com/api/v1/user/profile/${userId}`
+      `http://localhost:8000/api/v1/user/profile/${userId}`
     );
     if (
       res.data &&

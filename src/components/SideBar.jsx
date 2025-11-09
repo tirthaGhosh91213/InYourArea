@@ -29,7 +29,7 @@ const districts = [
   "Siwan","Supaul","Vaishali","West Champaran (Bettiah)",
 ];
 
-const MERAKI_LINK = "https://mehraki-website.vercel.app/";
+const MERAKI_LINK = "https://www.ulmind.com";
 
 export default function Sidebar({ sidebarOpen, onClose }) {
   const navigate = useNavigate();
@@ -272,7 +272,7 @@ export default function Sidebar({ sidebarOpen, onClose }) {
                     rel="noopener noreferrer"
                     className="text-green-600 font-bold underline hover:text-green-800 transition"
                   >
-                    Meraki
+                    Ulmind
                   </a>
                 </p>
               </div>

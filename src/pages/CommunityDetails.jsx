@@ -113,7 +113,7 @@ export default function CommunityDetails() {
       if (!token) return;
 
       try {
-        const res = await axios.get("https://cached-nursery-kevin-advances.trycloudflare.com/api/v1/user/profile", {
+        const res = await axios.get("http://localhost:8000/api/v1/user/profile", {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (res.data.success) setCurrentUser(res.data.data);
@@ -215,7 +215,7 @@ export default function CommunityDetails() {
 
     try {
       const res = await axios.put(
-        `https://cached-nursery-kevin-advances.trycloudflare.com/api/v1/comments/${commentId}`,
+        `http://localhost:8000/api/v1/comments/${commentId}`,
         { content: editCommentText },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -253,7 +253,7 @@ export default function CommunityDetails() {
   const handleDeleteComment = async () => {
     try {
       const res = await axios.delete(
-        `https://cached-nursery-kevin-advances.trycloudflare.com/api/v1/comments/${deletingCommentId}`,
+        `http://localhost:8000/api/v1/comments/${deletingCommentId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 

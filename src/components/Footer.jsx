@@ -29,10 +29,10 @@ const adminLinks = {
 };
 
 const companyLinks = {
-  linkedin: "https://www.linkedin.com/in/tirtha-ghosh-098a072ba/",
+  linkedin: "https://www.linkedin.com/company/ulmind/",
   twitter: "https://twitter.com/meraki_company",
-  instagram: "https://instagram.com/meraki_company",
-  website: "https://mehraki-website.vercel.app/"
+  instagram: "https://www.instagram.com/ulmind__official",
+  website: "https://www.ulmind.com"
 };
 
 const quickLinks = [
