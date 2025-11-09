@@ -24,6 +24,8 @@ import EmailService from "./components/EmailService";
 import GoogleCallback from "./pages/GoogleCallback";
 import Properties from "./pages/Properties";
 import CreatePropertyPost from "./pages/CreatePropertyPost";
+import AdminAddPost from "./pages/AdminAddPost";
+import AdminAddSection from "./pages/AdminAddSection";
 
 // ✅ Home component
 function Home() {
@@ -86,6 +88,8 @@ export default function App() {
           <Route path="/user-dashboard" element={<UserDashboard />} />
            <Route path="/properties" element={<Properties />} />
            <Route path="/createPropertyPost" element={<CreatePropertyPost />} />
+           <Route path="/add-post" element={<AdminAddPost />} />
+           <Route path="/add" element={<AdminAddSection />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </Router>

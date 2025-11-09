@@ -13,6 +13,7 @@ import {
 import axios from "axios";
 import Sidebar from "../components/SideBar";
 import RightSidebar from "../components/RightSidebar";
+import SmallAdd from "../components/SmallAdd"; // <<== Add this import
 import { useNavigate } from "react-router-dom";
 
 export default function Events() {
@@ -21,6 +22,18 @@ export default function Events() {
   const [loading, setLoading] = useState(false);
   const [filterCity, setFilterCity] = useState("All");
   const navigate = useNavigate();
+
+  // --- SmallAd state logic ---
+  const smallAdData = {
+    title: "Special Weekend Flash Sale!",
+    destinationUrl: "https://example.com/sale",
+    image: "https://your-cdn.com/small-add-image.jpg"
+  };
+  // Show randomly, e.g., 40% chance
+  const [showAdd, setShowAdd] = useState(false);
+  useEffect(() => {
+    if (Math.random() < 0.4) setShowAdd(true);
+  }, []);
 
   const fetchEvents = async () => {
     try {
@@ -52,6 +65,14 @@ export default function Events() {
 
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      {/* --- Small Add Popup --- */}
+      <SmallAdd
+        open={showAdd}
+        onClose={() => setShowAdd(false)}
+        title={smallAdData.title}
+        destinationUrl={smallAdData.destinationUrl}
+        image={smallAdData.image}
+      />
       <header className="w-full fixed top-0 left-0 z-50 bg-white shadow-md border-b border-gray-200">
         <RightSidebar refreshEvents={fetchEvents} />
       </header>

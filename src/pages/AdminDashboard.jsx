@@ -2,8 +2,20 @@ import React, { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Loader2, CheckCircle, XCircle, AlertTriangle, User, Calendar,
-  ArrowLeftCircle, LogOut, Image as ImageIcon, X, Check, Trash2, Home
+  Loader2,
+  CheckCircle,
+  XCircle,
+  AlertTriangle,
+  User,
+  Calendar,
+  ArrowLeftCircle,
+  LogOut,
+  Image as ImageIcon,
+  X,
+  Check,
+  PlusCircle,
+  Trash2,
+  Home,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
@@ -38,9 +50,10 @@ export default function AdminDashboard() {
     try {
       setLoading(true);
       const token = localStorage.getItem("accessToken");
-      let endpoint = category === "properties"
-        ? `${BASE_API}/properties/pending`
-        : `${BASE_API}/${category}/pending`;
+      let endpoint =
+        category === "properties"
+          ? `${BASE_API}/properties/pending`
+          : `${BASE_API}/${category}/pending`;
       const res = await axios.get(endpoint, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -68,10 +81,12 @@ export default function AdminDashboard() {
 
   const handleAction = async (id, action, fromModal = false) => {
     try {
-      setProcessingItems(prev => new Set(prev).add(id));
+      setProcessingItems((prev) => new Set(prev).add(id));
       const token = localStorage.getItem("accessToken");
       await axios.post(
-        `${BASE_API}/${activeTab === "properties" ? "properties" : activeTab}/${id}/${action}`,
+        `${BASE_API}/${
+          activeTab === "properties" ? "properties" : activeTab
+        }/${id}/${action}`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -90,7 +105,7 @@ export default function AdminDashboard() {
       console.error("Action error:", error);
     } finally {
       setConfirmAction(null);
-      setProcessingItems(prev => {
+      setProcessingItems((prev) => {
         const newSet = new Set(prev);
         newSet.delete(id);
         return newSet;
@@ -139,7 +154,7 @@ export default function AdminDashboard() {
   // Keyboard events
   useEffect(() => {
     const handleKeyDown = (event) => {
-      if (event.key === 'Escape') {
+      if (event.key === "Escape") {
         if (fullImage) {
           closeFullImage();
         } else if (selectedItem) {
@@ -148,9 +163,9 @@ export default function AdminDashboard() {
         }
       }
     };
-    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener("keydown", handleKeyDown);
     return () => {
-      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener("keydown", handleKeyDown);
     };
   }, [fullImage, selectedItem]);
 
@@ -171,6 +186,17 @@ export default function AdminDashboard() {
           Admin Dashboard — Pending Approvals
         </h1>
         <div className="flex justify-center sm:justify-end items-center gap-3 order-3 flex-wrap">
+          <motion.button
+            onClick={() => navigate("/add")}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="flex items-center bg-blue-200 hover:bg-blue-300 text-blue-800 px-4 py-2 rounded-lg shadow-sm font-medium transition-all duration-200"
+          >
+            <ImageIcon size={18} className="mr-2" />{" "}
+            {/* Change to your preferred icon */}
+            ADD
+          </motion.button>
+
           <motion.button
             onClick={() => navigate("/user-dashboard")}
             whileHover={{ scale: 1.05 }}
@@ -245,10 +271,13 @@ export default function AdminDashboard() {
                         <div className="text-sm text-gray-600 flex flex-wrap gap-3">
                           <span className="flex items-center">
                             <Home size={14} className="mr-1" />
-                            {item.propertyType} • {item.totalArea} sqft • ₹{item.price}
+                            {item.propertyType} • {item.totalArea} sqft • ₹
+                            {item.price}
                           </span>
                           <span>Status: {item.propertyStatus}</span>
-                          <span>Location: {item.city}, {item.state}</span>
+                          <span>
+                            Location: {item.city}, {item.state}
+                          </span>
                         </div>
                       ) : (
                         <>
@@ -261,8 +290,8 @@ export default function AdminDashboard() {
                           </p>
                           {item.description && (
                             <p className="text-sm text-gray-700 mt-2 line-clamp-2">
-                              {item.description.length > 100 
-                                ? `${item.description.substring(0, 100)}...` 
+                              {item.description.length > 100
+                                ? `${item.description.substring(0, 100)}...`
                                 : item.description}
                             </p>
                           )}
@@ -274,7 +303,9 @@ export default function AdminDashboard() {
                   <div className="flex items-center justify-between pt-3 border-t border-gray-200">
                     <div className="flex gap-3">
                       <motion.button
-                        onClick={(e) => handleQuickAction(e, item.id, "approve")}
+                        onClick={(e) =>
+                          handleQuickAction(e, item.id, "approve")
+                        }
                         disabled={processingItems.has(item.id)}
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
@@ -353,54 +384,74 @@ export default function AdminDashboard() {
                 </button>
               </div>
 
-              {!loadingDetails && activeTab === "properties" && propertyDetails && (
-                <div>
-                  <div className="flex flex-col md:flex-row gap-6 mb-6">
-                    <div className="min-w-[220px] max-w-[300px] rounded-xl overflow-hidden">
-                      {propertyDetails.imageUrls && propertyDetails.imageUrls.length > 0 ? (
-                        <img
-                          src={propertyDetails.imageUrls[0]}
-                          alt="Property"
-                          className="w-full h-auto rounded-xl"
-                          style={{ maxHeight: 180 }}
-                        />
-                      ) : (
-                        <div className="w-full h-40 bg-gray-100 rounded-xl flex items-center justify-center text-gray-400">
-                          <ImageIcon size={42} />
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex-1 flex flex-col gap-2">
-                      <div className="font-bold text-lg">{propertyDetails.title}</div>
-                      <div className="text-blue-600 font-bold text-base">
-                        ₹ {((+propertyDetails.price) / 100000).toLocaleString("en-IN")} Lakhs
-                      </div>
-                      <div className="text-gray-700 text-sm mb-1">{propertyDetails.description}</div>
-                      <div className="flex flex-wrap gap-2 text-[13px] text-gray-800">
-                        <span><Square size={15} className="inline" /> {propertyDetails.totalArea} sq.ft</span>
-                        <span><Home size={15} className="inline" /> {propertyDetails.propertyType}</span>
-                        <span>Status: {propertyDetails.propertyStatus}</span>
-                        <span>District: {propertyDetails.district}</span>
-                        <span>Address: {propertyDetails.address}</span>
-                        <span>City: {propertyDetails.city}</span>
-                        <span>State: {propertyDetails.state}</span>
-                        <span>Contact: {propertyDetails.contactName} ({propertyDetails.contactEmail})</span>
-                      </div>
-                      <div className="flex flex-wrap gap-1 mt-2">
-                        {(propertyDetails.imageUrls || []).map((img, i) => (
+              {!loadingDetails &&
+                activeTab === "properties" &&
+                propertyDetails && (
+                  <div>
+                    <div className="flex flex-col md:flex-row gap-6 mb-6">
+                      <div className="min-w-[220px] max-w-[300px] rounded-xl overflow-hidden">
+                        {propertyDetails.imageUrls &&
+                        propertyDetails.imageUrls.length > 0 ? (
                           <img
-                            key={i}
-                            src={img}
-                            alt={`img${i}`}
-                            className="w-14 h-14 object-cover rounded-lg border cursor-pointer"
-                            onClick={() => setFullImage(img)}
+                            src={propertyDetails.imageUrls[0]}
+                            alt="Property"
+                            className="w-full h-auto rounded-xl"
+                            style={{ maxHeight: 180 }}
                           />
-                        ))}
+                        ) : (
+                          <div className="w-full h-40 bg-gray-100 rounded-xl flex items-center justify-center text-gray-400">
+                            <ImageIcon size={42} />
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 flex flex-col gap-2">
+                        <div className="font-bold text-lg">
+                          {propertyDetails.title}
+                        </div>
+                        <div className="text-blue-600 font-bold text-base">
+                          ₹{" "}
+                          {(+propertyDetails.price / 100000).toLocaleString(
+                            "en-IN"
+                          )}{" "}
+                          Lakhs
+                        </div>
+                        <div className="text-gray-700 text-sm mb-1">
+                          {propertyDetails.description}
+                        </div>
+                        <div className="flex flex-wrap gap-2 text-[13px] text-gray-800">
+                          <span>
+                            <Square size={15} className="inline" />{" "}
+                            {propertyDetails.totalArea} sq.ft
+                          </span>
+                          <span>
+                            <Home size={15} className="inline" />{" "}
+                            {propertyDetails.propertyType}
+                          </span>
+                          <span>Status: {propertyDetails.propertyStatus}</span>
+                          <span>District: {propertyDetails.district}</span>
+                          <span>Address: {propertyDetails.address}</span>
+                          <span>City: {propertyDetails.city}</span>
+                          <span>State: {propertyDetails.state}</span>
+                          <span>
+                            Contact: {propertyDetails.contactName} (
+                            {propertyDetails.contactEmail})
+                          </span>
+                        </div>
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {(propertyDetails.imageUrls || []).map((img, i) => (
+                            <img
+                              key={i}
+                              src={img}
+                              alt={`img${i}`}
+                              className="w-14 h-14 object-cover rounded-lg border cursor-pointer"
+                              onClick={() => setFullImage(img)}
+                            />
+                          ))}
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              )}
+                )}
 
               {loadingDetails && activeTab === "properties" && (
                 <div className="flex items-center justify-center h-32">
@@ -412,18 +463,26 @@ export default function AdminDashboard() {
               {activeTab !== "properties" && (
                 <div className="space-y-3">
                   <p className="text-gray-700">
-                    <span className="font-semibold">Description:</span> {selectedItem.description || "N/A"}
+                    <span className="font-semibold">Description:</span>{" "}
+                    {selectedItem.description || "N/A"}
                   </p>
                   {/* ...more details based on tab */}
                   <p className="text-gray-700">
-                    <span className="font-semibold">Created:</span> {new Date(selectedItem.createdAt).toLocaleString()}
+                    <span className="font-semibold">Created:</span>{" "}
+                    {new Date(selectedItem.createdAt).toLocaleString()}
                   </p>
                 </div>
               )}
               {/* Modal Action Buttons */}
               <div className="flex justify-center gap-4 mt-6 pt-6 border-t border-gray-200">
                 <motion.button
-                  onClick={() => setConfirmAction({ id: selectedItem.id, action: "approve", fromModal: true })}
+                  onClick={() =>
+                    setConfirmAction({
+                      id: selectedItem.id,
+                      action: "approve",
+                      fromModal: true,
+                    })
+                  }
                   disabled={processingItems.has(selectedItem.id)}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
@@ -437,7 +496,13 @@ export default function AdminDashboard() {
                   Approve
                 </motion.button>
                 <motion.button
-                  onClick={() => setConfirmAction({ id: selectedItem.id, action: "reject", fromModal: true })}
+                  onClick={() =>
+                    setConfirmAction({
+                      id: selectedItem.id,
+                      action: "reject",
+                      fromModal: true,
+                    })
+                  }
                   disabled={processingItems.has(selectedItem.id)}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
@@ -509,7 +574,10 @@ export default function AdminDashboard() {
               exit={{ scale: 0.8, opacity: 0 }}
               className="bg-white p-6 rounded-2xl shadow-xl max-w-sm w-full text-center border border-green-200"
             >
-              <AlertTriangle className="text-yellow-500 mx-auto mb-3" size={40} />
+              <AlertTriangle
+                className="text-yellow-500 mx-auto mb-3"
+                size={40}
+              />
               <h3 className="text-lg font-semibold mb-2 text-gray-800">
                 Confirm Action
               </h3>
@@ -529,7 +597,11 @@ export default function AdminDashboard() {
               <div className="flex justify-center gap-4">
                 <motion.button
                   onClick={() =>
-                    handleAction(confirmAction.id, confirmAction.action, confirmAction.fromModal)
+                    handleAction(
+                      confirmAction.id,
+                      confirmAction.action,
+                      confirmAction.fromModal
+                    )
                   }
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
