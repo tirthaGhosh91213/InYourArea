@@ -48,7 +48,7 @@ export default function RightSidebar() {
       const token = localStorage.getItem("accessToken");
       if (!token) return;
       const res = await axios.get(
-        "https://cached-nursery-kevin-advances.trycloudflare.com/api/v1/notifications/recent?limit=50",
+        "http://localhost:8000/api/v1/notifications/recent?limit=50",
         { headers: { Authorization: `Bearer ${token}` } }
       );
       const data = res.data?.data || [];

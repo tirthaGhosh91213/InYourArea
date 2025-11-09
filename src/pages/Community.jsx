@@ -6,8 +6,25 @@ import RightSidebar from "../components/RightSidebar";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
-import { IoPersonCircleOutline } from "react-icons/io5";
+import { IoPersonCircleOutline } from "react-icons/io5"; // Ionicons profile image
 
+// Helper: fetch avatar for any user ID
+const fetchProfileImage = async (userId) => {
+  try {
+    const res = await axios.get(
+      `https://cached-nursery-kevin-advances.trycloudflare.com/api/v1/user/profile/${userId}`
+    );
+    if (
+      res.data &&
+      res.data.success &&
+      res.data.data &&
+      res.data.data.profileImageUrl
+    ) {
+      return res.data.data.profileImageUrl;
+    }
+  } catch (error) {}
+  return null; // Return null instead of a string
+};
 
 export default function Community() {
   const navigate = useNavigate();
@@ -33,7 +50,7 @@ export default function Community() {
     try {
       setLoading(true);
       const res = await axios.get(
-        "https://cached-nursery-kevin-advances.trycloudflare.com/api/v1/community",
+        "http://localhost:8000/api/v1/community",
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (res.data.success) {
@@ -61,7 +78,7 @@ export default function Community() {
   const fetchComments = async (postId) => {
     try {
       const res = await axios.get(
-        `https://cached-nursery-kevin-advances.trycloudflare.com/api/v1/comments/community-posts/${postId}`,
+        `http://localhost:8000/api/v1/comments/community-posts/${postId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (res.data.success) {
@@ -88,7 +105,7 @@ export default function Community() {
       return toast.error("Comment cannot be empty");
     try {
       const res = await axios.post(
-        `https://cached-nursery-kevin-advances.trycloudflare.com/api/v1/comments/community-posts/${postId}`,
+        `http://localhost:8000/api/v1/comments/community-posts/${postId}`,
         { content: commentText[postId] },
         { headers: { Authorization: `Bearer ${token}` } }
       );

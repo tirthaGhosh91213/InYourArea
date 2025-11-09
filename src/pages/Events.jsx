@@ -25,7 +25,7 @@ export default function Events() {
   const fetchEvents = async () => {
     try {
       setLoading(true);
-      const res = await axios.get("https://cached-nursery-kevin-advances.trycloudflare.com/api/v1/events");
+      const res = await axios.get("http://localhost:8000/api/v1/events");
       setEvents(res.data.data || []);
     } catch (err) {
       console.error("Error fetching events:", err);
