@@ -2,18 +2,8 @@ import React, { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Loader2,
-  CheckCircle,
-  XCircle,
-  AlertTriangle,
-  User,
-  Calendar,
-  ArrowLeftCircle,
-  LogOut,
-  Image as ImageIcon,
-  X,
-  Check,
-  Trash2,
+  Loader2, CheckCircle, XCircle, AlertTriangle, User, Calendar,
+  ArrowLeftCircle, LogOut, Image as ImageIcon, X, Check, Trash2, Home
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
@@ -23,6 +13,7 @@ const TABS = [
   { key: "events", label: "Events" },
   { key: "jobs", label: "Jobs" },
   { key: "community", label: "Community" },
+  { key: "properties", label: "Property" }, // Property tab
 ];
 
 export default function AdminDashboard() {
@@ -34,6 +25,8 @@ export default function AdminDashboard() {
   const [selectedItem, setSelectedItem] = useState(null);
   const [fullImage, setFullImage] = useState(null);
   const [processingItems, setProcessingItems] = useState(new Set());
+  const [propertyDetails, setPropertyDetails] = useState(null);
+  const [loadingDetails, setLoadingDetails] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -45,7 +38,10 @@ export default function AdminDashboard() {
     try {
       setLoading(true);
       const token = localStorage.getItem("accessToken");
-      const res = await axios.get(`${BASE_API}/${category}/pending`, {
+      let endpoint = category === "properties"
+        ? `${BASE_API}/properties/pending`
+        : `${BASE_API}/${category}/pending`;
+      const res = await axios.get(endpoint, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setItems(res.data.data || []);
@@ -75,20 +71,19 @@ export default function AdminDashboard() {
       setProcessingItems(prev => new Set(prev).add(id));
       const token = localStorage.getItem("accessToken");
       await axios.post(
-        `${BASE_API}/${activeTab}/${id}/${action}`,
+        `${BASE_API}/${activeTab === "properties" ? "properties" : activeTab}/${id}/${action}`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      
       setItems((prev) => prev.filter((it) => it.id !== id));
       setPopupMessage(
         `${activeTab.slice(0, -1).toUpperCase()} ${
           action === "approve" ? "Approved ✅" : "Rejected ❌"
         }`
       );
-      
       if (fromModal) {
         setSelectedItem(null);
+        setPropertyDetails(null);
       }
     } catch (error) {
       toast.error("Failed to process action");
@@ -104,7 +99,7 @@ export default function AdminDashboard() {
   };
 
   const handleQuickAction = (e, id, action) => {
-    e.stopPropagation(); // Prevent opening the modal when clicking buttons
+    e.stopPropagation();
     setConfirmAction({ id, action, fromModal: false });
   };
 
@@ -114,11 +109,34 @@ export default function AdminDashboard() {
     navigate("/login");
   };
 
+  // View details for property: fetch by id
+  const viewDetails = async (item) => {
+    if (activeTab === "properties") {
+      setLoadingDetails(true);
+      try {
+        const token = localStorage.getItem("accessToken");
+        const res = await axios.get(`${BASE_API}/properties/${item.id}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setPropertyDetails(res.data.data);
+        setSelectedItem(item);
+      } catch {
+        toast.error("Failed to fetch property details.");
+        setPropertyDetails(null);
+        setSelectedItem(null);
+      } finally {
+        setLoadingDetails(false);
+      }
+    } else {
+      setSelectedItem(item);
+    }
+  };
+
   const closeFullImage = () => {
     setFullImage(null);
   };
 
-  // Add keyboard event listener for closing image
+  // Keyboard events
   useEffect(() => {
     const handleKeyDown = (event) => {
       if (event.key === 'Escape') {
@@ -126,10 +144,10 @@ export default function AdminDashboard() {
           closeFullImage();
         } else if (selectedItem) {
           setSelectedItem(null);
+          setPropertyDetails(null);
         }
       }
     };
-
     document.addEventListener('keydown', handleKeyDown);
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
@@ -139,46 +157,38 @@ export default function AdminDashboard() {
   return (
     <div className="min-h-screen w-full flex flex-col bg-gray-50 text-gray-800">
       {/* Header */}
-     <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between bg-white shadow-sm border-b border-gray-200 p-4 sm:p-6 gap-3 sm:gap-0">
-  {/* Back button */}
-  <motion.button
-    onClick={() => navigate(-1)}
-    whileHover={{ scale: 1.05 }}
-    whileTap={{ scale: 0.95 }}
-    className="flex items-center text-gray-700 hover:text-green-700 transition-colors duration-200 order-2 sm:order-1"
-  >
-    <ArrowLeftCircle size={26} className="mr-2" />
-    <span className="hidden sm:inline font-semibold">Back</span>
-  </motion.button>
-
-  {/* Dashboard title */}
-  <h1 className="text-xl sm:text-2xl font-bold text-center text-green-800 order-1 sm:order-2">
-    Admin Dashboard — Pending Approvals
-  </h1>
-
-  {/* Buttons: Profile + Logout */}
-  <div className="flex justify-center sm:justify-end items-center gap-3 order-3 flex-wrap">
-    <motion.button
-      onClick={() => navigate("/user-dashboard")}
-      whileHover={{ scale: 1.05 }}
-      whileTap={{ scale: 0.95 }}
-      className="flex items-center bg-green-200 hover:bg-green-300 text-green-800 px-4 py-2 rounded-lg shadow-sm font-medium transition-all duration-200"
-    >
-      <User size={18} className="mr-2" /> Profile
-    </motion.button>
-
-    <motion.button
-      onClick={handleLogout}
-      whileHover={{ scale: 1.05 }}
-      whileTap={{ scale: 0.95 }}
-      className="flex items-center bg-red-200 hover:bg-red-300 text-red-800 px-3 py-2 rounded-lg shadow-sm font-medium transition-all duration-200"
-    >
-      <LogOut size={18} className="mr-1" /> Logout
-    </motion.button>
-  </div>
-</header>
-
-
+      <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between bg-white shadow-sm border-b border-gray-200 p-4 sm:p-6 gap-3 sm:gap-0">
+        <motion.button
+          onClick={() => navigate(-1)}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          className="flex items-center text-gray-700 hover:text-green-700 transition-colors duration-200 order-2 sm:order-1"
+        >
+          <ArrowLeftCircle size={26} className="mr-2" />
+          <span className="hidden sm:inline font-semibold">Back</span>
+        </motion.button>
+        <h1 className="text-xl sm:text-2xl font-bold text-center text-green-800 order-1 sm:order-2">
+          Admin Dashboard — Pending Approvals
+        </h1>
+        <div className="flex justify-center sm:justify-end items-center gap-3 order-3 flex-wrap">
+          <motion.button
+            onClick={() => navigate("/user-dashboard")}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="flex items-center bg-green-200 hover:bg-green-300 text-green-800 px-4 py-2 rounded-lg shadow-sm font-medium transition-all duration-200"
+          >
+            <User size={18} className="mr-2" /> Profile
+          </motion.button>
+          <motion.button
+            onClick={handleLogout}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="flex items-center bg-red-200 hover:bg-red-300 text-red-800 px-3 py-2 rounded-lg shadow-sm font-medium transition-all duration-200"
+          >
+            <LogOut size={18} className="mr-1" /> Logout
+          </motion.button>
+        </div>
+      </header>
       {/* Tabs */}
       <div className="flex justify-center gap-3 sm:gap-6 bg-white py-3 border-b border-gray-200">
         {TABS.map((tab) => (
@@ -196,7 +206,6 @@ export default function AdminDashboard() {
           </motion.button>
         ))}
       </div>
-
       {/* Content */}
       <main className="flex-1 overflow-y-auto px-4 sm:px-8 py-6">
         {loading ? (
@@ -223,51 +232,45 @@ export default function AdminDashboard() {
                 }`}
               >
                 <div className="flex flex-col gap-4">
-                  {/* Main Content - Clickable Area */}
                   <div
-                    onClick={() => setSelectedItem(item)}
+                    onClick={() => viewDetails(item)}
                     className="cursor-pointer flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2"
                   >
                     <div className="flex-1">
                       <h3 className="text-lg font-semibold text-green-800 mb-1">
                         {item.title}
                       </h3>
-                      <p className="text-sm text-gray-600 flex flex-wrap gap-4">
-                        <span className="flex items-center">
-                          <Calendar size={14} className="mr-1" />
-                          {new Date(item.createdAt).toLocaleDateString()}
-                        </span>
-                        {activeTab === "jobs" && (
-                          <>
-                            <span>
-                              • Deadline: {item.applicationDeadline ? new Date(item.applicationDeadline).toLocaleDateString() : "N/A"}
+                      {/* PROPERTY CARD SUMMARY */}
+                      {activeTab === "properties" ? (
+                        <div className="text-sm text-gray-600 flex flex-wrap gap-3">
+                          <span className="flex items-center">
+                            <Home size={14} className="mr-1" />
+                            {item.propertyType} • {item.totalArea} sqft • ₹{item.price}
+                          </span>
+                          <span>Status: {item.propertyStatus}</span>
+                          <span>Location: {item.city}, {item.state}</span>
+                        </div>
+                      ) : (
+                        <>
+                          <p className="text-sm text-gray-600 flex flex-wrap gap-4">
+                            <span className="flex items-center">
+                              <Calendar size={14} className="mr-1" />
+                              {new Date(item.createdAt).toLocaleDateString()}
                             </span>
-                            <span>• Salary: ₹{item.salaryRange || "N/A"}</span>
-                          </>
-                        )}
-                        {activeTab === "events" && (
-                          <>
-                            <span>• Location: {item.location || "N/A"}</span>
-                            <span>
-                              • Date: {item.eventDate ? new Date(item.eventDate).toLocaleDateString() : "N/A"}
-                            </span>
-                          </>
-                        )}
-                        {activeTab === "communityPosts" && (
-                          <span>• Location: {item.location || "N/A"}</span>
-                        )}
-                      </p>
-                      {item.description && (
-                        <p className="text-sm text-gray-700 mt-2 line-clamp-2">
-                          {item.description.length > 100 
-                            ? `${item.description.substring(0, 100)}...` 
-                            : item.description}
-                        </p>
+                            {/* Jobs/Events extra info */}
+                          </p>
+                          {item.description && (
+                            <p className="text-sm text-gray-700 mt-2 line-clamp-2">
+                              {item.description.length > 100 
+                                ? `${item.description.substring(0, 100)}...` 
+                                : item.description}
+                            </p>
+                          )}
+                        </>
                       )}
                     </div>
                   </div>
-
-                  {/* Action Buttons - Non-clickable Area */}
+                  {/* Action Buttons */}
                   <div className="flex items-center justify-between pt-3 border-t border-gray-200">
                     <div className="flex gap-3">
                       <motion.button
@@ -284,7 +287,6 @@ export default function AdminDashboard() {
                         )}
                         Approve
                       </motion.button>
-
                       <motion.button
                         onClick={(e) => handleQuickAction(e, item.id, "reject")}
                         disabled={processingItems.has(item.id)}
@@ -300,9 +302,8 @@ export default function AdminDashboard() {
                         Reject
                       </motion.button>
                     </div>
-
                     <button
-                      onClick={() => setSelectedItem(item)}
+                      onClick={() => viewDetails(item)}
                       className="text-green-600 hover:text-green-700 font-medium text-sm transition-colors duration-200"
                     >
                       View Details →
@@ -315,7 +316,7 @@ export default function AdminDashboard() {
         )}
       </main>
 
-      {/* Details Modal */}
+      {/* Details Modal: includes properties */}
       <AnimatePresence>
         {selectedItem && (
           <motion.div
@@ -326,6 +327,7 @@ export default function AdminDashboard() {
             onClick={(e) => {
               if (e.target === e.currentTarget) {
                 setSelectedItem(null);
+                setPropertyDetails(null);
               }
             }}
           >
@@ -340,7 +342,10 @@ export default function AdminDashboard() {
                   {selectedItem.title}
                 </h2>
                 <button
-                  onClick={() => setSelectedItem(null)}
+                  onClick={() => {
+                    setSelectedItem(null);
+                    setPropertyDetails(null);
+                  }}
                   className="text-gray-500 hover:text-red-500 transition-colors duration-200 p-1"
                   aria-label="Close modal"
                 >
@@ -348,86 +353,77 @@ export default function AdminDashboard() {
                 </button>
               </div>
 
-              <div className="space-y-3">
-                <p className="text-gray-700">
-                  <span className="font-semibold">Description:</span> {selectedItem.description || "N/A"}
-                </p>
-
-                {activeTab === "events" && (
-                  <>
-                    <p className="text-gray-700">
-                      <span className="font-semibold">Location:</span> {selectedItem.location || "N/A"}
-                    </p>
-                    <p className="text-gray-700">
-                      <span className="font-semibold">Event Date:</span>{" "}
-                      {selectedItem.eventDate ? new Date(selectedItem.eventDate).toLocaleString() : "N/A"}
-                    </p>
-                  </>
-                )}
-
-                {activeTab === "jobs" && (
-                  <>
-                    <p className="text-gray-700">
-                      <span className="font-semibold">Application Deadline:</span>{" "}
-                      {selectedItem.applicationDeadline ? new Date(selectedItem.applicationDeadline).toLocaleDateString() : "N/A"}
-                    </p>
-                    <p className="text-gray-700">
-                      <span className="font-semibold">Salary Range:</span> ₹{selectedItem.salaryRange || "N/A"}
-                    </p>
-                    <p className="text-gray-700">
-                      <span className="font-semibold">Company:</span> {selectedItem.company || "N/A"}
-                    </p>
-                    <p className="text-gray-700">
-                      <span className="font-semibold">Job Type:</span> {selectedItem.jobType || "N/A"}
-                    </p>
-                  </>
-                )}
-
-                {activeTab === "communityPosts" && (
-                  <>
-                    <p className="text-gray-700">
-                      <span className="font-semibold">Location:</span> {selectedItem.location || "N/A"}
-                    </p>
-                    <p className="text-gray-700">
-                      <span className="font-semibold">Content:</span> {selectedItem.content || "N/A"}
-                    </p>
-                  </>
-                )}
-
-                <p className="text-gray-700">
-                  <span className="font-semibold">Created:</span>{" "}
-                  {new Date(selectedItem.createdAt).toLocaleString()}
-                </p>
-              </div>
-
-              <div className="mt-6">
-                <h3 className="text-lg font-medium text-green-700 mb-3">Images</h3>
-                <div className="flex flex-wrap gap-3">
-                  {selectedItem.imageUrls && selectedItem.imageUrls.length > 0 ? (
-                    selectedItem.imageUrls.map((img, i) => (
-                      <motion.img
-                        key={i}
-                        src={img}
-                        alt={`Post image ${i + 1}`}
-                        onClick={() => setFullImage(img)}
-                        whileHover={{ scale: 1.05 }}
-                        className="w-20 h-20 rounded-lg object-cover cursor-pointer border-2 border-green-300 hover:border-green-500 transition-all duration-200 shadow-sm"
-                      />
-                    ))
-                  ) : (
-                    <p className="text-gray-500 text-sm flex items-center gap-2">
-                      <ImageIcon size={16} /> No images uploaded
-                    </p>
-                  )}
+              {!loadingDetails && activeTab === "properties" && propertyDetails && (
+                <div>
+                  <div className="flex flex-col md:flex-row gap-6 mb-6">
+                    <div className="min-w-[220px] max-w-[300px] rounded-xl overflow-hidden">
+                      {propertyDetails.imageUrls && propertyDetails.imageUrls.length > 0 ? (
+                        <img
+                          src={propertyDetails.imageUrls[0]}
+                          alt="Property"
+                          className="w-full h-auto rounded-xl"
+                          style={{ maxHeight: 180 }}
+                        />
+                      ) : (
+                        <div className="w-full h-40 bg-gray-100 rounded-xl flex items-center justify-center text-gray-400">
+                          <ImageIcon size={42} />
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1 flex flex-col gap-2">
+                      <div className="font-bold text-lg">{propertyDetails.title}</div>
+                      <div className="text-blue-600 font-bold text-base">
+                        ₹ {((+propertyDetails.price) / 100000).toLocaleString("en-IN")} Lakhs
+                      </div>
+                      <div className="text-gray-700 text-sm mb-1">{propertyDetails.description}</div>
+                      <div className="flex flex-wrap gap-2 text-[13px] text-gray-800">
+                        <span><Square size={15} className="inline" /> {propertyDetails.totalArea} sq.ft</span>
+                        <span><Home size={15} className="inline" /> {propertyDetails.propertyType}</span>
+                        <span>Status: {propertyDetails.propertyStatus}</span>
+                        <span>District: {propertyDetails.district}</span>
+                        <span>Address: {propertyDetails.address}</span>
+                        <span>City: {propertyDetails.city}</span>
+                        <span>State: {propertyDetails.state}</span>
+                        <span>Contact: {propertyDetails.contactName} ({propertyDetails.contactEmail})</span>
+                      </div>
+                      <div className="flex flex-wrap gap-1 mt-2">
+                        {(propertyDetails.imageUrls || []).map((img, i) => (
+                          <img
+                            key={i}
+                            src={img}
+                            alt={`img${i}`}
+                            className="w-14 h-14 object-cover rounded-lg border cursor-pointer"
+                            onClick={() => setFullImage(img)}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              </div>
+              )}
 
+              {loadingDetails && activeTab === "properties" && (
+                <div className="flex items-center justify-center h-32">
+                  <Loader2 size={32} className="animate-spin text-green-600" />
+                </div>
+              )}
+
+              {/* For non-property tabs */}
+              {activeTab !== "properties" && (
+                <div className="space-y-3">
+                  <p className="text-gray-700">
+                    <span className="font-semibold">Description:</span> {selectedItem.description || "N/A"}
+                  </p>
+                  {/* ...more details based on tab */}
+                  <p className="text-gray-700">
+                    <span className="font-semibold">Created:</span> {new Date(selectedItem.createdAt).toLocaleString()}
+                  </p>
+                </div>
+              )}
               {/* Modal Action Buttons */}
               <div className="flex justify-center gap-4 mt-6 pt-6 border-t border-gray-200">
                 <motion.button
-                  onClick={() =>
-                    setConfirmAction({ id: selectedItem.id, action: "approve", fromModal: true })
-                  }
+                  onClick={() => setConfirmAction({ id: selectedItem.id, action: "approve", fromModal: true })}
                   disabled={processingItems.has(selectedItem.id)}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
@@ -441,9 +437,7 @@ export default function AdminDashboard() {
                   Approve
                 </motion.button>
                 <motion.button
-                  onClick={() =>
-                    setConfirmAction({ id: selectedItem.id, action: "reject", fromModal: true })
-                  }
+                  onClick={() => setConfirmAction({ id: selectedItem.id, action: "reject", fromModal: true })}
                   disabled={processingItems.has(selectedItem.id)}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
@@ -472,7 +466,6 @@ export default function AdminDashboard() {
             exit={{ opacity: 0 }}
             onClick={closeFullImage}
           >
-            {/* Close Button */}
             <motion.button
               onClick={closeFullImage}
               initial={{ opacity: 0, scale: 0.8 }}
@@ -485,7 +478,6 @@ export default function AdminDashboard() {
             >
               <X size={24} />
             </motion.button>
-
             <motion.img
               src={fullImage}
               alt="Full size preview"
@@ -495,8 +487,6 @@ export default function AdminDashboard() {
               className="max-w-[90%] max-h-[90%] rounded-lg shadow-2xl object-contain"
               onClick={(e) => e.stopPropagation()}
             />
-            
-            {/* Instruction text */}
             <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-white/70 text-sm bg-black/30 px-4 py-2 rounded-full backdrop-blur-sm">
               Click outside or press ESC to close
             </div>

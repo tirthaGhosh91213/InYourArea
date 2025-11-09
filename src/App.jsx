@@ -22,6 +22,8 @@ import RightSidebar from "./components/RightSidebar";
 import LocalNewsDetails from "./pages/LocalNewsDetails";
 import EmailService from "./components/EmailService";
 import GoogleCallback from "./pages/GoogleCallback";
+import Properties from "./pages/Properties";
+import CreatePropertyPost from "./pages/CreatePropertyPost";
 
 // ✅ Home component
 function Home() {
@@ -82,6 +84,8 @@ export default function App() {
           <Route path="/events/:id" element={<EventDetails />} />
           <Route path="/localnews/details/:id" element={<LocalNewsDetails />} />
           <Route path="/user-dashboard" element={<UserDashboard />} />
+           <Route path="/properties" element={<Properties />} />
+           <Route path="/createPropertyPost" element={<CreatePropertyPost />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </Router>

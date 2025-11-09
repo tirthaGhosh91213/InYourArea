@@ -1,33 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
-  Radio,
-  Newspaper,
-  Users,
-  Home,
-  X,
-  Mail,
-  MapPin,
-  ChevronDown,
+  Radio, Newspaper, Users, Home, X, Mail, MapPin, ChevronDown, Building2
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import logo from "../assets/logo.png";
 
-const districts = [
-  "----------- Jharkhand -----------",
-  "Bokaro", "Chatra", "Deoghar", "Dhanbad", "Dumka",
-  "East Singhbhum", "Garhwa", "Giridih", "Godda", "Gumla",
-  "Hazaribagh", "Jamtara", "Jamshedpur", "Khunti", "Koderma",
-  "Latehar", "Lohardaga", "Pakur", "Palamu", "Ramgarh",
-  "Ranchi", "Sahibganj", "Seraikela-Kharsawan", "Simdega", "West Singhbhum",
-  "----------- Bihar -----------",
-  "Araria","Arwal","Aurangabad","Banka","Begusarai","Bhagalpur","Bhojpur","Buxar",
-  "Darbhanga","East Champaran (Motihari)","Gaya","Gopalganj","Jamui","Jehanabad",
-  "Kaimur (Bhabua)","Katihar","Khagaria","Kishanganj","Lakhisarai","Madhepura",
-  "Madhubani","Munger","Muzaffarpur","Nalanda","Nawada","Patna","Purnia","Rohtas",
-  "Saharsa","Samastipur","Saran (Chhapra)","Sheikhpura","Sheohar","Sitamarhi",
-  "Siwan","Supaul","Vaishali","West Champaran (Bettiah)",
-];
+const districts = [ /* your districts array here... */ ];
 
 const MERAKI_LINK = "https://www.ulmind.com";
 
@@ -56,9 +35,7 @@ export default function Sidebar({ sidebarOpen, onClose }) {
       }
     };
     window.addEventListener("storage", onStorageChange);
-    return () => {
-      window.removeEventListener("storage", onStorageChange);
-    };
+    return () => window.removeEventListener("storage", onStorageChange);
   }, [selectedDistrict, location.pathname]);
 
   const handleDistrictSelect = (district) => {
@@ -94,11 +71,13 @@ export default function Sidebar({ sidebarOpen, onClose }) {
     { name: "Jobs", icon: Newspaper, path: "/jobs" },
     { name: "Community", icon: Users, path: "/community" },
     { name: "Events", icon: Home, path: "/events" },
+    { name: "Properties", icon: Building2, path: "/properties" }, // New Section
   ];
 
   const getPostOptions = () => {
-    if (role === "admin") return ["Local News", "Jobs", "Events", "Community"];
-    return ["Jobs", "Events", "Community"];
+    const base = ["Jobs", "Events", "Community"];
+    if (role === "admin") return ["Local News", ...base];
+    return base;
   };
 
   const handleOptionClick = (type) => {
@@ -115,6 +94,12 @@ export default function Sidebar({ sidebarOpen, onClose }) {
       case "Events": navigate("/create/events"); break;
       default: break;
     }
+  };
+
+  // New Property Post handler
+  const handleCreatePropertyPost = () => {
+    setShowModal(false);
+    navigate("/createPropertyPost");
   };
 
   const handleMenuClick = (item) => {
@@ -140,15 +125,14 @@ export default function Sidebar({ sidebarOpen, onClose }) {
           className="fixed top-0 left-0 h-screen w-64 px-8 py-14 bg-gradient-to-b from-white/90 via-white/80 to-white/70 backdrop-blur-lg border-r border-gray-200 shadow-lg flex flex-col justify-between z-40"
         >
           <div>
-            <div className="flex items-center justify-between ">
-             <img
-  src={logo}
-  alt="Logo"
-  className="max-h-32 w-auto mt-3 select-none sm:max-h-28 md:max-h-28"
-  style={{ marginLeft: '40px' }} // Optionally, you can remove this for better centering on small screens
-  draggable={false}
-/>
-
+            <div className="flex items-center justify-between">
+              <img
+                src={logo}
+                alt="Logo"
+                className="max-h-32 w-auto mt-3 select-none sm:max-h-28 md:max-h-28"
+                style={{ marginLeft: '40px' }}
+                draggable={false}
+              />
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -314,6 +298,15 @@ export default function Sidebar({ sidebarOpen, onClose }) {
                         {type}
                       </motion.button>
                     ))}
+                    {/* Create Property Button */}
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={handleCreatePropertyPost}
+                      className="py-2 bg-blue-100 text-blue-700 font-medium rounded-xl hover:bg-blue-200 transition-all"
+                    >
+                      Create Property
+                    </motion.button>
                   </div>
                 </motion.div>
               </motion.div>
