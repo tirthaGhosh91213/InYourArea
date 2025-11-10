@@ -1,53 +1,10 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useState } from "react";
 import { X as CloseIcon } from "lucide-react";
 
-// Utility: returns a random int between min and max seconds (in ms)
-function getRandomInterval(minSec = 6, maxSec = 15) {
-  return Math.floor(Math.random() * (maxSec * 1000 - minSec * 1000 + 1)) + minSec * 1000;
-}
+export default function SmallAdd({ position = "bottom-right", ad, open = true, onClose }) {
+  const [localOpen, setLocalOpen] = useState(open);
 
-/**
- * SmallAddRotate: Rotates through all small ads, showing one at a time popup.
- */
-export default function SmallAdd() {
-  const [ads, setAds] = useState([]);
-  const [curIdx, setCurIdx] = useState(0);
-  const [open, setOpen] = useState(true);
-  const timerRef = useRef(null);
-
-  // Fetch all active small ads on mount
-  useEffect(() => {
-    fetch("http://localhost:8000/api/v1/banner-ads/active/small")
-      .then(res => res.json())
-      .then(data => {
-        if (data && data.data && data.data.length > 0) {
-          setAds(data.data);
-          setOpen(true);
-        }
-      });
-    return () => clearTimeout(timerRef.current);
-  }, []);
-
-  // When a new ad is shown, set a timer to show the next one randomly
-  useEffect(() => {
-    if (!open || ads.length === 0) return;
-    timerRef.current && clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => {
-      if (curIdx < ads.length - 1) {
-        setCurIdx(curIdx + 1);
-      } else {
-        setOpen(false); // all done, close popups
-      }
-    }, getRandomInterval(6, 15));
-    return () => clearTimeout(timerRef.current);
-    // eslint-disable-next-line
-  }, [curIdx, open, ads]);
-
-  if (!open || ads.length === 0) return null;
-
-  const ad = ads[curIdx];
-  // Defensive: if image/title missing, skip rendering
-  if (!ad || !ad.bannerUrl || !ad.title) return null;
+  if (!localOpen || !ad || !ad.bannerUrl || !ad.title) return null;
 
   const handleGo = () => {
     if (ad.destinationUrl) {
@@ -55,19 +12,29 @@ export default function SmallAdd() {
     }
   };
 
+  const handleClose = () => {
+    setLocalOpen(false);
+    if (onClose) onClose();
+  };
+
+  const containerStyle =
+    position === "top-right"
+      ? { position: "fixed", top: "18px", right: "12px", zIndex: 50 }
+      : { position: "fixed", bottom: "22px", right: "12px", zIndex: 50 };
+
   return (
-    <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-50">
-      <div className="relative bg-white rounded-xl shadow-lg p-3 w-80 max-w-[90vw] border border-blue-200 flex flex-col items-center">
+    <div style={containerStyle} className="max-w-[95vw] pointer-events-auto">
+      <div className="relative bg-white rounded-lg shadow-xl border border-blue-200 flex flex-col overflow-hidden p-0 w-[170px] sm:w-[160px] max-w-full transition-all">
         <button
           aria-label="Close Ad"
-          className="absolute top-3 right-3 text-gray-400 hover:text-red-500 transition-colors p-1 rounded-full"
-          onClick={() => setOpen(false)}
+          className="absolute top-1 right-1 text-white/90 hover:text-red-400 bg-black/30 transition-colors p-1 rounded-full z-10"
+          onClick={handleClose}
         >
-          <CloseIcon size={22} />
+          <CloseIcon size={15} />
         </button>
         <div
           onClick={handleGo}
-          className="cursor-pointer flex flex-col items-center w-full select-none"
+          className="cursor-pointer w-full flex flex-col relative select-none"
           tabIndex={0}
           role="button"
           title={ad.title}
@@ -75,10 +42,15 @@ export default function SmallAdd() {
           <img
             src={ad.bannerUrl}
             alt={ad.title}
-            className="rounded-lg mb-2 w-40 h-24 object-cover border border-gray-200 shadow-sm"
+            className="w-full h-[80px] xs:h-[95px] sm:h-[95px] object-cover"
+            draggable={false}
+            style={{ userSelect: 'none' }}
+            loading="lazy"
           />
-          <div className="text-base font-bold text-blue-700 text-center truncate w-full px-2">
-            {ad.title}
+          <div className="absolute bottom-0 left-0 w-full py-1 px-2 flex items-end bg-gradient-to-t from-black/85 via-black/55 to-transparent">
+            <span className="w-full text-xs font-bold text-white truncate drop-shadow">
+              {ad.title}
+            </span>
           </div>
         </div>
       </div>

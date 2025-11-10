@@ -1,5 +1,9 @@
 // src/pages/Events.jsx
 import React, { useState, useEffect } from "react";
+import axios from "axios";
+import Sidebar from "../components/SideBar";
+import RightSidebar from "../components/RightSidebar";
+import SmallAdd from "../components/SmallAdd";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Calendar,
@@ -10,31 +14,34 @@ import {
   MessageCircle,
   Link as LinkIcon,
 } from "lucide-react";
-import axios from "axios";
-import Sidebar from "../components/SideBar";
-import RightSidebar from "../components/RightSidebar";
-import SmallAdd from "../components/SmallAdd"; // <<== Add this import
 import { useNavigate } from "react-router-dom";
+
+// Helper: For each slot, rotate through ads, remember what was closed, persist across refresh.
+function getSlotIndexes(totalAds, closedForSlot) {
+  // Pull indexes from localStorage ("EVENTSADS_SLOT0" etc.), defaults to 0/1/2
+  let indexes = [0, 1, 2].map(i =>
+    parseInt(localStorage.getItem(`EVENTSADS_SLOT${i}`) || i, 10)
+  );
+  // Advance only if ad was closed last session
+  for (let pos = 0; pos < 3; pos++) {
+    if (closedForSlot[pos]) {
+      indexes[pos] = (indexes[pos] + 1) % totalAds;
+      localStorage.setItem(`EVENTSADS_SLOT${pos}`, indexes[pos]);
+    }
+  }
+  return indexes;
+}
 
 export default function Events() {
   const [events, setEvents] = useState([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
   const [filterCity, setFilterCity] = useState("All");
+  const [ads, setAds] = useState([]);
+  const [adsClosed, setAdsClosed] = useState({}); // {0:true, 1:true, 2:true}
   const navigate = useNavigate();
 
-  // --- SmallAd state logic ---
-  const smallAdData = {
-    title: "Special Weekend Flash Sale!",
-    destinationUrl: "https://example.com/sale",
-    image: "https://your-cdn.com/small-add-image.jpg"
-  };
-  // Show randomly, e.g., 40% chance
-  const [showAdd, setShowAdd] = useState(false);
-  useEffect(() => {
-    if (Math.random() < 0.4) setShowAdd(true);
-  }, []);
-
+  // Fetch events
   const fetchEvents = async () => {
     try {
       setLoading(true);
@@ -47,9 +54,34 @@ export default function Events() {
     }
   };
 
+  // Fetch small ads
   useEffect(() => {
+    fetch("http://localhost:8000/api/v1/banner-ads/active/small")
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.data && Array.isArray(data.data) && data.data.length > 0) {
+          // Shuffle to randomize sequence on app load
+          let shuffled = [...data.data].sort(() => Math.random() - 0.5);
+          setAds(shuffled);
+        }
+      });
     fetchEvents();
+    // eslint-disable-next-line
   }, []);
+
+  // Get the ad slot indexes to render
+  let slotIndexes = ads.length ? getSlotIndexes(ads.length, adsClosed) : [];
+  let adsToShow = slotIndexes.map(idx => ads[idx]);
+
+  // Position mapping
+  const POSITIONS = [
+    { id: 0, pos: "top-right", style: "fixed right-2 sm:right-6 top-3 z-[90]" },
+    { id: 1, pos: "bottom-right", style: "fixed right-2 sm:right-6 bottom-4 z-[90]" },
+    { id: 2, pos: "bottom-left", style: "fixed left-2 sm:left-6 bottom-4 z-[90]" }
+  ];
+
+  // Close handler (removes for this render, rotates on next refresh)
+  const handleCloseAd = pos => setAdsClosed(prev => ({ ...prev, [pos]: true }));
 
   const filteredEvents = events.filter((e) => {
     const title = (e.title || "").toLowerCase();
@@ -64,15 +96,22 @@ export default function Events() {
   });
 
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      {/* --- Small Add Popup --- */}
-      <SmallAdd
-        open={showAdd}
-        onClose={() => setShowAdd(false)}
-        title={smallAdData.title}
-        destinationUrl={smallAdData.destinationUrl}
-        image={smallAdData.image}
-      />
+    <div className="flex flex-col min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 relative">
+      {/* Ad Slots: Top-right, Bottom-right, Bottom-left */}
+      {POSITIONS.map(({ id, pos, style }) =>
+        adsToShow[id] && !adsClosed[id] ? (
+          <div key={pos} className={style}>
+            <AnimatePresence>
+              <SmallAdd
+                ad={adsToShow[id]}
+                position={pos}
+                open={true}
+                onClose={() => handleCloseAd(id)}
+              />
+            </AnimatePresence>
+          </div>
+        ) : null
+      )}
       <header className="w-full fixed top-0 left-0 z-50 bg-white shadow-md border-b border-gray-200">
         <RightSidebar refreshEvents={fetchEvents} />
       </header>
@@ -163,7 +202,6 @@ export default function Events() {
                         No image
                       </div>
                     )}
-
                     {/* Event Info */}
                     <h2 className="text-lg font-semibold">{event.title}</h2>
                     <p className="text-sm text-gray-600">

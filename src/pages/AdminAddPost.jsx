@@ -53,7 +53,6 @@ export default function AdminAddPost() {
       formData.append("metadata", JSON.stringify(metadata));
       banners.forEach(file => formData.append("bannerImage", file));
       const token = localStorage.getItem("accessToken");
-      // Always send token in frontend (if required by backend security)
       await axios.post(`${BASE_API}/banner-ads`, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
@@ -66,8 +65,6 @@ export default function AdminAddPost() {
     } catch (error) {
       if (error?.response?.status === 403) {
         toast.error("Access Denied: You are not authorized to create ads. Please log in with an admin account.");
-        // Optionally clear token or redirect to login:
-        // localStorage.removeItem("accessToken"); navigate("/login");
       } else {
         toast.error(error?.response?.data?.message || "Failed to create banner ad");
       }
@@ -83,27 +80,30 @@ export default function AdminAddPost() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-blue-100">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-blue-50 via-white to-blue-100 py-6 px-2">
+      {/* Back button outside the box */}
+      <div className="w-full max-w-2xl mx-auto mb-6 flex justify-start">
+        <motion.button
+          whileHover={{ scale: 1.06, x: -3, backgroundColor: "#dbeafe" }}
+          whileTap={{ scale: 0.97, x: -8 }}
+          className="flex items-center gap-2 font-semibold text-blue-700 bg-blue-50 px-4 py-2 rounded-full shadow-sm border border-blue-200 z-10 transition"
+          onClick={() => navigate(-1)}
+        >
+          <ArrowLeftCircle size={20} className="mr-1" />
+          Back
+        </motion.button>
+      </div>
+      {/* Form box */}
       <motion.div
-        className="max-w-2xl w-full mx-auto bg-white/90 rounded-2xl shadow-2xl p-8 relative border border-blue-100"
+        className="max-w-2xl w-full mx-auto bg-white rounded-2xl shadow-2xl p-6 md:p-10 relative border border-blue-100"
         variants={formVariants}
         initial="hidden"
         animate="visible"
         exit="exit"
         layout
       >
-        {/* Back Button */}
-        <motion.button
-          whileHover={{ scale: 1.06, x: -3, backgroundColor: "#dbeafe" }}
-          whileTap={{ scale: 0.97, x: -8 }}
-          className="flex items-center gap-2 font-semibold text-blue-700 bg-blue-50 px-4 py-2 rounded-full mb-3 absolute -top-6 left-4 shadow-sm border border-blue-200 z-10 transition"
-          onClick={() => navigate(-1)}
-        >
-          <ArrowLeftCircle size={20} className="mr-1" />
-          Back
-        </motion.button>
         <motion.h2
-          className="text-3xl font-black mb-7 text-blue-700 flex items-center gap-2 tracking-tight"
+          className="text-2xl md:text-3xl font-black mb-7 text-blue-700 flex items-center gap-2 tracking-tight"
           initial={{ opacity: 0, x: -30 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.1, type: "spring", stiffness: 90 }}
@@ -114,9 +114,9 @@ export default function AdminAddPost() {
         <form onSubmit={handleSubmit} className="flex flex-col gap-7" encType="multipart/form-data">
           {/* Title */}
           <motion.label className="flex flex-col gap-1"
-              initial={{ opacity: 0, y: 25 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.11 }}>
+            initial={{ opacity: 0, y: 25 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.11 }}>
             <span className="font-bold text-gray-700">Title</span>
             <input
               type="text"
@@ -146,7 +146,7 @@ export default function AdminAddPost() {
             />
           </motion.label>
           {/* DATES */}
-          <div className="flex gap-5">
+          <div className="flex flex-col md:flex-row gap-5">
             <motion.label className="flex flex-col flex-1 gap-1"
               initial={{ opacity: 0, y: 25 }}
               animate={{ opacity: 1, y: 0 }}
@@ -193,7 +193,7 @@ export default function AdminAddPost() {
                   {banners.map((file, idx) => (
                     <motion.div
                       key={idx}
-                      className="relative w-24 h-24 rounded-lg border border-blue-200 bg-blue-50 flex items-center justify-center overflow-hidden group"
+                      className="relative w-20 h-20 md:w-24 md:h-24 rounded-lg border border-blue-200 bg-blue-50 flex items-center justify-center overflow-hidden group"
                       initial={{ opacity: 0, scale: 0.7 }}
                       animate={{ opacity: 1, scale: 1 }}
                       exit={{ opacity: 0, scale: 0.4 }}
@@ -212,7 +212,7 @@ export default function AdminAddPost() {
                         whileHover={{ scale: 1.2, rotate: 18 }}
                         whileTap={{ scale: 1 }}
                       >
-                        <RemoveIcon size={18} />
+                        <RemoveIcon size={16} />
                       </motion.button>
                     </motion.div>
                   ))}
@@ -223,7 +223,7 @@ export default function AdminAddPost() {
                   className="flex items-center gap-2 bg-gradient-to-tr from-blue-100 via-blue-50 to-blue-200 hover:from-blue-200 hover:to-blue-300 px-6 py-2 rounded-xl border border-blue-200 text-blue-800 font-bold shadow hover:shadow-lg"
                   whileHover={{ scale: 1.04 }}
                 >
-                  <ImageIcon size={20} /> Add Images
+                  <ImageIcon size={18} /> Add Images
                 </motion.div>
                 <input
                   type="file"

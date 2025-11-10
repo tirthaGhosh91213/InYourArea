@@ -5,9 +5,7 @@ import {
   PlusCircle,
   ArrowRight,
   Loader2,
-  CheckCircle,
   XCircle,
-  Circle,
   LogOut,
   ChevronDown,
   ChevronUp,
@@ -17,13 +15,10 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "react-toastify";
 
-// API endpoints per tab
 const tabDefs = [
   { key: "ALL", label: "All Ads", api: "http://localhost:8000/api/v1/banner-ads" },
   { key: "SMALL_ACTIVE", label: "Active Small", api: "http://localhost:8000/api/v1/banner-ads/active/small" },
-  { key: "LARGE_ACTIVE", label: "Active Large", api: "http://localhost:8000/api/v1/banner-ads/active/large" },
-  { key: "SMALL_INACTIVE", label: "Inactive Small", api: "http://localhost:8000/api/v1/banner-ads/inactive/small" },
-  { key: "LARGE_INACTIVE", label: "Inactive Large", api: "http://localhost:8000/api/v1/banner-ads/inactive/large" }
+  { key: "LARGE_ACTIVE", label: "Active Large", api: "http://localhost:8000/api/v1/banner-ads/active/large" }
 ];
 
 const STATUS_OPTIONS = ["ACTIVE", "INACTIVE"];
@@ -116,7 +111,6 @@ export default function AdminAddSection() {
     // eslint-disable-next-line
   }, [tab]);
 
-  // Status update handler
   const handleStatusChange = async (adId, newStatus) => {
     try {
       await axios.patch(
@@ -131,7 +125,6 @@ export default function AdminAddSection() {
     }
   };
 
-  // Delete ad handler
   const handleDelete = async (adId) => {
     if (!window.confirm("Delete this ad?")) return;
     try {
@@ -143,24 +136,24 @@ export default function AdminAddSection() {
     }
   };
 
-  // Logout handler
   const handleLogout = () => {
     localStorage.removeItem("accessToken");
     toast.success("Logged out successfully");
     navigate("/login");
   };
 
-  // Animated card rendering
+  // Card fix: Remove opacity & filters
   const renderAdCard = (ad) => (
     <motion.div
       key={ad.id}
       layout
-      initial={{ opacity: 0, scale: 0.92, y: 32 }}
+      initial={{ opacity: 0, scale: 1, y: 32 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.92, y: 32 }}
+      exit={{ opacity: 0, scale: 0.95, y: 32 }}
       transition={{ type: "spring", stiffness: 180, damping: 20 }}
-      whileHover={{ scale: 1.03, y: -8, boxShadow: "0 10px 32px rgba(25,60,165,0.13)" }}
-      className="rounded-xl border-2 p-4 shadow-md bg-white/90 relative overflow-visible transition group border-blue-100 hover:border-blue-500"
+      whileHover={{ scale: 1.03, y: -4, boxShadow: "0 8px 32px rgba(25,60,165,0.13)" }}
+      className="rounded-xl border-2 p-4 shadow-md bg-white relative overflow-visible transition group border-blue-100 hover:border-blue-500"
+      style={{ opacity: 1, filter: "none", backdropFilter: "none" }} // <-- FIX: Remove blur!
     >
       <div className="flex items-center gap-1 absolute right-2 top-2 z-20">
         <DropDownStatus
@@ -222,24 +215,24 @@ export default function AdminAddSection() {
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-blue-50 via-white to-blue-100">
       {/* Navbar */}
-      <nav className="flex items-center justify-between px-6 py-4 bg-white/95 border-b border-blue-100 shadow sticky top-0 z-30">
+      <nav className="flex items-center justify-between px-4 sm:px-6 py-4 bg-white border-b border-blue-100 shadow sticky top-0 z-30">
         <div className="text-2xl md:text-3xl font-black text-blue-800 flex items-center gap-2 drop-shadow">
           Ads Admin Panel
         </div>
-        <div className="flex gap-3 items-center">
+        <div className="flex gap-2 sm:gap-3 items-center">
           <motion.button
             whileHover={{ scale: 1.07, backgroundColor: "#2563eb", color: "#fff" }}
             whileTap={{ scale: 0.95 }}
-            className="flex items-center gap-2 bg-blue-600 text-white px-5 py-2 rounded-xl shadow-lg font-bold text-base transition-colors hover:bg-blue-700"
+            className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-xl shadow-lg font-bold text-base transition-colors hover:bg-blue-700"
             onClick={() => navigate("/add-post")}
           >
             <PlusCircle className="w-5 h-5" />
-            Post Add
+            Post Ads
           </motion.button>
           <motion.button
             whileHover={{ scale: 1.07, backgroundColor: "#fee2e2", color: "#b91c1c" }}
             whileTap={{ scale: 0.95 }}
-            className="flex items-center gap-2 bg-red-100 text-red-700 px-4 py-2 rounded-xl shadow font-bold text-base transition-colors hover:bg-red-200 border border-red-200"
+            className="flex items-center gap-2 bg-red-100 text-red-700 px-3 py-2 rounded-xl shadow font-bold text-base transition-colors hover:bg-red-200 border border-red-200"
             onClick={handleLogout}
           >
             <LogOut className="w-5 h-5" />
@@ -249,15 +242,14 @@ export default function AdminAddSection() {
       </nav>
 
       {/* Tabs */}
-      <div className="flex items-center gap-2 px-6 py-3 mt-4 mb-2">
+      <div className="flex items-center gap-2 px-4 sm:px-6 py-3 mt-4 mb-2 overflow-x-auto">
         {tabDefs.map(def => (
           <button
             key={def.key}
             className={`px-4 py-1.5 rounded-lg font-bold border text-base shadow-sm transition-all
-              ${
-                tab === def.key
-                  ? "bg-blue-100 text-blue-700 border-blue-400 shadow"
-                  : "bg-white text-gray-700 border-gray-200 hover:bg-blue-50"
+              ${tab === def.key
+                ? "bg-blue-100 text-blue-700 border-blue-400 shadow"
+                : "bg-white text-gray-700 border-gray-200 hover:bg-blue-50"
               }`}
             onClick={() => setTab(def.key)}
           >
@@ -267,7 +259,7 @@ export default function AdminAddSection() {
       </div>
 
       {/* AD Main List */}
-      <main className="flex-1 px-4 md:px-8 pt-2 pb-10 w-full max-w-6xl mx-auto">
+      <main className="flex-1 px-2 sm:px-4 md:px-8 pt-2 pb-10 w-full max-w-6xl mx-auto">
         <AnimatePresence mode="wait">
           {loading ? (
             <motion.div
@@ -304,7 +296,7 @@ export default function AdminAddSection() {
           ) : (
             <motion.div
               layout
-              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mt-2"
+              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 mt-2"
             >
               {ads.map(renderAdCard)}
             </motion.div>
