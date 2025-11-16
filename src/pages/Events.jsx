@@ -1,9 +1,9 @@
-// src/pages/Events.jsx
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import Sidebar from "../components/SideBar";
 import RightSidebar from "../components/RightSidebar";
 import SmallAdd from "../components/SmallAdd";
+import LargeAd from "../components/LargeAd";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Calendar,
@@ -16,34 +16,35 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
-// Helper: Get next index in circular manner
-function getNextIndex(current, total) {
-  if (total === 0) return 0;
-  return (current + 1) % total;
+// Helper: Shuffle an array
+function shuffle(array) {
+  const arr = [...array];
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
 }
-
-// Keys in localStorage for each slot
-const SLOT_KEYS = {
-  TOP_RIGHT: "EVENTS_AD_INDEX_TOP_RIGHT",
-  BOTTOM_RIGHT: "EVENTS_AD_INDEX_BOTTOM_RIGHT",
-};
 
 export default function Events() {
   const [events, setEvents] = useState([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
   const [filterCity, setFilterCity] = useState("All");
-
   const [ads, setAds] = useState([]);
+  const [largeAds, setLargeAds] = useState([]);
 
-  // Slot indexes for ads (top-right, bottom-right)
   const [topRightIndex, setTopRightIndex] = useState(0);
   const [bottomRightIndex, setBottomRightIndex] = useState(1);
-
   const [topRightClosed, setTopRightClosed] = useState(false);
   const [bottomRightClosed, setBottomRightClosed] = useState(false);
-
   const navigate = useNavigate();
+
+  // Slot keys for persistent small ad positions
+  const SLOT_KEYS = {
+    TOP_RIGHT: "EVENTS_AD_INDEX_TOP_RIGHT",
+    BOTTOM_RIGHT: "EVENTS_AD_INDEX_BOTTOM_RIGHT",
+  };
 
   // Fetch events
   const fetchEvents = async () => {
@@ -62,9 +63,7 @@ export default function Events() {
 
   // Fetch small ads
   useEffect(() => {
-    fetch(
-      "https://api.jharkhandbiharupdates.com/api/v1/banner-ads/active/small"
-    )
+    fetch("https://api.jharkhandbiharupdates.com/api/v1/banner-ads/active/small")
       .then((res) => res.json())
       .then((data) => {
         if (
@@ -73,61 +72,47 @@ export default function Events() {
           Array.isArray(data.data) &&
           data.data.length > 0
         ) {
-          // Keep original order a,b,c,d,e,f (as created in backend)
           const orderedAds = [...data.data];
-
           setAds(orderedAds);
-
           const total = orderedAds.length;
-
-          // Load saved indexes from localStorage
           let savedTop = parseInt(
-            localStorage.getItem(SLOT_KEYS.TOP_RIGHT) ?? "0",
-            10
+            localStorage.getItem(SLOT_KEYS.TOP_RIGHT) ?? "0", 10
           );
           let savedBottom = parseInt(
-            localStorage.getItem(SLOT_KEYS.BOTTOM_RIGHT) ?? "1",
-            10
+            localStorage.getItem(SLOT_KEYS.BOTTOM_RIGHT) ?? "1", 10
           );
-
-          // Normalize if out of range
-          if (isNaN(savedTop) || savedTop < 0 || savedTop >= total) {
-            savedTop = 0;
-          }
-          if (isNaN(savedBottom) || savedBottom < 0 || savedBottom >= total) {
-            savedBottom = total > 1 ? 1 : 0;
-          }
-
-          // If both indexes are same and there is more than one ad, shift bottom
-          if (savedTop === savedBottom && total > 1) {
-            savedBottom = getNextIndex(savedTop, total);
-          }
-
+          if (isNaN(savedTop) || savedTop < 0 || savedTop >= total) savedTop = 0;
+          if (isNaN(savedBottom) || savedBottom < 0 || savedBottom >= total) savedBottom = total > 1 ? 1 : 0;
+          if (savedTop === savedBottom && total > 1) savedBottom = (savedTop + 1) % total;
           setTopRightIndex(savedTop);
           setBottomRightIndex(savedBottom);
         }
-      })
-      .catch((err) => {
-        console.error("Error fetching ads:", err);
-      });
+      }).catch(console.error);
 
     fetchEvents();
+
+    // Fetch large ads once (shuffle every time page renders)
+    fetch("https://api.jharkhandbiharupdates.com/api/v1/banner-ads/active/large")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data && Array.isArray(data.data)) {
+          setLargeAds(shuffle(data.data));
+        }
+      })
+      .catch(console.error);
+
     // eslint-disable-next-line
   }, []);
 
-  // When a slot is closed, update localStorage so that on next refresh it moves to the next ad
   useEffect(() => {
     if (!ads.length) return;
-
     const total = ads.length;
-
     if (topRightClosed) {
-      const nextTop = getNextIndex(topRightIndex, total);
+      const nextTop = (topRightIndex + 1) % total;
       localStorage.setItem(SLOT_KEYS.TOP_RIGHT, String(nextTop));
     }
-
     if (bottomRightClosed) {
-      const nextBottom = getNextIndex(bottomRightIndex, total);
+      const nextBottom = (bottomRightIndex + 1) % total;
       localStorage.setItem(SLOT_KEYS.BOTTOM_RIGHT, String(nextBottom));
     }
   }, [topRightClosed, bottomRightClosed, topRightIndex, bottomRightIndex, ads]);
@@ -138,19 +123,36 @@ export default function Events() {
     const location = (e.location || "").toLowerCase();
     const q = search.toLowerCase();
     const matchesSearch = title.includes(q) || location.includes(q);
-    const matchesFilter =
-      filterCity === "All"
-        ? true
-        : (e.location || "").toLowerCase().includes(filterCity.toLowerCase());
+    const matchesFilter = filterCity === "All"
+      ? true
+      : (e.location || "").toLowerCase().includes(filterCity.toLowerCase());
     return matchesSearch && matchesFilter;
   });
 
   const topRightAd = ads.length ? ads[topRightIndex % ads.length] : null;
   const bottomRightAd = ads.length ? ads[bottomRightIndex % ads.length] : null;
 
+  // Final grid: interleave large ads and events (ad -> event -> event -> ad ...)
+  function buildInterleavedGrid(eventsArr, adsArr) {
+    const result = [];
+    let eventIdx = 0, adIdx = 0;
+    while (eventIdx < eventsArr.length || adIdx < adsArr.length) {
+      if (adIdx < adsArr.length) {
+        result.push({ type: "ad", data: adsArr[adIdx] });
+        adIdx++;
+      }
+      for (let k = 0; k < 2 && eventIdx < eventsArr.length; k++) {
+        result.push({ type: "event", data: eventsArr[eventIdx] });
+        eventIdx++;
+      }
+    }
+    return result;
+  }
+  const gridItems = buildInterleavedGrid(filteredEvents, largeAds);
+
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 relative">
-      {/* Ad: Top-right (just under navbar, handled via SmallAdd position) */}
+      {/* Ad: Top-right */}
       {topRightAd && !topRightClosed && (
         <AnimatePresence>
           <SmallAdd
@@ -161,7 +163,6 @@ export default function Events() {
           />
         </AnimatePresence>
       )}
-
       {/* Ad: Bottom-right */}
       {bottomRightAd && !bottomRightClosed && (
         <AnimatePresence>
@@ -182,7 +183,6 @@ export default function Events() {
         <aside className="hidden lg:block w-64 bg-white shadow-md border-r border-gray-200">
           <Sidebar activePage="events" />
         </aside>
-
         <main className="flex-1 p-4 sm:p-6 overflow-y-auto">
           <div className="flex justify-between items-center mb-6 flex-wrap gap-3">
             <motion.h1
@@ -202,12 +202,7 @@ export default function Events() {
               <PlusCircle className="w-5 h-5" /> Add Event
             </motion.button>
           </div>
-
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="mb-6 relative"
-          >
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-6 relative">
             <Search className="absolute left-3 top-3 text-gray-400 w-5 h-5" />
             <input
               type="text"
@@ -217,7 +212,6 @@ export default function Events() {
               onChange={(e) => setSearch(e.target.value)}
             />
           </motion.div>
-
           <div className="flex gap-2 sm:gap-3 mb-6 flex-wrap">
             {["All", "Bokaro"].map((loc) => (
               <motion.button
@@ -235,110 +229,111 @@ export default function Events() {
               </motion.button>
             ))}
           </div>
-
           <AnimatePresence>
             {loading ? (
               <motion.div className="text-gray-500 text-center">
                 Loading events...
               </motion.div>
-            ) : filteredEvents.length > 0 ? (
+            ) : gridItems.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-                {filteredEvents.map((event) => (
-                  <motion.div
-                    key={event.id}
-                    layout
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    whileHover={{
-                      scale: 1.03,
-                      boxShadow: "0 20px 30px rgba(0,0,0,0.08)",
-                    }}
-                    className="bg-white rounded-2xl p-4 relative hover:bg-gradient-to-r hover:from-blue-50 hover:to-blue-100 transition cursor-pointer"
-                    onClick={() => navigate(`/events/${event.id}`)}
-                  >
-                    {/* Image Section */}
-                    {Array.isArray(event.imageUrls) &&
-                    event.imageUrls.length > 0 ? (
-                      <img
-                        src={event.imageUrls[0]}
-                        alt={event.title}
-                        className="w-full h-44 object-cover rounded-lg mb-3"
-                      />
-                    ) : (
-                      <div className="w-full h-44 bg-gray-100 flex items-center justify-center rounded-lg text-gray-400 mb-3">
-                        No image
-                      </div>
-                    )}
+                {gridItems.map((item, idx) =>
+                  item.type === "ad" ? (
+                    <LargeAd
+  key={"ad-" + (item.data.id ?? idx)}
+  ad={item.data}
+  onClose={() => {
+    setLargeAds((prev) => prev.filter((a) => a.id !== item.data.id));
+  }}
+/>
 
-                    {/* Event Info */}
-                    <h2 className="text-lg font-semibold">{event.title}</h2>
-                    <p className="text-sm text-gray-600">
-                      {event.description?.slice(0, 100)}
-                      {event.description &&
-                      event.description.length > 100
-                        ? "…"
-                        : ""}
-                    </p>
-                    <div className="mt-3 text-gray-600 text-sm flex gap-3 items-center flex-wrap">
-                      <span className="flex items-center gap-1">
-                        <MapPin className="w-4 h-4" /> {event.location}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Calendar className="w-4 h-4" />{" "}
-                        {event.eventDate
-                          ? new Date(
-                              event.eventDate
-                            ).toLocaleDateString()
-                          : "-"}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Clock className="w-4 h-4" />{" "}
-                        {event.eventDate
-                          ? new Date(event.eventDate).toLocaleTimeString(
-                              [],
-                              {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              }
-                            )
-                          : "-"}
-                      </span>
-                    </div>
-                    <p className="text-xs text-gray-400 mt-2">
-                      Posted by:{" "}
-                      {event.author
-                        ? `${event.author.firstName} ${event.author.lastName}`
-                        : "Unknown"}
-                    </p>
-                    <div className="mt-3 flex gap-2">
-                      <motion.button
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          navigate(`/events/${event.id}`);
-                        }}
-                        className="flex-1 flex items-center justify-center gap-2 bg-green-600 text-white py-2 rounded-xl text-sm hover:bg-green-700 transition"
-                      >
-                        <MessageCircle className="w-4 h-4" /> Comment
-                      </motion.button>
-                      <motion.button
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (event.reglink) {
-                            window.open(event.reglink, "_blank");
-                          }
-                        }}
-                        className="flex-1 flex items-center justify-center gap-2 bg-blue-600 text-white py-2 rounded-xl text-sm hover:bg-blue-700 transition"
-                      >
-                        <LinkIcon className="w-4 h-4" /> Register
-                      </motion.button>
-                    </div>
-                  </motion.div>
-                ))}
+                  ) : (
+                    <motion.div
+                      key={"event-" + item.data.id}
+                      layout
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -20 }}
+                      whileHover={{
+                        scale: 1.03,
+                        boxShadow: "0 20px 30px rgba(0,0,0,0.08)",
+                      }}
+                      className="bg-white rounded-2xl p-4 relative hover:bg-gradient-to-r hover:from-blue-50 hover:to-blue-100 transition cursor-pointer"
+                      onClick={() => navigate(`/events/${item.data.id}`)}
+                    >
+                      {Array.isArray(item.data.imageUrls) && item.data.imageUrls.length > 0 ? (
+                        <img
+                          src={item.data.imageUrls[0]}
+                          alt={item.data.title}
+                          className="w-full h-44 object-cover rounded-lg mb-3"
+                        />
+                      ) : (
+                        <div className="w-full h-44 bg-gray-100 flex items-center justify-center rounded-lg text-gray-400 mb-3">
+                          No image
+                        </div>
+                      )}
+                      <h2 className="text-lg font-semibold">{item.data.title}</h2>
+                      <p className="text-sm text-gray-600">
+                        {item.data.description?.slice(0, 100)}
+                        {item.data.description && item.data.description.length > 100 ? "…" : ""}
+                      </p>
+                      <div className="mt-3 text-gray-600 text-sm flex gap-3 items-center flex-wrap">
+                        <span className="flex items-center gap-1">
+                          <MapPin className="w-4 h-4" /> {item.data.location}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Calendar className="w-4 h-4" />{" "}
+                          {item.data.eventDate
+                            ? new Date(item.data.eventDate).toLocaleDateString()
+                            : "-"}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Clock className="w-4 h-4" />{" "}
+                          {item.data.eventDate
+                            ? new Date(item.data.eventDate).toLocaleTimeString(
+                                [],
+                                {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                }
+                              )
+                            : "-"}
+                        </span>
+                      </div>
+                      <p className="text-xs text-gray-400 mt-2">
+                        Posted by:{" "}
+                        {item.data.author
+                          ? `${item.data.author.firstName} ${item.data.author.lastName}`
+                          : "Unknown"}
+                      </p>
+                      <div className="mt-3 flex gap-2">
+                        <motion.button
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/events/${item.data.id}`);
+                          }}
+                          className="flex-1 flex items-center justify-center gap-2 bg-green-600 text-white py-2 rounded-xl text-sm hover:bg-green-700 transition"
+                        >
+                          <MessageCircle className="w-4 h-4" /> Comment
+                        </motion.button>
+                        <motion.button
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (item.data.reglink) {
+                              window.open(item.data.reglink, "_blank");
+                            }
+                          }}
+                          className="flex-1 flex items-center justify-center gap-2 bg-blue-600 text-white py-2 rounded-xl text-sm hover:bg-blue-700 transition"
+                        >
+                          <LinkIcon className="w-4 h-4" /> Register
+                        </motion.button>
+                      </div>
+                    </motion.div>
+                  )
+                )}
               </div>
             ) : (
               <motion.div
