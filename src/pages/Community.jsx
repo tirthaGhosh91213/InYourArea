@@ -5,6 +5,7 @@ import { MessageCircle, Search } from "lucide-react";
 import Sidebar from "../components/SideBar";
 import RightSidebar from "../components/RightSidebar";
 import SmallAdd from "../components/SmallAdd";
+import LargeAd from "../components/LargeAd";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
@@ -34,6 +35,16 @@ function getNextIndex(current, total) {
   return (current + 1) % total;
 }
 
+// Helper: shuffle array (for large ads)
+function shuffle(array) {
+  const arr = [...array];
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
 // LocalStorage keys for Community ads
 const SLOT_KEYS = {
   TOP_RIGHT: "COMMUNITY_AD_INDEX_TOP_RIGHT",
@@ -57,12 +68,15 @@ export default function Community() {
   const [commentText, setCommentText] = useState({});
   const [loading, setLoading] = useState(true);
 
-  // Ads state
+  // Small ads
   const [ads, setAds] = useState([]);
   const [topRightIndex, setTopRightIndex] = useState(0);
   const [bottomRightIndex, setBottomRightIndex] = useState(1);
   const [topRightClosed, setTopRightClosed] = useState(false);
   const [bottomRightClosed, setBottomRightClosed] = useState(false);
+
+  // Large ads
+  const [largeAds, setLargeAds] = useState([]);
 
   const fetchPosts = async () => {
     try {
@@ -132,7 +146,19 @@ export default function Community() {
         }
       })
       .catch((err) => {
-        console.error("Error fetching community ads:", err);
+        console.error("Error fetching community small ads:", err);
+      });
+
+    // Fetch large ads for Community interleaving
+    fetch("https://api.jharkhandbiharupdates.com/api/v1/banner-ads/active/large")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data && Array.isArray(data.data)) {
+          setLargeAds(shuffle(data.data));
+        }
+      })
+      .catch((err) => {
+        console.error("Error fetching community large ads:", err);
       });
   }, []);
 
@@ -177,8 +203,7 @@ export default function Community() {
   };
 
   const sendComment = async (postId) => {
-    if (!commentText[postId])
-      return toast.error("Comment cannot be empty");
+    if (!commentText[postId]) return toast.error("Comment cannot be empty");
     try {
       const res = await axios.post(
         `https://api.jharkhandbiharupdates.com/api/v1/comments/community-posts/${postId}`,
@@ -250,6 +275,26 @@ export default function Community() {
   const topRightAd = ads.length ? ads[topRightIndex % ads.length] : null;
   const bottomRightAd = ads.length ? ads[bottomRightIndex % ads.length] : null;
 
+  // Build interleaved list: ad -> post -> post -> ad ...
+  function buildInterleavedGrid(postsArr, adsArr) {
+    const result = [];
+    let postIdx = 0;
+    let adIdx = 0;
+    while (postIdx < postsArr.length || adIdx < adsArr.length) {
+      if (adIdx < adsArr.length) {
+        result.push({ type: "ad", data: adsArr[adIdx] });
+        adIdx++;
+      }
+      for (let k = 0; k < 2 && postIdx < postsArr.length; k++) {
+        result.push({ type: "post", data: postsArr[postIdx] });
+        postIdx++;
+      }
+    }
+    return result;
+  }
+
+  const gridItems = buildInterleavedGrid(filteredPosts, largeAds);
+
   return (
     <>
       {/* Top Navbar */}
@@ -317,63 +362,266 @@ export default function Community() {
               <div className="flex justify-center py-12 text-gray-600">
                 Loading...
               </div>
-            ) : filteredPosts.length > 0 ? (
+            ) : gridItems.length > 0 ? (
               <AnimatePresence>
                 <div className="space-y-5 mx-0 sm:mx-4">
-                  {filteredPosts.map((post, idx) => (
-                    <motion.div
-                      key={post.id}
-                      layout
-                      initial={{ opacity: 0, y: 40 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -20 }}
-                      transition={{
-                        delay: idx * 0.05,
-                        type: "spring",
-                        stiffness: 100,
-                      }}
-                      whileHover={{
-                        scale: 1.01,
-                        boxShadow:
-                          "0 10px 24px rgba(52, 211, 153, 0.10)",
-                      }}
-                      className="relative rounded-xl overflow-hidden bg-white/90 shadow-md border border-green-50 transition-all cursor-pointer hover:bg-gradient-to-l hover:from-emerald-100 hover:via-green-50 hover:to-teal-50"
-                      onClick={() => handlePostClick(post.id)}
-                    >
-                      {/* DESKTOP+TABLET layout */}
-                      <div className="hidden sm:flex items-start">
-                        {/* Left: Profile Image */}
-                        <div className="flex flex-col items-center px-4 py-4 flex-shrink-0">
-                          <ProfileImage
-                            src={authorAvatars[post.author.id]}
-                            alt="author"
-                            size="w-12 h-12"
-                          />
+                  {gridItems.map((item, idx) =>
+                    item.type === "ad" ? (
+                      <LargeAd
+                        key={"ad-" + (item.data.id ?? idx)}
+                        ad={item.data}
+                        onClose={() => {
+                          setLargeAds((prev) =>
+                            prev.filter((a) => a.id !== item.data.id)
+                          );
+                        }}
+                      />
+                    ) : (
+                      <motion.div
+                        key={item.data.id}
+                        layout
+                        initial={{ opacity: 0, y: 40 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        transition={{
+                          delay: idx * 0.05,
+                          type: "spring",
+                          stiffness: 100,
+                        }}
+                        whileHover={{
+                          scale: 1.01,
+                          boxShadow: "0 10px 24px rgba(52, 211, 153, 0.10)",
+                        }}
+                        className="relative rounded-xl overflow-hidden bg-white/90 shadow-md border border-green-50 transition-all cursor-pointer hover:bg-gradient-to-l hover:from-emerald-100 hover:via-green-50 hover:to-teal-50"
+                        onClick={() => handlePostClick(item.data.id)}
+                      >
+                        {/* DESKTOP+TABLET layout */}
+                        <div className="hidden sm:flex items-start">
+                          {/* Left: Profile Image */}
+                          <div className="flex flex-col items-center px-4 py-4 flex-shrink-0">
+                            <ProfileImage
+                              src={authorAvatars[item.data.author.id]}
+                              alt="author"
+                              size="w-12 h-12"
+                            />
+                          </div>
+
+                          {/* Center: Title, Author Name, Date, Content */}
+                          <div className="flex flex-col justify-start px-4 py-4 flex-1 min-w-0">
+                            {/* Title */}
+                            <h3 className="font-semibold text-lg text-gray-900 mb-2 leading-snug break-words">
+                              {item.data.title}
+                            </h3>
+
+                            {/* Author Name and Date */}
+                            <div className="flex items-center gap-2 mb-3">
+                              <span className="font-semibold text-gray-800 text-sm">
+                                {item.data.author.firstName}{" "}
+                                {item.data.author.lastName}
+                              </span>
+                              <span className="text-gray-400">•</span>
+                              <span className="text-xs text-gray-500">
+                                {formatDate(item.data.createdAt)}
+                              </span>
+                            </div>
+
+                            {/* Content Summary */}
+                            <span className="text-[15px] text-gray-700 mb-3">
+                              {getSummary(item.data.content)}
+                            </span>
+
+                            {/* Comment Button */}
+                            <motion.button
+                              whileTap={{ scale: 0.95 }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setShowCommentInput((prev) => ({
+                                  ...prev,
+                                  [item.data.id]: !prev[item.data.id],
+                                }));
+                                if (!commentsMap[item.data.id])
+                                  fetchComments(item.data.id);
+                              }}
+                              className="inline-flex items-center gap-2 text-green-700 font-semibold mt-1"
+                            >
+                              <MessageCircle size={18} /> Comment
+                            </motion.button>
+
+                            {/* Comments Section */}
+                            {showCommentInput[item.data.id] && (
+                              <div className="mt-3 space-y-2">
+                                {(commentsMap[item.data.id] || []).map((c) => (
+                                  <div
+                                    key={c.id}
+                                    className="flex gap-2 items-center text-gray-700"
+                                  >
+                                    <ProfileImage
+                                      src={commentAvatars[c.author.id]}
+                                      alt="profile"
+                                      size="w-8 h-8"
+                                      className="border border-gray-300"
+                                    />
+                                    <span className="font-semibold text-gray-800 mr-1">
+                                      {c.author.firstName} {c.author.lastName}
+                                    </span>
+                                    <span>{c.content}</span>
+                                  </div>
+                                ))}
+                                <div className="flex gap-2 mt-2">
+                                  <input
+                                    type="text"
+                                    placeholder="Write a comment..."
+                                    value={commentText[item.data.id] || ""}
+                                    onChange={(e) =>
+                                      setCommentText((prev) => ({
+                                        ...prev,
+                                        [item.data.id]: e.target.value,
+                                      }))
+                                    }
+                                    className="flex-1 px-3 py-2 border rounded-full focus:outline-none focus:ring-2 focus:ring-green-400"
+                                  />
+                                  <button
+                                    onClick={() => sendComment(item.data.id)}
+                                    className="bg-green-600 text-white px-4 py-2 rounded-full hover:bg-green-700 transition"
+                                  >
+                                    Send
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Right: Post Image */}
+                          {item.data.imageUrls &&
+                            item.data.imageUrls.length > 0 && (
+                              <div className="flex flex-col justify-center items-center px-4 py-4 flex-shrink-0">
+                                <div className="relative w-32 h-32 sm:w-44 sm:h-44 rounded-lg overflow-hidden">
+                                  <img
+                                    src={
+                                      item.data.imageUrls[
+                                        item.data.currentImageIndex || 0
+                                      ]
+                                    }
+                                    alt={item.data.title}
+                                    className="w-full h-full object-cover rounded-lg"
+                                  />
+                                  {item.data.imageUrls.length > 1 && (
+                                    <>
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setPosts((prev) =>
+                                            prev.map((p) =>
+                                              p.id === item.data.id
+                                                ? {
+                                                    ...p,
+                                                    currentImageIndex:
+                                                      (p.currentImageIndex ||
+                                                        0) -
+                                                        1 <
+                                                      0
+                                                        ? p.imageUrls.length - 1
+                                                        : (p.currentImageIndex ||
+                                                            0) - 1,
+                                                  }
+                                                : p
+                                            )
+                                          );
+                                        }}
+                                        className="absolute left-1 top-1/2 transform -translate-y-1/2 bg-black/30 text-white p-1 rounded-full hover:bg-black/50 transition"
+                                      >
+                                        ←
+                                      </button>
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setPosts((prev) =>
+                                            prev.map((p) =>
+                                              p.id === item.data.id
+                                                ? {
+                                                    ...p,
+                                                    currentImageIndex:
+                                                      (p.currentImageIndex ||
+                                                        0) +
+                                                        1 >=
+                                                      p.imageUrls.length
+                                                        ? 0
+                                                        : (p.currentImageIndex ||
+                                                            0) + 1,
+                                                  }
+                                                : p
+                                            )
+                                          );
+                                        }}
+                                        className="absolute right-1 top-1/2 transform -translate-y-1/2 bg-black/30 text-white p-1 rounded-full hover:bg-black/50 transition"
+                                      >
+                                        →
+                                      </button>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                            )}
                         </div>
 
-                        {/* Center: Title, Author Name, Date, Content */}
-                        <div className="flex flex-col justify-start px-4 py-4 flex-1 min-w-0">
-                          {/* Title */}
-                          <h3 className="font-semibold text-lg text-gray-900 mb-2 leading-snug break-words">
-                            {post.title}
-                          </h3>
+                        {/* MOBILE RESPONSIVE LAYOUT */}
+                        <div className="flex sm:hidden flex-col w-full p-4 gap-3">
+                          {/* Top Row: Profile + Title */}
+                          <div className="flex items-start gap-3">
+                            {/* Profile Image */}
+                            <div className="flex-shrink-0">
+                              <ProfileImage
+                                src={authorAvatars[item.data.author.id]}
+                                alt="author"
+                                size="w-10 h-10"
+                              />
+                            </div>
+
+                            {/* Title */}
+                            <h3 className="flex-1 text-base font-bold text-gray-900 leading-snug break-words">
+                              {item.data.title}
+                            </h3>
+                          </div>
 
                           {/* Author Name and Date */}
-                          <div className="flex items-center gap-2 mb-3">
+                          <div className="flex items-center gap-2 pl-[52px]">
                             <span className="font-semibold text-gray-800 text-sm">
-                              {post.author.firstName}{" "}
-                              {post.author.lastName}
+                              {item.data.author.firstName}{" "}
+                              {item.data.author.lastName}
                             </span>
                             <span className="text-gray-400">•</span>
                             <span className="text-xs text-gray-500">
-                              {formatDate(post.createdAt)}
+                              {formatDate(item.data.createdAt)}
                             </span>
                           </div>
 
-                          {/* Content Summary */}
-                          <span className="text-[15px] text-gray-700 mb-3">
-                            {getSummary(post.content)}
-                          </span>
+                          {/* Content and Image Row */}
+                          <div className="flex gap-3 pl-[52px]">
+                            {/* Content */}
+                            <div className="flex-1">
+                              <span className="text-[14px] text-gray-800">
+                                {truncateWords(item.data.content, 15)}
+                              </span>
+                            </div>
+
+                            {/* Post Image */}
+                            {item.data.imageUrls &&
+                              item.data.imageUrls.length > 0 && (
+                                <div className="flex-shrink-0">
+                                  <div className="w-20 h-24 rounded-lg overflow-hidden">
+                                    <img
+                                      src={
+                                        item.data.imageUrls[
+                                          item.data.currentImageIndex || 0
+                                        ]
+                                      }
+                                      alt={item.data.title}
+                                      className="w-full h-full object-cover rounded-lg"
+                                    />
+                                  </div>
+                                </div>
+                              )}
+                          </div>
 
                           {/* Comment Button */}
                           <motion.button
@@ -382,56 +630,51 @@ export default function Community() {
                               e.stopPropagation();
                               setShowCommentInput((prev) => ({
                                 ...prev,
-                                [post.id]: !prev[post.id],
+                                [item.data.id]: !prev[item.data.id],
                               }));
-                              if (!commentsMap[post.id])
-                                fetchComments(post.id);
+                              if (!commentsMap[item.data.id])
+                                fetchComments(item.data.id);
                             }}
-                            className="inline-flex items-center gap-2 text-green-700 font-semibold mt-1"
+                            className="inline-flex items-center gap-2 text-green-700 font-semibold pl-[52px]"
                           >
                             <MessageCircle size={18} /> Comment
                           </motion.button>
 
                           {/* Comments Section */}
-                          {showCommentInput[post.id] && (
-                            <div className="mt-3 space-y-2">
-                              {(commentsMap[post.id] || []).map(
-                                (c) => (
-                                  <div
-                                    key={c.id}
-                                    className="flex gap-2 items-center text-gray-700"
-                                  >
-                                    <ProfileImage
-                                      src={
-                                        commentAvatars[c.author.id]
-                                      }
-                                      alt="profile"
-                                      size="w-8 h-8"
-                                      className="border border-gray-300"
-                                    />
-                                    <span className="font-semibold text-gray-800 mr-1">
-                                      {c.author.firstName}{" "}
-                                      {c.author.lastName}
-                                    </span>
-                                    <span>{c.content}</span>
-                                  </div>
-                                )
-                              )}
+                          {showCommentInput[item.data.id] && (
+                            <div className="mt-2 space-y-2 pl-[52px]">
+                              {(commentsMap[item.data.id] || []).map((c) => (
+                                <div
+                                  key={c.id}
+                                  className="flex gap-2 items-center text-gray-700"
+                                >
+                                  <ProfileImage
+                                    src={commentAvatars[c.author.id]}
+                                    alt="profile"
+                                    size="w-8 h-8"
+                                    className="border border-gray-300"
+                                  />
+                                  <span className="font-semibold text-gray-800 mr-1">
+                                    {c.author.firstName} {c.author.lastName}
+                                  </span>
+                                  <span>{c.content}</span>
+                                </div>
+                              ))}
                               <div className="flex gap-2 mt-2">
                                 <input
                                   type="text"
                                   placeholder="Write a comment..."
-                                  value={commentText[post.id] || ""}
+                                  value={commentText[item.data.id] || ""}
                                   onChange={(e) =>
                                     setCommentText((prev) => ({
                                       ...prev,
-                                      [post.id]: e.target.value,
+                                      [item.data.id]: e.target.value,
                                     }))
                                   }
                                   className="flex-1 px-3 py-2 border rounded-full focus:outline-none focus:ring-2 focus:ring-green-400"
                                 />
                                 <button
-                                  onClick={() => sendComment(post.id)}
+                                  onClick={() => sendComment(item.data.id)}
                                   className="bg-green-600 text-white px-4 py-2 rounded-full hover:bg-green-700 transition"
                                 >
                                   Send
@@ -440,203 +683,9 @@ export default function Community() {
                             </div>
                           )}
                         </div>
-
-                        {/* Right: Post Image */}
-                        {post.imageUrls &&
-                          post.imageUrls.length > 0 && (
-                            <div className="flex flex-col justify-center items-center px-4 py-4 flex-shrink-0">
-                              <div className="relative w-32 h-32 sm:w-44 sm:h-44 rounded-lg overflow-hidden">
-                                <img
-                                  src={
-                                    post.imageUrls[
-                                      post.currentImageIndex || 0
-                                    ]
-                                  }
-                                  alt={post.title}
-                                  className="w-full h-full object-cover rounded-lg"
-                                />
-                                {post.imageUrls.length > 1 && (
-                                  <>
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setPosts((prev) =>
-                                          prev.map((p) =>
-                                            p.id === post.id
-                                              ? {
-                                                  ...p,
-                                                  currentImageIndex:
-                                                    (p.currentImageIndex ||
-                                                      0) -
-                                                      1 <
-                                                    0
-                                                      ? p.imageUrls
-                                                          .length - 1
-                                                      : (p.currentImageIndex ||
-                                                          0) - 1,
-                                                }
-                                              : p
-                                          )
-                                        );
-                                      }}
-                                      className="absolute left-1 top-1/2 transform -translate-y-1/2 bg-black/30 text-white p-1 rounded-full hover:bg-black/50 transition"
-                                    >
-                                      ←
-                                    </button>
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setPosts((prev) =>
-                                          prev.map((p) =>
-                                            p.id === post.id
-                                              ? {
-                                                  ...p,
-                                                  currentImageIndex:
-                                                    (p.currentImageIndex ||
-                                                      0) +
-                                                      1 >=
-                                                    p.imageUrls.length
-                                                      ? 0
-                                                      : (p.currentImageIndex ||
-                                                          0) + 1,
-                                                }
-                                              : p
-                                          )
-                                        );
-                                      }}
-                                      className="absolute right-1 top-1/2 transform -translate-y-1/2 bg-black/30 text-white p-1 rounded-full hover:bg-black/50 transition"
-                                    >
-                                      →
-                                    </button>
-                                  </>
-                                )}
-                              </div>
-                            </div>
-                          )}
-                      </div>
-
-                      {/* MOBILE RESPONSIVE LAYOUT */}
-                      <div className="flex sm:hidden flex-col w-full p-4 gap-3">
-                        {/* Top Row: Profile + Title */}
-                        <div className="flex items-start gap-3">
-                          {/* Profile Image */}
-                          <div className="flex-shrink-0">
-                            <ProfileImage
-                              src={authorAvatars[post.author.id]}
-                              alt="author"
-                              size="w-10 h-10"
-                            />
-                          </div>
-
-                          {/* Title */}
-                          <h3 className="flex-1 text-base font-bold text-gray-900 leading-snug break-words">
-                            {post.title}
-                          </h3>
-                        </div>
-
-                        {/* Author Name and Date */}
-                        <div className="flex items-center gap-2 pl-[52px]">
-                          <span className="font-semibold text-gray-800 text-sm">
-                            {post.author.firstName}{" "}
-                            {post.author.lastName}
-                          </span>
-                          <span className="text-gray-400">•</span>
-                          <span className="text-xs text-gray-500">
-                            {formatDate(post.createdAt)}
-                          </span>
-                        </div>
-
-                        {/* Content and Image Row */}
-                        <div className="flex gap-3 pl-[52px]">
-                          {/* Content */}
-                          <div className="flex-1">
-                            <span className="text-[14px] text-gray-800">
-                              {truncateWords(post.content, 15)}
-                            </span>
-                          </div>
-
-                          {/* Post Image */}
-                          {post.imageUrls &&
-                            post.imageUrls.length > 0 && (
-                              <div className="flex-shrink-0">
-                                <div className="w-20 h-24 rounded-lg overflow-hidden">
-                                  <img
-                                    src={
-                                      post.imageUrls[
-                                        post.currentImageIndex || 0
-                                      ]
-                                    }
-                                    alt={post.title}
-                                    className="w-full h-full object-cover rounded-lg"
-                                  />
-                                </div>
-                              </div>
-                            )}
-                        </div>
-
-                        {/* Comment Button */}
-                        <motion.button
-                          whileTap={{ scale: 0.95 }}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setShowCommentInput((prev) => ({
-                              ...prev,
-                              [post.id]: !prev[post.id],
-                            }));
-                            if (!commentsMap[post.id])
-                              fetchComments(post.id);
-                          }}
-                          className="inline-flex items-center gap-2 text-green-700 font-semibold pl-[52px]"
-                        >
-                          <MessageCircle size={18} /> Comment
-                        </motion.button>
-
-                        {/* Comments Section */}
-                        {showCommentInput[post.id] && (
-                          <div className="mt-2 space-y-2 pl-[52px]">
-                            {(commentsMap[post.id] || []).map((c) => (
-                              <div
-                                key={c.id}
-                                className="flex gap-2 items-center text-gray-700"
-                              >
-                                <ProfileImage
-                                  src={commentAvatars[c.author.id]}
-                                  alt="profile"
-                                  size="w-8 h-8"
-                                  className="border border-gray-300"
-                                />
-                                <span className="font-semibold text-gray-800 mr-1">
-                                  {c.author.firstName}{" "}
-                                  {c.author.lastName}
-                                </span>
-                                <span>{c.content}</span>
-                              </div>
-                            ))}
-                            <div className="flex gap-2 mt-2">
-                              <input
-                                type="text"
-                                placeholder="Write a comment..."
-                                value={commentText[post.id] || ""}
-                                onChange={(e) =>
-                                  setCommentText((prev) => ({
-                                    ...prev,
-                                    [post.id]: e.target.value,
-                                  }))
-                                }
-                                className="flex-1 px-3 py-2 border rounded-full focus:outline-none focus:ring-2 focus:ring-green-400"
-                              />
-                              <button
-                                onClick={() => sendComment(post.id)}
-                                className="bg-green-600 text-white px-4 py-2 rounded-full hover:bg-green-700 transition"
-                              >
-                                Send
-                              </button>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </motion.div>
-                  ))}
+                      </motion.div>
+                    )
+                  )}
                 </div>
               </AnimatePresence>
             ) : (

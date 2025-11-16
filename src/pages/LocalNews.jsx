@@ -1,11 +1,12 @@
 // src/pages/LocalNews.jsx
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import axios from "axios";
 import Sidebar from "../../src/components/SideBar";
 import RightSidebar from "../components/RightSidebar";
 import SmallAdd from "../components/SmallAdd";
+import LargeAd from "../components/LargeAd";
 import { Clock, Loader2, MessageSquare } from "lucide-react";
 
 // Helper: circular next index
@@ -26,18 +27,70 @@ export default function LocalNews() {
 
   const districts = [
     "----------- Jharkhand -----------",
-    "Bokaro", "Chatra", "Deoghar", "Dhanbad", "Dumka",
-    "East Singhbhum", "Garhwa", "Giridih", "Godda", "Gumla",
-    "Hazaribagh", "Jamtara", "Jamshedpur", "Khunti", "Koderma",
-    "Latehar", "Lohardaga", "Pakur", "Palamu", "Ramgarh",
-    "Ranchi", "Sahibganj", "Seraikela-Kharsawan", "Simdega", "West Singhbhum",
+    "Bokaro",
+    "Chatra",
+    "Deoghar",
+    "Dhanbad",
+    "Dumka",
+    "East Singhbhum",
+    "Garhwa",
+    "Giridih",
+    "Godda",
+    "Gumla",
+    "Hazaribagh",
+    "Jamtara",
+    "Jamshedpur",
+    "Khunti",
+    "Koderma",
+    "Latehar",
+    "Lohardaga",
+    "Pakur",
+    "Palamu",
+    "Ramgarh",
+    "Ranchi",
+    "Sahibganj",
+    "Seraikela-Kharsawan",
+    "Simdega",
+    "West Singhbhum",
     "----------- Bihar -----------",
-    "Araria", "Arwal", "Aurangabad", "Banka", "Begusarai", "Bhagalpur", "Bhojpur", "Buxar",
-    "Darbhanga", "East Champaran (Motihari)", "Gaya", "Gopalganj", "Jamui", "Jehanabad",
-    "Kaimur (Bhabua)", "Katihar", "Khagaria", "Kishanganj", "Lakhisarai", "Madhepura",
-    "Madhubani", "Munger", "Muzaffarpur", "Nalanda", "Nawada", "Patna", "Purnia", "Rohtas",
-    "Saharsa", "Samastipur", "Saran (Chhapra)", "Sheikhpura", "Sheohar", "Sitamarhi",
-    "Siwan", "Supaul", "Vaishali", "West Champaran (Bettiah)",
+    "Araria",
+    "Arwal",
+    "Aurangabad",
+    "Banka",
+    "Begusarai",
+    "Bhagalpur",
+    "Bhojpur",
+    "Buxar",
+    "Darbhanga",
+    "East Champaran (Motihari)",
+    "Gaya",
+    "Gopalganj",
+    "Jamui",
+    "Jehanabad",
+    "Kaimur (Bhabua)",
+    "Katihar",
+    "Khagaria",
+    "Kishanganj",
+    "Lakhisarai",
+    "Madhepura",
+    "Madhubani",
+    "Munger",
+    "Muzaffarpur",
+    "Nalanda",
+    "Nawada",
+    "Patna",
+    "Purnia",
+    "Rohtas",
+    "Saharsa",
+    "Samastipur",
+    "Saran (Chhapra)",
+    "Sheikhpura",
+    "Sheohar",
+    "Sitamarhi",
+    "Siwan",
+    "Supaul",
+    "Vaishali",
+    "West Champaran (Bettiah)",
   ];
 
   // Prevent heading as selected value
@@ -55,12 +108,15 @@ export default function LocalNews() {
   const [error, setError] = useState("");
   const token = localStorage.getItem("accessToken");
 
-  // Ads state
+  // Small ads state
   const [ads, setAds] = useState([]);
   const [topRightIndex, setTopRightIndex] = useState(0);
   const [bottomRightIndex, setBottomRightIndex] = useState(1);
   const [topRightClosed, setTopRightClosed] = useState(false);
   const [bottomRightClosed, setBottomRightClosed] = useState(false);
+
+  // Large ads state for interleaving
+  const [largeAds, setLargeAds] = useState([]);
 
   // Sync district with URL and localStorage
   useEffect(() => {
@@ -148,6 +204,20 @@ export default function LocalNews() {
       });
   }, []);
 
+  // Fetch large ads for interleaving (same pattern as Events/Jobs/Community)
+  useEffect(() => {
+    fetch("https://api.jharkhandbiharupdates.com/api/v1/banner-ads/active/large")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data && Array.isArray(data.data)) {
+          setLargeAds(shuffleArray(data.data));
+        }
+      })
+      .catch((err) => {
+        console.error("Error fetching local news large ads:", err);
+      });
+  }, []);
+
   // Rotate ad index on next refresh after a close
   useEffect(() => {
     if (!ads.length) return;
@@ -175,7 +245,7 @@ export default function LocalNews() {
   const handleNewsClick = (id) => navigate(`/localnews/details/${id}`);
   const handleCommentClick = (id) => navigate(`/localnews/details/${id}`);
 
-  // Desktop layout logic
+  // Desktop layout logic (kept as-is for content grouping)
   const getDesktopNewsLayout = () => {
     const bigTop = newsList.slice(0, 2);
     const smallBoxes = newsList.slice(2, 4);
@@ -199,6 +269,26 @@ export default function LocalNews() {
   const topRightAd = ads.length ? ads[topRightIndex % ads.length] : null;
   const bottomRightAd = ads.length ? ads[bottomRightIndex % ads.length] : null;
 
+  // Interleaved list for MOBILE (ad -> news -> news -> ad ...)
+  function buildInterleavedList(newsArr, adsArr) {
+    const result = [];
+    let newsIdx = 0;
+    let adIdx = 0;
+    while (newsIdx < newsArr.length || adIdx < adsArr.length) {
+      if (adIdx < adsArr.length) {
+        result.push({ type: "ad", data: adsArr[adIdx] });
+        adIdx++;
+      }
+      for (let k = 0; k < 2 && newsIdx < newsArr.length; k++) {
+        result.push({ type: "news", data: newsArr[newsIdx] });
+        newsIdx++;
+      }
+    }
+    return result;
+  }
+
+  const mobileItems = buildInterleavedList(newsList, largeAds);
+
   return (
     <div className="flex min-h-screen bg-gray-50">
       {/* Left Sidebar */}
@@ -211,23 +301,27 @@ export default function LocalNews() {
           <RightSidebar />
         </div>
 
-        {/* Ads like Events/Jobs/Community */}
-        {topRightAd && !topRightClosed && (
-          <SmallAdd
-            ad={topRightAd}
-            position="top-right"
-            open={true}
-            onClose={() => setTopRightClosed(true)}
-          />
-        )}
-        {bottomRightAd && !bottomRightClosed && (
-          <SmallAdd
-            ad={bottomRightAd}
-            position="bottom-right"
-            open={true}
-            onClose={() => setBottomRightClosed(true)}
-          />
-        )}
+        {/* Small ads like Events/Jobs/Community */}
+        <AnimatePresence>
+          {topRightAd && !topRightClosed && (
+            <SmallAdd
+              ad={topRightAd}
+              position="top-right"
+              open={true}
+              onClose={() => setTopRightClosed(true)}
+            />
+          )}
+        </AnimatePresence>
+        <AnimatePresence>
+          {bottomRightAd && !bottomRightClosed && (
+            <SmallAdd
+              ad={bottomRightAd}
+              position="bottom-right"
+              open={true}
+              onClose={() => setBottomRightClosed(true)}
+            />
+          )}
+        </AnimatePresence>
 
         <main className="flex-1 flex flex-col gap-6 p-6 pt-24 items-center">
           {/* Header */}
@@ -262,58 +356,76 @@ export default function LocalNews() {
             )
           ) : (
             <>
-              {/* Mobile: all large cards */}
+              {/* Mobile: interleaved large ads + news */}
               <div className="w-full max-w-6xl lg:hidden flex flex-col gap-6">
-                {newsList.map((news, i) => (
-                  <motion.div
-                    key={news.id || i}
-                    className="relative rounded-3xl overflow-hidden shadow-lg border border-green-100 cursor-pointer group"
-                    onClick={() => handleNewsClick(news.id)}
-                    initial={{ opacity: 0, y: 40 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.05 }}
-                    style={{ minHeight: "350px", height: "350px" }}
-                  >
-                    {Array.isArray(news.imageUrls) &&
-                      news.imageUrls.length > 0 &&
-                      renderMedia(
-                        news.imageUrls[0],
-                        news.title,
-                        "w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                      )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent" />
-                    <div className="absolute bottom-0 p-6 text-white">
-                      <h3
-                        className="text-2xl font-bold mb-2 capitalize"
-                        dangerouslySetInnerHTML={{ __html: news.title }}
-                      />
-                      <div
-                        className="text-sm text-gray-200 mb-3 line-clamp-2"
-                        dangerouslySetInnerHTML={{ __html: news.content }}
-                      />
-                      <div className="flex items-center justify-between text-gray-300 text-sm mb-3">
-                        <span>
-                          {news.author?.firstName} {news.author?.lastName}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Clock size={14} /> {formatDate(news.createdAt)}
-                        </span>
+                {mobileItems.map((item, i) =>
+                  item.type === "ad" ? (
+                    <LargeAd
+                      key={"ad-mobile-" + (item.data.id ?? i)}
+                      ad={item.data}
+                      onClose={() => {
+                        setLargeAds((prev) =>
+                          prev.filter((a) => a.id !== item.data.id)
+                        );
+                      }}
+                    />
+                  ) : (
+                    <motion.div
+                      key={item.data.id || `news-mobile-${i}`}
+                      className="relative rounded-3xl overflow-hidden shadow-lg border border-green-100 cursor-pointer group"
+                      onClick={() => handleNewsClick(item.data.id)}
+                      initial={{ opacity: 0, y: 40 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.05 }}
+                      style={{ minHeight: "350px", height: "350px" }}
+                    >
+                      {Array.isArray(item.data.imageUrls) &&
+                        item.data.imageUrls.length > 0 &&
+                        renderMedia(
+                          item.data.imageUrls[0],
+                          item.data.title,
+                          "w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        )}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent" />
+                      <div className="absolute bottom-0 p-6 text-white">
+                        <h3
+                          className="text-2xl font-bold mb-2 capitalize"
+                          dangerouslySetInnerHTML={{
+                            __html: item.data.title,
+                          }}
+                        />
+                        <div
+                          className="text-sm text-gray-200 mb-3 line-clamp-2"
+                          dangerouslySetInnerHTML={{
+                            __html: item.data.content,
+                          }}
+                        />
+                        <div className="flex items-center justify-between text-gray-300 text-sm mb-3">
+                          <span>
+                            {item.data.author?.firstName}{" "}
+                            {item.data.author?.lastName}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Clock size={14} />{" "}
+                            {formatDate(item.data.createdAt)}
+                          </span>
+                        </div>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleCommentClick(item.data.id);
+                          }}
+                          className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium px-4 py-2 rounded-lg shadow-md transition-all"
+                        >
+                          <MessageSquare size={16} /> Comment
+                        </button>
                       </div>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleCommentClick(news.id);
-                        }}
-                        className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium px-4 py-2 rounded-lg shadow-md transition-all"
-                      >
-                        <MessageSquare size={16} /> Comment
-                      </button>
-                    </div>
-                  </motion.div>
-                ))}
+                    </motion.div>
+                  )
+                )}
               </div>
 
-              {/* Desktop: 2-column layout */}
+              {/* Desktop: existing two-column layout preserved (no interleaving, just content) */}
               <div className="w-full max-w-6xl hidden lg:grid grid-cols-[2fr_1fr] gap-6 items-start">
                 {/* Left: Big boxes */}
                 <div className="flex flex-col gap-6">
@@ -346,12 +458,10 @@ export default function LocalNews() {
                         />
                         <div className="flex items-center justify-between text-gray-300 text-sm mb-3">
                           <span>
-                            {news.author?.firstName}{" "}
-                            {news.author?.lastName}
+                            {news.author?.firstName} {news.author?.lastName}
                           </span>
                           <span className="flex items-center gap-1">
-                            <Clock size={14} />{" "}
-                            {formatDate(news.createdAt)}
+                            <Clock size={14} /> {formatDate(news.createdAt)}
                           </span>
                         </div>
                         <button
@@ -395,12 +505,10 @@ export default function LocalNews() {
                         />
                         <div className="flex items-center justify-between text-gray-300 text-sm mb-3">
                           <span>
-                            {news.author?.firstName}{" "}
-                            {news.author?.lastName}
+                            {news.author?.firstName} {news.author?.lastName}
                           </span>
                           <span className="flex items-center gap-1">
-                            <Clock size={14} />{" "}
-                            {formatDate(news.createdAt)}
+                            <Clock size={14} /> {formatDate(news.createdAt)}
                           </span>
                         </div>
                         <button
