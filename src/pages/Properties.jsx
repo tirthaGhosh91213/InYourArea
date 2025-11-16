@@ -10,7 +10,7 @@ export default function Properties() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetch("http://localhost:8000/api/v1/properties/recent?days=15")
+    fetch("https://api.jharkhandbiharupdates.com/api/v1/properties/recent?days=15")
       .then((res) => {
         if (!res.ok) {
           throw new Error("Failed to fetch properties");

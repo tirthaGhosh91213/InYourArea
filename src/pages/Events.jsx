@@ -45,7 +45,7 @@ export default function Events() {
   const fetchEvents = async () => {
     try {
       setLoading(true);
-      const res = await axios.get("http://localhost:8000/api/v1/events");
+      const res = await axios.get("https://api.jharkhandbiharupdates.com/api/v1/events");
       setEvents(res.data.data || []);
     } catch (err) {
       console.error("Error fetching events:", err);
@@ -56,7 +56,7 @@ export default function Events() {
 
   // Fetch small ads
   useEffect(() => {
-    fetch("http://localhost:8000/api/v1/banner-ads/active/small")
+    fetch("https://api.jharkhandbiharupdates.com/api/v1/banner-ads/active/small")
       .then(res => res.json())
       .then(data => {
         if (data && data.data && Array.isArray(data.data) && data.data.length > 0) {

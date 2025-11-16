@@ -87,7 +87,7 @@ export default function CreatePropertyPost() {
       amenitiesArr.forEach(a => formData.append("amenities[]", a));
       mediaFiles.forEach(f => formData.append("images", f));  // Send as "images"
 
-      const resp = await fetch("http://localhost:8000/api/v1/properties", {
+      const resp = await fetch("https://api.jharkhandbiharupdates.com/api/v1/properties", {
         method: "POST",
         body: formData
       });

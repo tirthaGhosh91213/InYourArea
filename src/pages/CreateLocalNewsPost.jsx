@@ -54,7 +54,7 @@ export default function CreateLocalNewsPost() {
   useEffect(() => {
     const fetchExistingDistricts = async () => {
       try {
-        const res = await axios.get("http://localhost:8000/api/v1/districts", {
+        const res = await axios.get("https://api.jharkhandbiharupdates.com/api/v1/districts", {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (res.data.success) {
@@ -122,7 +122,7 @@ export default function CreateLocalNewsPost() {
     if (existingDistricts.includes(districtName)) return;
     try {
       const res = await axios.post(
-        "http://localhost:8000/api/v1/districts",
+        "https://api.jharkhandbiharupdates.com/api/v1/districts",
         { name: districtName },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -156,7 +156,7 @@ export default function CreateLocalNewsPost() {
       formData.media.forEach((file) => form.append("images", file)); // <-- always use key "images" for all files
 
       const res = await axios.post(
-        "http://localhost:8000/api/v1/district-news",
+        "https://api.jharkhandbiharupdates.com/api/v1/district-news",
         form,
         { headers: { "Content-Type": "multipart/form-data", Authorization: `Bearer ${token}` } }
       );
