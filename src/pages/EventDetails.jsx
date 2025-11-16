@@ -79,7 +79,7 @@ export default function EventDetails() {
       if (!token) return;
 
       try {
-        const res = await axios.get("http://localhost:8000/api/v1/user/profile", {
+        const res = await axios.get("https://api.jharkhandbiharupdates.com/api/v1/user/profile", {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (res.data.success) setCurrentUser(res.data.data);
@@ -96,7 +96,7 @@ export default function EventDetails() {
       try {
         setLoading(true);
         const res = await axios.get(
-          `http://localhost:8000/api/v1/events/${id}`,
+          `https://api.jharkhandbiharupdates.com/api/v1/events/${id}`,
           {
             headers: { Authorization: `Bearer ${token}` },
           }
@@ -116,7 +116,7 @@ export default function EventDetails() {
   const fetchComments = async () => {
     try {
       const res = await axios.get(
-        `http://localhost:8000/api/v1/comments/events/${id}`,
+        `https://api.jharkhandbiharupdates.com/api/v1/comments/events/${id}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (res.data.success) setComments(res.data.data);
@@ -130,7 +130,7 @@ export default function EventDetails() {
     try {
       setPosting(true);
       const res = await axios.post(
-        `http://localhost:8000/api/v1/comments/events/${id}`,
+        `https://api.jharkhandbiharupdates.com/api/v1/comments/events/${id}`,
         { content: commentText },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -167,7 +167,7 @@ export default function EventDetails() {
 
     try {
       const res = await axios.put(
-        `http://localhost:8000/api/v1/comments/${commentId}`,
+        `https://api.jharkhandbiharupdates.com/api/v1/comments/${commentId}`,
         { content: editCommentText },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -205,7 +205,7 @@ export default function EventDetails() {
   const handleDeleteComment = async () => {
     try {
       const res = await axios.delete(
-        `http://localhost:8000/api/v1/comments/${deletingCommentId}`,
+        `https://api.jharkhandbiharupdates.com/api/v1/comments/${deletingCommentId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 

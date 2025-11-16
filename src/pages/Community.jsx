@@ -12,7 +12,7 @@ import { IoPersonCircleOutline } from "react-icons/io5"; // Ionicons profile ima
 const fetchProfileImage = async (userId) => {
   try {
     const res = await axios.get(
-      `http://localhost:8000/api/v1/user/profile/${userId}`
+      `https://api.jharkhandbiharupdates.com/api/v1/user/profile/${userId}`
     );
     if (
       res.data &&
@@ -50,7 +50,7 @@ export default function Community() {
     try {
       setLoading(true);
       const res = await axios.get(
-        "http://localhost:8000/api/v1/community",
+        "https://api.jharkhandbiharupdates.com/api/v1/community",
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (res.data.success) {
@@ -78,7 +78,7 @@ export default function Community() {
   const fetchComments = async (postId) => {
     try {
       const res = await axios.get(
-        `http://localhost:8000/api/v1/comments/community-posts/${postId}`,
+        `https://api.jharkhandbiharupdates.com/api/v1/comments/community-posts/${postId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (res.data.success) {
@@ -105,7 +105,7 @@ export default function Community() {
       return toast.error("Comment cannot be empty");
     try {
       const res = await axios.post(
-        `http://localhost:8000/api/v1/comments/community-posts/${postId}`,
+        `https://api.jharkhandbiharupdates.com/api/v1/comments/community-posts/${postId}`,
         { content: commentText[postId] },
         { headers: { Authorization: `Bearer ${token}` } }
       );
