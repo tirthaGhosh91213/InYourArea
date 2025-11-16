@@ -30,7 +30,7 @@ const adminLinks = {
 
 const companyLinks = {
   linkedin: "https://www.linkedin.com/company/ulmind/",
-  twitter: "https://twitter.com/meraki_company",
+  
   instagram: "https://www.instagram.com/ulmind__official",
   website: "https://www.ulmind.com"
 };
@@ -89,7 +89,7 @@ export default function Footer() {
               className="underline cursor-pointer transition hover:text-green-900"
               onClick={handleMerakiClick}
               tabIndex={0}
-            >Meraki Private Limited</span>
+            >Ulmind Private Limited</span>
           </span>
         </div>
       </div>
@@ -149,7 +149,7 @@ export default function Footer() {
           {/* Company Socials */}
           <div className="w-full">
             <h2 className="font-semibold text-green-700 mb-2 text-base text-center lg:text-right animate-fade-in">
-              Meraki Private Limited Media Links
+              Ulmind Private Limited Media Links
             </h2>
             <div className="flex justify-center lg:justify-end gap-3 mb-2 animate-pop-in">
               <a href={companyLinks.linkedin} target="_blank" rel="noopener" title="LinkedIn" className="hover:scale-110 transition"><FaLinkedin size={20} /></a>
@@ -231,7 +231,7 @@ export default function Footer() {
             onClick={handleMerakiClick}
             tabIndex={0}
           >
-            Meraki Private Limited
+            Ulmind Private Limited
           </span>
         </div>
       </div>
