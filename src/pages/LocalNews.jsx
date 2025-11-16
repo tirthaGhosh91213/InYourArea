@@ -5,7 +5,20 @@ import { motion } from "framer-motion";
 import axios from "axios";
 import Sidebar from "../../src/components/SideBar";
 import RightSidebar from "../components/RightSidebar";
+import SmallAdd from "../components/SmallAdd";
 import { Clock, Loader2, MessageSquare } from "lucide-react";
+
+// Helper: circular next index
+function getNextIndex(current, total) {
+  if (total === 0) return 0;
+  return (current + 1) % total;
+}
+
+// LocalStorage keys for LocalNews ads
+const SLOT_KEYS = {
+  TOP_RIGHT: "LOCALNEWS_AD_INDEX_TOP_RIGHT",
+  BOTTOM_RIGHT: "LOCALNEWS_AD_INDEX_BOTTOM_RIGHT",
+};
 
 export default function LocalNews() {
   const params = useParams();
@@ -42,13 +55,20 @@ export default function LocalNews() {
   const [error, setError] = useState("");
   const token = localStorage.getItem("accessToken");
 
-  // On dropdown select or on param change, always sync to local storage and URL
+  // Ads state
+  const [ads, setAds] = useState([]);
+  const [topRightIndex, setTopRightIndex] = useState(0);
+  const [bottomRightIndex, setBottomRightIndex] = useState(1);
+  const [topRightClosed, setTopRightClosed] = useState(false);
+  const [bottomRightClosed, setBottomRightClosed] = useState(false);
+
+  // Sync district with URL and localStorage
   useEffect(() => {
-    // Do not sync if the heading is ever set by mistake
     if (district && !district.startsWith("-") && params.district !== district) {
       localStorage.setItem("district", district);
       navigate(`/localnews/${encodeURIComponent(district)}`, { replace: true });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [district]);
 
   const shuffleArray = (array) => {
@@ -60,6 +80,7 @@ export default function LocalNews() {
     return shuffled;
   };
 
+  // Fetch district news
   useEffect(() => {
     if (!district || district.startsWith("-")) return;
     const fetchNews = async () => {
@@ -83,6 +104,66 @@ export default function LocalNews() {
     fetchNews();
   }, [district, token]);
 
+  // Fetch small ads for Local News
+  useEffect(() => {
+    fetch("https://api.jharkhandbiharupdates.com/api/v1/banner-ads/active/small")
+      .then((res) => res.json())
+      .then((data) => {
+        if (
+          data &&
+          data.data &&
+          Array.isArray(data.data) &&
+          data.data.length > 0
+        ) {
+          const orderedAds = [...data.data];
+          setAds(orderedAds);
+
+          const total = orderedAds.length;
+          let savedTop = parseInt(
+            localStorage.getItem(SLOT_KEYS.TOP_RIGHT) ?? "0",
+            10
+          );
+          let savedBottom = parseInt(
+            localStorage.getItem(SLOT_KEYS.BOTTOM_RIGHT) ?? "1",
+            10
+          );
+
+          if (isNaN(savedTop) || savedTop < 0 || savedTop >= total) {
+            savedTop = 0;
+          }
+          if (isNaN(savedBottom) || savedBottom < 0 || savedBottom >= total) {
+            savedBottom = total > 1 ? 1 : 0;
+          }
+
+          if (savedTop === savedBottom && total > 1) {
+            savedBottom = getNextIndex(savedTop, total);
+          }
+
+          setTopRightIndex(savedTop);
+          setBottomRightIndex(savedBottom);
+        }
+      })
+      .catch((err) => {
+        console.error("Error fetching local news ads:", err);
+      });
+  }, []);
+
+  // Rotate ad index on next refresh after a close
+  useEffect(() => {
+    if (!ads.length) return;
+    const total = ads.length;
+
+    if (topRightClosed) {
+      const nextTop = getNextIndex(topRightIndex, total);
+      localStorage.setItem(SLOT_KEYS.TOP_RIGHT, String(nextTop));
+    }
+
+    if (bottomRightClosed) {
+      const nextBottom = getNextIndex(bottomRightIndex, total);
+      localStorage.setItem(SLOT_KEYS.BOTTOM_RIGHT, String(nextBottom));
+    }
+  }, [topRightClosed, bottomRightClosed, topRightIndex, bottomRightIndex, ads]);
+
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     return date.toLocaleString("en-IN", {
@@ -94,23 +175,29 @@ export default function LocalNews() {
   const handleNewsClick = (id) => navigate(`/localnews/details/${id}`);
   const handleCommentClick = (id) => navigate(`/localnews/details/${id}`);
 
-  // NEW: Desktop layout logic changed as per instructions
+  // Desktop layout logic
   const getDesktopNewsLayout = () => {
-    // First 2 = big boxes, next 2 = small boxes, remaining big boxes below
-    const bigTop = newsList.slice(0, 2); // large first two
-    const smallBoxes = newsList.slice(2, 4); // small next two
-    const bigMore = newsList.slice(4); // remaining as additional big boxes
+    const bigTop = newsList.slice(0, 2);
+    const smallBoxes = newsList.slice(2, 4);
+    const bigMore = newsList.slice(4);
     return { bigTop, smallBoxes, bigMore };
   };
   const { bigTop, smallBoxes, bigMore } = getDesktopNewsLayout();
 
   // Helper to render first media item (image or video)
   const renderMedia = (url, alt, className) => {
-    const isVideo = url &&
-      (url.endsWith(".mp4") || url.endsWith(".webm") || url.endsWith(".ogg") || url.includes("video"));
+    const isVideo =
+      url &&
+      (url.endsWith(".mp4") ||
+        url.endsWith(".webm") ||
+        url.endsWith(".ogg") ||
+        url.includes("video"));
     if (isVideo) return <video src={url} controls className={className} />;
     return <img src={url} alt={alt} className={className} />;
   };
+
+  const topRightAd = ads.length ? ads[topRightIndex % ads.length] : null;
+  const bottomRightAd = ads.length ? ads[bottomRightIndex % ads.length] : null;
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -123,6 +210,25 @@ export default function LocalNews() {
         <div className="fixed top-0 w-full z-30">
           <RightSidebar />
         </div>
+
+        {/* Ads like Events/Jobs/Community */}
+        {topRightAd && !topRightClosed && (
+          <SmallAdd
+            ad={topRightAd}
+            position="top-right"
+            open={true}
+            onClose={() => setTopRightClosed(true)}
+          />
+        )}
+        {bottomRightAd && !bottomRightClosed && (
+          <SmallAdd
+            ad={bottomRightAd}
+            position="bottom-right"
+            open={true}
+            onClose={() => setBottomRightClosed(true)}
+          />
+        )}
+
         <main className="flex-1 flex flex-col gap-6 p-6 pt-24 items-center">
           {/* Header */}
           <motion.div
@@ -131,7 +237,9 @@ export default function LocalNews() {
             animate={{ opacity: 1, y: 0 }}
           >
             <div>
-              <h2 className="text-xl sm:text-2xl font-bold">Local District News</h2>
+              <h2 className="text-xl sm:text-2xl font-bold">
+                Local District News
+              </h2>
               <p className="text-emerald-200 mt-1">
                 Latest updates from {district || "your district"}
               </p>
@@ -146,14 +254,15 @@ export default function LocalNews() {
           ) : error ? (
             <div className="text-center text-red-500 font-semibold">{error}</div>
           ) : newsList.length === 0 ? (
-            district && !district.startsWith("-") && (
+            district &&
+            !district.startsWith("-") && (
               <div className="text-center text-gray-600 font-medium">
                 No district news found.
               </div>
             )
           ) : (
             <>
-              {/* Mobile: show all as same style large boxes, single column */}
+              {/* Mobile: all large cards */}
               <div className="w-full max-w-6xl lg:hidden flex flex-col gap-6">
                 {newsList.map((news, i) => (
                   <motion.div
@@ -165,7 +274,8 @@ export default function LocalNews() {
                     transition={{ delay: i * 0.05 }}
                     style={{ minHeight: "350px", height: "350px" }}
                   >
-                    {Array.isArray(news.imageUrls) && news.imageUrls.length > 0 &&
+                    {Array.isArray(news.imageUrls) &&
+                      news.imageUrls.length > 0 &&
                       renderMedia(
                         news.imageUrls[0],
                         news.title,
@@ -202,9 +312,10 @@ export default function LocalNews() {
                   </motion.div>
                 ))}
               </div>
-              {/* Desktop: two column grid */}
+
+              {/* Desktop: 2-column layout */}
               <div className="w-full max-w-6xl hidden lg:grid grid-cols-[2fr_1fr] gap-6 items-start">
-                {/* Left Side: Big Boxes - show first 2 + all after 4 */}
+                {/* Left: Big boxes */}
                 <div className="flex flex-col gap-6">
                   {bigTop.map((news, i) => (
                     <motion.div
@@ -216,7 +327,8 @@ export default function LocalNews() {
                       transition={{ delay: i * 0.05 }}
                       style={{ height: "520px" }}
                     >
-                      {Array.isArray(news.imageUrls) && news.imageUrls.length > 0 &&
+                      {Array.isArray(news.imageUrls) &&
+                        news.imageUrls.length > 0 &&
                         renderMedia(
                           news.imageUrls[0],
                           news.title,
@@ -234,10 +346,12 @@ export default function LocalNews() {
                         />
                         <div className="flex items-center justify-between text-gray-300 text-sm mb-3">
                           <span>
-                            {news.author?.firstName} {news.author?.lastName}
+                            {news.author?.firstName}{" "}
+                            {news.author?.lastName}
                           </span>
                           <span className="flex items-center gap-1">
-                            <Clock size={14} /> {formatDate(news.createdAt)}
+                            <Clock size={14} />{" "}
+                            {formatDate(news.createdAt)}
                           </span>
                         </div>
                         <button
@@ -262,7 +376,8 @@ export default function LocalNews() {
                       transition={{ delay: (bigTop.length + i) * 0.05 }}
                       style={{ height: "520px" }}
                     >
-                      {Array.isArray(news.imageUrls) && news.imageUrls.length > 0 &&
+                      {Array.isArray(news.imageUrls) &&
+                        news.imageUrls.length > 0 &&
                         renderMedia(
                           news.imageUrls[0],
                           news.title,
@@ -280,10 +395,12 @@ export default function LocalNews() {
                         />
                         <div className="flex items-center justify-between text-gray-300 text-sm mb-3">
                           <span>
-                            {news.author?.firstName} {news.author?.lastName}
+                            {news.author?.firstName}{" "}
+                            {news.author?.lastName}
                           </span>
                           <span className="flex items-center gap-1">
-                            <Clock size={14} /> {formatDate(news.createdAt)}
+                            <Clock size={14} />{" "}
+                            {formatDate(news.createdAt)}
                           </span>
                         </div>
                         <button
@@ -299,7 +416,8 @@ export default function LocalNews() {
                     </motion.div>
                   ))}
                 </div>
-                {/* Right Side: Small Boxes - only news[2] and news[3] */}
+
+                {/* Right: small boxes (2 & 3) */}
                 {smallBoxes.length > 0 && (
                   <div className="flex flex-col gap-6 sticky top-24 h-[520px]">
                     {smallBoxes.map((news, i) => (
@@ -311,7 +429,8 @@ export default function LocalNews() {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: (bigTop.length + i) * 0.05 }}
                       >
-                        {Array.isArray(news.imageUrls) && news.imageUrls.length > 0 &&
+                        {Array.isArray(news.imageUrls) &&
+                          news.imageUrls.length > 0 &&
                           renderMedia(
                             news.imageUrls[0],
                             news.title,
@@ -321,18 +440,24 @@ export default function LocalNews() {
                         <div className="absolute bottom-0 p-4 text-white w-full">
                           <h3
                             className="text-lg font-semibold capitalize mb-1 line-clamp-1"
-                            dangerouslySetInnerHTML={{ __html: news.title }}
+                            dangerouslySetInnerHTML={{
+                              __html: news.title,
+                            }}
                           />
                           <div
                             className="text-xs text-gray-200 line-clamp-2 mb-1"
-                            dangerouslySetInnerHTML={{ __html: news.content }}
+                            dangerouslySetInnerHTML={{
+                              __html: news.content,
+                            }}
                           />
                           <div className="flex items-center justify-between text-xs text-gray-300">
                             <span>
-                              {news.author?.firstName} {news.author?.lastName}
+                              {news.author?.firstName}{" "}
+                              {news.author?.lastName}
                             </span>
                             <span className="flex items-center gap-1">
-                              <Clock size={12} /> {formatDate(news.createdAt)}
+                              <Clock size={12} />{" "}
+                              {formatDate(news.createdAt)}
                             </span>
                           </div>
                           <button

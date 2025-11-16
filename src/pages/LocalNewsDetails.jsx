@@ -1,3 +1,4 @@
+// src/pages/LocalNewsDetails.jsx
 import React, { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -17,6 +18,19 @@ import {
 } from "lucide-react";
 import axios from "axios";
 import { toast } from "react-toastify";
+import SmallAdd from "../components/SmallAdd"; // adjust path if needed
+
+// Helper: next index in circular list
+const getNextIndex = (current, total) => {
+  if (total === 0) return 0;
+  return (current + 1) % total;
+};
+
+// LocalStorage keys for LocalNewsDetails ads
+const SLOT_KEYS = {
+  TOP_RIGHT: "LOCALNEWSDETAILS_AD_INDEX_TOP_RIGHT",
+  BOTTOM_RIGHT: "LOCALNEWSDETAILS_AD_INDEX_BOTTOM_RIGHT",
+};
 
 export default function LocalNewsDetails() {
   const { id } = useParams();
@@ -34,6 +48,13 @@ export default function LocalNewsDetails() {
   const [editCommentText, setEditCommentText] = useState("");
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deletingCommentId, setDeletingCommentId] = useState(null);
+
+  // Ads state
+  const [ads, setAds] = useState([]);
+  const [topRightIndex, setTopRightIndex] = useState(0);
+  const [bottomRightIndex, setBottomRightIndex] = useState(1);
+  const [topRightClosed, setTopRightClosed] = useState(false);
+  const [bottomRightClosed, setBottomRightClosed] = useState(false);
 
   const touchStartX = useRef(0);
   const touchEndX = useRef(0);
@@ -106,9 +127,12 @@ export default function LocalNewsDetails() {
       if (!token) return;
 
       try {
-        const res = await axios.get("https://api.jharkhandbiharupdates.com/api/v1/user/profile", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await axios.get(
+          "https://api.jharkhandbiharupdates.com/api/v1/user/profile",
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
         if (res.data.success) setCurrentUser(res.data.data);
       } catch (error) {
         console.error("Failed to fetch current user", error);
@@ -150,6 +174,66 @@ export default function LocalNewsDetails() {
   useEffect(() => {
     fetchComments();
   }, [id]);
+
+  // Fetch small ads for LocalNewsDetails
+  useEffect(() => {
+    fetch("https://api.jharkhandbiharupdates.com/api/v1/banner-ads/active/small")
+      .then((res) => res.json())
+      .then((data) => {
+        if (
+          data &&
+          data.data &&
+          Array.isArray(data.data) &&
+          data.data.length > 0
+        ) {
+          const orderedAds = [...data.data];
+          setAds(orderedAds);
+
+          const total = orderedAds.length;
+          let savedTop = parseInt(
+            localStorage.getItem(SLOT_KEYS.TOP_RIGHT) ?? "0",
+            10
+          );
+          let savedBottom = parseInt(
+            localStorage.getItem(SLOT_KEYS.BOTTOM_RIGHT) ?? "1",
+            10
+          );
+
+          if (isNaN(savedTop) || savedTop < 0 || savedTop >= total) {
+            savedTop = 0;
+          }
+          if (isNaN(savedBottom) || savedBottom < 0 || savedBottom >= total) {
+            savedBottom = total > 1 ? 1 : 0;
+          }
+
+          if (savedTop === savedBottom && total > 1) {
+            savedBottom = getNextIndex(savedTop, total);
+          }
+
+          setTopRightIndex(savedTop);
+          setBottomRightIndex(savedBottom);
+        }
+      })
+      .catch((err) => {
+        console.error("Error fetching local news details ads:", err);
+      });
+  }, []);
+
+  // Rotate ad index on next refresh after a close
+  useEffect(() => {
+    if (!ads.length) return;
+    const total = ads.length;
+
+    if (topRightClosed) {
+      const nextTop = getNextIndex(topRightIndex, total);
+      localStorage.setItem(SLOT_KEYS.TOP_RIGHT, String(nextTop));
+    }
+
+    if (bottomRightClosed) {
+      const nextBottom = getNextIndex(bottomRightIndex, total);
+      localStorage.setItem(SLOT_KEYS.BOTTOM_RIGHT, String(nextBottom));
+    }
+  }, [topRightClosed, bottomRightClosed, topRightIndex, bottomRightIndex, ads]);
 
   // Post Comment
   const handlePostComment = async () => {
@@ -288,6 +372,9 @@ export default function LocalNewsDetails() {
     return isCommentOwner || isPostOwner;
   };
 
+  const topRightAd = ads.length ? ads[topRightIndex % ads.length] : null;
+  const bottomRightAd = ads.length ? ads[bottomRightIndex % ads.length] : null;
+
   if (loading || !news)
     return (
       <div className="flex justify-center items-center h-screen text-gray-600 text-lg animate-pulse">
@@ -298,6 +385,24 @@ export default function LocalNewsDetails() {
   return (
     <>
       <div className="flex h-screen bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden">
+        {/* Ads like Events/Jobs (top-right just under navbar, bottom-right) */}
+        {topRightAd && !topRightClosed && (
+          <SmallAdd
+            ad={topRightAd}
+            position="top-right"
+            open={true}
+            onClose={() => setTopRightClosed(true)}
+          />
+        )}
+        {bottomRightAd && !bottomRightClosed && (
+          <SmallAdd
+            ad={bottomRightAd}
+            position="bottom-right"
+            open={true}
+            onClose={() => setBottomRightClosed(true)}
+          />
+        )}
+
         <main className="flex-1 overflow-y-auto p-6 relative">
           <motion.button
             whileHover={{ scale: 1.05 }}
@@ -358,7 +463,9 @@ export default function LocalNewsDetails() {
                   size={48}
                   className="text-green-600"
                   style={{
-                    display: news.author?.profileImageUrl ? "none" : "block",
+                    display: news.author?.profileImageUrl
+                      ? "none"
+                      : "block",
                   }}
                 />
                 <div>
@@ -461,7 +568,9 @@ export default function LocalNewsDetails() {
                         <div
                           className="w-12 h-12 bg-green-100 text-green-700 flex items-center justify-center rounded-full font-bold text-lg shadow-sm flex-shrink-0"
                           style={{
-                            display: c.author?.profileImageUrl ? "none" : "flex",
+                            display: c.author?.profileImageUrl
+                              ? "none"
+                              : "flex",
                           }}
                         >
                           {(c.author?.firstName?.[0] || "U").toUpperCase()}
@@ -478,34 +587,39 @@ export default function LocalNewsDetails() {
                                 {formatDate(c.createdAt)}
                               </span>
                             </div>
-                            
+
                             {/* Action Buttons */}
-                            {currentUser && (canEditComment(c) || canDeleteComment(c)) && (
-                              <div className="flex items-center gap-2">
-                                {canEditComment(c) && editingCommentId !== c.id && (
-                                  <motion.button
-                                    whileHover={{ scale: 1.1 }}
-                                    whileTap={{ scale: 0.95 }}
-                                    onClick={() => handleStartEdit(c)}
-                                    className="text-blue-600 hover:text-blue-700 p-1.5 rounded-lg hover:bg-blue-50 transition"
-                                    title="Edit comment"
-                                  >
-                                    <Edit2 size={16} />
-                                  </motion.button>
-                                )}
-                                {canDeleteComment(c) && editingCommentId !== c.id && (
-                                  <motion.button
-                                    whileHover={{ scale: 1.1 }}
-                                    whileTap={{ scale: 0.95 }}
-                                    onClick={() => handleOpenDeleteModal(c.id)}
-                                    className="text-red-600 hover:text-red-700 p-1.5 rounded-lg hover:bg-red-50 transition"
-                                    title="Delete comment"
-                                  >
-                                    <Trash2 size={16} />
-                                  </motion.button>
-                                )}
-                              </div>
-                            )}
+                            {currentUser &&
+                              (canEditComment(c) || canDeleteComment(c)) && (
+                                <div className="flex items-center gap-2">
+                                  {canEditComment(c) &&
+                                    editingCommentId !== c.id && (
+                                      <motion.button
+                                        whileHover={{ scale: 1.1 }}
+                                        whileTap={{ scale: 0.95 }}
+                                        onClick={() => handleStartEdit(c)}
+                                        className="text-blue-600 hover:text-blue-700 p-1.5 rounded-lg hover:bg-blue-50 transition"
+                                        title="Edit comment"
+                                      >
+                                        <Edit2 size={16} />
+                                      </motion.button>
+                                    )}
+                                  {canDeleteComment(c) &&
+                                    editingCommentId !== c.id && (
+                                      <motion.button
+                                        whileHover={{ scale: 1.1 }}
+                                        whileTap={{ scale: 0.95 }}
+                                        onClick={() =>
+                                          handleOpenDeleteModal(c.id)
+                                        }
+                                        className="text-red-600 hover:text-red-700 p-1.5 rounded-lg hover:bg-red-50 transition"
+                                        title="Delete comment"
+                                      >
+                                        <Trash2 size={16} />
+                                      </motion.button>
+                                    )}
+                                </div>
+                              )}
                           </div>
 
                           {/* Edit Mode */}
@@ -513,7 +627,9 @@ export default function LocalNewsDetails() {
                             <div className="mt-2 space-y-2">
                               <textarea
                                 value={editCommentText}
-                                onChange={(e) => setEditCommentText(e.target.value)}
+                                onChange={(e) =>
+                                  setEditCommentText(e.target.value)
+                                }
                                 className="w-full border border-gray-300 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
                                 rows="3"
                               />
@@ -621,7 +737,8 @@ export default function LocalNewsDetails() {
                   Delete Comment
                 </h3>
                 <p className="text-gray-600 mb-6">
-                  Are you sure you want to delete this comment? This action cannot be undone.
+                  Are you sure you want to delete this comment? This action
+                  cannot be undone.
                 </p>
                 <div className="flex gap-3 justify-end">
                   <motion.button

@@ -16,36 +16,42 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
-// Helper: For each slot, rotate through ads, remember what was closed, persist across refresh.
-function getSlotIndexes(totalAds, closedForSlot) {
-  // Pull indexes from localStorage ("EVENTSADS_SLOT0" etc.), defaults to 0/1/2
-  let indexes = [0, 1, 2].map(i =>
-    parseInt(localStorage.getItem(`EVENTSADS_SLOT${i}`) || i, 10)
-  );
-  // Advance only if ad was closed last session
-  for (let pos = 0; pos < 3; pos++) {
-    if (closedForSlot[pos]) {
-      indexes[pos] = (indexes[pos] + 1) % totalAds;
-      localStorage.setItem(`EVENTSADS_SLOT${pos}`, indexes[pos]);
-    }
-  }
-  return indexes;
+// Helper: Get next index in circular manner
+function getNextIndex(current, total) {
+  if (total === 0) return 0;
+  return (current + 1) % total;
 }
+
+// Keys in localStorage for each slot
+const SLOT_KEYS = {
+  TOP_RIGHT: "EVENTS_AD_INDEX_TOP_RIGHT",
+  BOTTOM_RIGHT: "EVENTS_AD_INDEX_BOTTOM_RIGHT",
+};
 
 export default function Events() {
   const [events, setEvents] = useState([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
   const [filterCity, setFilterCity] = useState("All");
+
   const [ads, setAds] = useState([]);
-  const [adsClosed, setAdsClosed] = useState({}); // {0:true, 1:true, 2:true}
+
+  // Slot indexes for ads (top-right, bottom-right)
+  const [topRightIndex, setTopRightIndex] = useState(0);
+  const [bottomRightIndex, setBottomRightIndex] = useState(1);
+
+  const [topRightClosed, setTopRightClosed] = useState(false);
+  const [bottomRightClosed, setBottomRightClosed] = useState(false);
+
   const navigate = useNavigate();
 
   // Fetch events
   const fetchEvents = async () => {
     try {
       setLoading(true);
-      const res = await axios.get("https://api.jharkhandbiharupdates.com/api/v1/events");
+      const res = await axios.get(
+        "https://api.jharkhandbiharupdates.com/api/v1/events"
+      );
       setEvents(res.data.data || []);
     } catch (err) {
       console.error("Error fetching events:", err);
@@ -56,33 +62,77 @@ export default function Events() {
 
   // Fetch small ads
   useEffect(() => {
-    fetch("https://api.jharkhandbiharupdates.com/api/v1/banner-ads/active/small")
-      .then(res => res.json())
-      .then(data => {
-        if (data && data.data && Array.isArray(data.data) && data.data.length > 0) {
-          // Shuffle to randomize sequence on app load
-          let shuffled = [...data.data].sort(() => Math.random() - 0.5);
-          setAds(shuffled);
+    fetch(
+      "https://api.jharkhandbiharupdates.com/api/v1/banner-ads/active/small"
+    )
+      .then((res) => res.json())
+      .then((data) => {
+        if (
+          data &&
+          data.data &&
+          Array.isArray(data.data) &&
+          data.data.length > 0
+        ) {
+          // Keep original order a,b,c,d,e,f (as created in backend)
+          const orderedAds = [...data.data];
+
+          setAds(orderedAds);
+
+          const total = orderedAds.length;
+
+          // Load saved indexes from localStorage
+          let savedTop = parseInt(
+            localStorage.getItem(SLOT_KEYS.TOP_RIGHT) ?? "0",
+            10
+          );
+          let savedBottom = parseInt(
+            localStorage.getItem(SLOT_KEYS.BOTTOM_RIGHT) ?? "1",
+            10
+          );
+
+          // Normalize if out of range
+          if (isNaN(savedTop) || savedTop < 0 || savedTop >= total) {
+            savedTop = 0;
+          }
+          if (isNaN(savedBottom) || savedBottom < 0 || savedBottom >= total) {
+            savedBottom = total > 1 ? 1 : 0;
+          }
+
+          // If both indexes are same and there is more than one ad, shift bottom
+          if (savedTop === savedBottom && total > 1) {
+            savedBottom = getNextIndex(savedTop, total);
+          }
+
+          setTopRightIndex(savedTop);
+          setBottomRightIndex(savedBottom);
         }
+      })
+      .catch((err) => {
+        console.error("Error fetching ads:", err);
       });
+
     fetchEvents();
     // eslint-disable-next-line
   }, []);
 
-  // Get the ad slot indexes to render
-  let slotIndexes = ads.length ? getSlotIndexes(ads.length, adsClosed) : [];
-  let adsToShow = slotIndexes.map(idx => ads[idx]);
+  // When a slot is closed, update localStorage so that on next refresh it moves to the next ad
+  useEffect(() => {
+    if (!ads.length) return;
 
-  // Position mapping
-  const POSITIONS = [
-    { id: 0, pos: "top-right", style: "fixed right-2 sm:right-6 top-3 z-[90]" },
-    { id: 1, pos: "bottom-right", style: "fixed right-2 sm:right-6 bottom-4 z-[90]" },
-    { id: 2, pos: "bottom-left", style: "fixed left-2 sm:left-6 bottom-4 z-[90]" }
-  ];
+    const total = ads.length;
 
-  // Close handler (removes for this render, rotates on next refresh)
-  const handleCloseAd = pos => setAdsClosed(prev => ({ ...prev, [pos]: true }));
+    if (topRightClosed) {
+      const nextTop = getNextIndex(topRightIndex, total);
+      localStorage.setItem(SLOT_KEYS.TOP_RIGHT, String(nextTop));
+    }
 
+    if (bottomRightClosed) {
+      const nextBottom = getNextIndex(bottomRightIndex, total);
+      localStorage.setItem(SLOT_KEYS.BOTTOM_RIGHT, String(nextBottom));
+    }
+  }, [topRightClosed, bottomRightClosed, topRightIndex, bottomRightIndex, ads]);
+
+  // Filter events
   const filteredEvents = events.filter((e) => {
     const title = (e.title || "").toLowerCase();
     const location = (e.location || "").toLowerCase();
@@ -95,30 +145,44 @@ export default function Events() {
     return matchesSearch && matchesFilter;
   });
 
+  const topRightAd = ads.length ? ads[topRightIndex % ads.length] : null;
+  const bottomRightAd = ads.length ? ads[bottomRightIndex % ads.length] : null;
+
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 relative">
-      {/* Ad Slots: Top-right, Bottom-right, Bottom-left */}
-      {POSITIONS.map(({ id, pos, style }) =>
-        adsToShow[id] && !adsClosed[id] ? (
-          <div key={pos} className={style}>
-            <AnimatePresence>
-              <SmallAdd
-                ad={adsToShow[id]}
-                position={pos}
-                open={true}
-                onClose={() => handleCloseAd(id)}
-              />
-            </AnimatePresence>
-          </div>
-        ) : null
+      {/* Ad: Top-right (just under navbar, handled via SmallAdd position) */}
+      {topRightAd && !topRightClosed && (
+        <AnimatePresence>
+          <SmallAdd
+            ad={topRightAd}
+            position="top-right"
+            open={true}
+            onClose={() => setTopRightClosed(true)}
+          />
+        </AnimatePresence>
       )}
+
+      {/* Ad: Bottom-right */}
+      {bottomRightAd && !bottomRightClosed && (
+        <AnimatePresence>
+          <SmallAdd
+            ad={bottomRightAd}
+            position="bottom-right"
+            open={true}
+            onClose={() => setBottomRightClosed(true)}
+          />
+        </AnimatePresence>
+      )}
+
       <header className="w-full fixed top-0 left-0 z-50 bg-white shadow-md border-b border-gray-200">
         <RightSidebar refreshEvents={fetchEvents} />
       </header>
+
       <div className="flex flex-1 pt-16 overflow-hidden">
         <aside className="hidden lg:block w-64 bg-white shadow-md border-r border-gray-200">
           <Sidebar activePage="events" />
         </aside>
+
         <main className="flex-1 p-4 sm:p-6 overflow-y-auto">
           <div className="flex justify-between items-center mb-6 flex-wrap gap-3">
             <motion.h1
@@ -138,6 +202,7 @@ export default function Events() {
               <PlusCircle className="w-5 h-5" /> Add Event
             </motion.button>
           </div>
+
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -152,6 +217,7 @@ export default function Events() {
               onChange={(e) => setSearch(e.target.value)}
             />
           </motion.div>
+
           <div className="flex gap-2 sm:gap-3 mb-6 flex-wrap">
             {["All", "Bokaro"].map((loc) => (
               <motion.button
@@ -169,6 +235,7 @@ export default function Events() {
               </motion.button>
             ))}
           </div>
+
           <AnimatePresence>
             {loading ? (
               <motion.div className="text-gray-500 text-center">
@@ -191,7 +258,8 @@ export default function Events() {
                     onClick={() => navigate(`/events/${event.id}`)}
                   >
                     {/* Image Section */}
-                    {Array.isArray(event.imageUrls) && event.imageUrls.length > 0 ? (
+                    {Array.isArray(event.imageUrls) &&
+                    event.imageUrls.length > 0 ? (
                       <img
                         src={event.imageUrls[0]}
                         alt={event.title}
@@ -202,11 +270,15 @@ export default function Events() {
                         No image
                       </div>
                     )}
+
                     {/* Event Info */}
                     <h2 className="text-lg font-semibold">{event.title}</h2>
                     <p className="text-sm text-gray-600">
                       {event.description?.slice(0, 100)}
-                      {event.description && event.description.length > 100 ? "…" : ""}
+                      {event.description &&
+                      event.description.length > 100
+                        ? "…"
+                        : ""}
                     </p>
                     <div className="mt-3 text-gray-600 text-sm flex gap-3 items-center flex-wrap">
                       <span className="flex items-center gap-1">
@@ -215,16 +287,21 @@ export default function Events() {
                       <span className="flex items-center gap-1">
                         <Calendar className="w-4 h-4" />{" "}
                         {event.eventDate
-                          ? new Date(event.eventDate).toLocaleDateString()
+                          ? new Date(
+                              event.eventDate
+                            ).toLocaleDateString()
                           : "-"}
                       </span>
                       <span className="flex items-center gap-1">
                         <Clock className="w-4 h-4" />{" "}
                         {event.eventDate
-                          ? new Date(event.eventDate).toLocaleTimeString([], {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })
+                          ? new Date(event.eventDate).toLocaleTimeString(
+                              [],
+                              {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              }
+                            )
                           : "-"}
                       </span>
                     </div>
@@ -251,7 +328,9 @@ export default function Events() {
                         whileTap={{ scale: 0.95 }}
                         onClick={(e) => {
                           e.stopPropagation();
-                          window.open(event.reglink, "_blank");
+                          if (event.reglink) {
+                            window.open(event.reglink, "_blank");
+                          }
                         }}
                         className="flex-1 flex items-center justify-center gap-2 bg-blue-600 text-white py-2 rounded-xl text-sm hover:bg-blue-700 transition"
                       >

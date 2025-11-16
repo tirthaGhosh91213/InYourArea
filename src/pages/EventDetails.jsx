@@ -1,3 +1,4 @@
+// src/pages/EventDetails.jsx
 import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -18,6 +19,19 @@ import {
 } from "lucide-react";
 import axios from "axios";
 import { toast } from "react-toastify";
+import SmallAdd from "../components/SmallAdd"; // adjust path if needed
+
+// Helper: circular index
+const getNextIndex = (current, total) => {
+  if (total === 0) return 0;
+  return (current + 1) % total;
+};
+
+// LocalStorage keys for EventDetails ads
+const SLOT_KEYS = {
+  TOP_RIGHT: "EVENTDETAILS_AD_INDEX_TOP_RIGHT",
+  BOTTOM_RIGHT: "EVENTDETAILS_AD_INDEX_BOTTOM_RIGHT",
+};
 
 export default function EventDetails() {
   const { id } = useParams();
@@ -37,6 +51,13 @@ export default function EventDetails() {
   const [editCommentText, setEditCommentText] = useState("");
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deletingCommentId, setDeletingCommentId] = useState(null);
+
+  // Ads state
+  const [ads, setAds] = useState([]);
+  const [topRightIndex, setTopRightIndex] = useState(0);
+  const [bottomRightIndex, setBottomRightIndex] = useState(1);
+  const [topRightClosed, setTopRightClosed] = useState(false);
+  const [bottomRightClosed, setBottomRightClosed] = useState(false);
 
   const touchStartX = useRef(0);
   const touchEndX = useRef(0);
@@ -79,9 +100,12 @@ export default function EventDetails() {
       if (!token) return;
 
       try {
-        const res = await axios.get("https://api.jharkhandbiharupdates.com/api/v1/user/profile", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await axios.get(
+          "https://api.jharkhandbiharupdates.com/api/v1/user/profile",
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
         if (res.data.success) setCurrentUser(res.data.data);
       } catch (error) {
         console.error("Failed to fetch current user", error);
@@ -89,6 +113,18 @@ export default function EventDetails() {
     };
     fetchCurrentUser();
   }, [token]);
+
+  const fetchComments = async () => {
+    try {
+      const res = await axios.get(
+        `https://api.jharkhandbiharupdates.com/api/v1/comments/events/${id}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (res.data.success) setComments(res.data.data);
+    } catch {
+      toast.error("Failed to fetch comments");
+    }
+  };
 
   useEffect(() => {
     if (!token) navigate("/login");
@@ -110,23 +146,73 @@ export default function EventDetails() {
     };
     fetchEvent();
     fetchComments();
-    // eslint-disable-next-line
+
+    // Fetch small ads
+    fetch(
+      "https://api.jharkhandbiharupdates.com/api/v1/banner-ads/active/small"
+    )
+      .then((res) => res.json())
+      .then((data) => {
+        if (
+          data &&
+          data.data &&
+          Array.isArray(data.data) &&
+          data.data.length > 0
+        ) {
+          const orderedAds = [...data.data];
+          setAds(orderedAds);
+
+          const total = orderedAds.length;
+          let savedTop = parseInt(
+            localStorage.getItem(SLOT_KEYS.TOP_RIGHT) ?? "0",
+            10
+          );
+          let savedBottom = parseInt(
+            localStorage.getItem(SLOT_KEYS.BOTTOM_RIGHT) ?? "1",
+            10
+          );
+
+          if (isNaN(savedTop) || savedTop < 0 || savedTop >= total) {
+            savedTop = 0;
+          }
+          if (isNaN(savedBottom) || savedBottom < 0 || savedBottom >= total) {
+            savedBottom = total > 1 ? 1 : 0;
+          }
+
+          if (savedTop === savedBottom && total > 1) {
+            savedBottom = getNextIndex(savedTop, total);
+          }
+
+          setTopRightIndex(savedTop);
+          setBottomRightIndex(savedBottom);
+        }
+      })
+      .catch((err) => {
+        console.error("Error fetching event details ads:", err);
+      });
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, token]);
 
-  const fetchComments = async () => {
-    try {
-      const res = await axios.get(
-        `https://api.jharkhandbiharupdates.com/api/v1/comments/events/${id}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      if (res.data.success) setComments(res.data.data);
-    } catch {
-      toast.error("Failed to fetch comments");
+  // Rotate ad index for next refresh when a slot is closed
+  useEffect(() => {
+    if (!ads.length) return;
+    const total = ads.length;
+
+    if (topRightClosed) {
+      const nextTop = getNextIndex(topRightIndex, total);
+      localStorage.setItem(SLOT_KEYS.TOP_RIGHT, String(nextTop));
     }
-  };
+
+    if (bottomRightClosed) {
+      const nextBottom = getNextIndex(bottomRightIndex, total);
+      localStorage.setItem(SLOT_KEYS.BOTTOM_RIGHT, String(nextBottom));
+    }
+  }, [topRightClosed, bottomRightClosed, topRightIndex, bottomRightIndex, ads]);
 
   const postComment = async () => {
-    if (!commentText.trim()) return toast.error("Comment cannot be empty");
+    if (!commentText.trim())
+      return toast.error("Comment cannot be empty");
     try {
       setPosting(true);
       const res = await axios.post(
@@ -238,6 +324,9 @@ export default function EventDetails() {
     return isCommentOwner || isPostOwner;
   };
 
+  const topRightAd = ads.length ? ads[topRightIndex % ads.length] : null;
+  const bottomRightAd = ads.length ? ads[bottomRightIndex % ads.length] : null;
+
   if (loading || !event)
     return (
       <div className="flex justify-center items-center h-screen text-gray-600 text-lg animate-pulse">
@@ -248,6 +337,24 @@ export default function EventDetails() {
   return (
     <>
       <div className="flex h-screen bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden">
+        {/* Ads like other detail pages */}
+        {topRightAd && !topRightClosed && (
+          <SmallAdd
+            ad={topRightAd}
+            position="top-right"
+            open={true}
+            onClose={() => setTopRightClosed(true)}
+          />
+        )}
+        {bottomRightAd && !bottomRightClosed && (
+          <SmallAdd
+            ad={bottomRightAd}
+            position="bottom-right"
+            open={true}
+            onClose={() => setBottomRightClosed(true)}
+          />
+        )}
+
         <main className="flex-1 overflow-y-auto p-4 md:p-6 relative">
           <motion.button
             whileHover={{ scale: 1.05 }}
@@ -308,7 +415,9 @@ export default function EventDetails() {
                   size={48}
                   className="text-green-600 flex-shrink-0"
                   style={{
-                    display: event.author?.profileImageUrl ? "none" : "block",
+                    display: event.author?.profileImageUrl
+                      ? "none"
+                      : "block",
                   }}
                 />
                 <div>
@@ -320,7 +429,9 @@ export default function EventDetails() {
                   <div className="text-sm text-gray-500 flex items-center gap-1">
                     <Calendar size={14} className="shrink-0" />
                     {event.eventDate
-                      ? new Date(event.eventDate).toLocaleDateString("en-GB", {
+                      ? new Date(
+                          event.eventDate
+                        ).toLocaleDateString("en-GB", {
                           day: "2-digit",
                           month: "short",
                           year: "numeric",
@@ -328,17 +439,23 @@ export default function EventDetails() {
                       : "-"}
                     <span>
                       {event.eventDate
-                        ? new Date(event.eventDate).toLocaleTimeString([], {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })
+                        ? new Date(event.eventDate).toLocaleTimeString(
+                            [],
+                            {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            }
+                          )
                         : "-"}
                     </span>
                   </div>
                 </div>
               </div>
               <div className="flex items-center gap-1 text-sm text-gray-500 order-2 sm:order-3 mt-1 sm:mt-0">
-                <MapPin size={16} className="text-green-600 flex-shrink-0" />
+                <MapPin
+                  size={16}
+                  className="text-green-600 flex-shrink-0"
+                />
                 {event.location || "Unknown Location"}
               </div>
             </div>
@@ -428,7 +545,9 @@ export default function EventDetails() {
                         <div
                           className="w-10 h-10 bg-green-100 text-green-700 flex items-center justify-center rounded-full font-bold text-lg shadow-sm flex-shrink-0"
                           style={{
-                            display: c.author?.profileImageUrl ? "none" : "flex",
+                            display: c.author?.profileImageUrl
+                              ? "none"
+                              : "flex",
                           }}
                         >
                           {(c.author?.firstName?.[0] || "U").toUpperCase()}

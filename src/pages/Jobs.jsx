@@ -13,10 +13,22 @@ import {
 } from "lucide-react";
 import Sidebar from "../components/SideBar";
 import RightSidebar from "../components/RightSidebar";
+import SmallAdd from "../components/SmallAdd";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 
+// Helper: Get next index in circular manner
+function getNextIndex(current, total) {
+  if (total === 0) return 0;
+  return (current + 1) % total;
+}
+
+// Keys in localStorage for each slot (separate from Events keys)
+const SLOT_KEYS = {
+  TOP_RIGHT: "JOBS_AD_INDEX_TOP_RIGHT",
+  BOTTOM_RIGHT: "JOBS_AD_INDEX_BOTTOM_RIGHT",
+};
 
 export default function Jobs() {
   const navigate = useNavigate();
@@ -24,11 +36,19 @@ export default function Jobs() {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Ads state (same behavior as Events page)
+  const [ads, setAds] = useState([]);
+  const [topRightIndex, setTopRightIndex] = useState(0);
+  const [bottomRightIndex, setBottomRightIndex] = useState(1);
+  const [topRightClosed, setTopRightClosed] = useState(false);
+  const [bottomRightClosed, setBottomRightClosed] = useState(false);
 
   const fetchJobs = async () => {
     try {
       setLoading(true);
-      const res = await axios.get("https://api.jharkhandbiharupdates.com/api/v1/jobs");
+      const res = await axios.get(
+        "https://api.jharkhandbiharupdates.com/api/v1/jobs"
+      );
       if (res.data.success) {
         setJobs(res.data.data.filter((job) => job.status === "APPROVED"));
       }
@@ -39,18 +59,80 @@ export default function Jobs() {
     }
   };
 
-
+  // Fetch jobs and small ads
   useEffect(() => {
     fetchJobs();
+
+    fetch(
+      "https://api.jharkhandbiharupdates.com/api/v1/banner-ads/active/small"
+    )
+      .then((res) => res.json())
+      .then((data) => {
+        if (
+          data &&
+          data.data &&
+          Array.isArray(data.data) &&
+          data.data.length > 0
+        ) {
+          // Keep original order a,b,c,d,e,f (as created in backend)
+          const orderedAds = [...data.data];
+          setAds(orderedAds);
+
+          const total = orderedAds.length;
+
+          // Load saved indexes from localStorage (jobs-specific keys)
+          let savedTop = parseInt(
+            localStorage.getItem(SLOT_KEYS.TOP_RIGHT) ?? "0",
+            10
+          );
+          let savedBottom = parseInt(
+            localStorage.getItem(SLOT_KEYS.BOTTOM_RIGHT) ?? "1",
+            10
+          );
+
+          // Normalize
+          if (isNaN(savedTop) || savedTop < 0 || savedTop >= total) {
+            savedTop = 0;
+          }
+          if (isNaN(savedBottom) || savedBottom < 0 || savedBottom >= total) {
+            savedBottom = total > 1 ? 1 : 0;
+          }
+
+          // Ensure different ads for top and bottom if possible
+          if (savedTop === savedBottom && total > 1) {
+            savedBottom = getNextIndex(savedTop, total);
+          }
+
+          setTopRightIndex(savedTop);
+          setBottomRightIndex(savedBottom);
+        }
+      })
+      .catch((err) => {
+        console.error("Error fetching jobs ads:", err);
+      });
   }, []);
 
+  // When a slot is closed, update localStorage so that on next refresh it moves to the next ad
+  useEffect(() => {
+    if (!ads.length) return;
+    const total = ads.length;
+
+    if (topRightClosed) {
+      const nextTop = getNextIndex(topRightIndex, total);
+      localStorage.setItem(SLOT_KEYS.TOP_RIGHT, String(nextTop));
+    }
+
+    if (bottomRightClosed) {
+      const nextBottom = getNextIndex(bottomRightIndex, total);
+      localStorage.setItem(SLOT_KEYS.BOTTOM_RIGHT, String(nextBottom));
+    }
+  }, [topRightClosed, bottomRightClosed, topRightIndex, bottomRightIndex, ads]);
 
   const filteredJobs = jobs.filter((job) =>
     [job.title, job.company, job.location].some((field) =>
       field?.toLowerCase().includes(searchTerm.toLowerCase())
     )
   );
-
 
   const formatDate = (date) =>
     new Date(date).toLocaleString("en-GB", {
@@ -59,6 +141,8 @@ export default function Jobs() {
       year: "numeric",
     });
 
+  const topRightAd = ads.length ? ads[topRightIndex % ads.length] : null;
+  const bottomRightAd = ads.length ? ads[bottomRightIndex % ads.length] : null;
 
   return (
     <>
@@ -67,6 +151,28 @@ export default function Jobs() {
         <RightSidebar refreshJobs={fetchJobs} />
       </div>
 
+      {/* Ads - same layout/behavior as Events page */}
+      {topRightAd && !topRightClosed && (
+        <AnimatePresence>
+          <SmallAdd
+            ad={topRightAd}
+            position="top-right"
+            open={true}
+            onClose={() => setTopRightClosed(true)}
+          />
+        </AnimatePresence>
+      )}
+
+      {bottomRightAd && !bottomRightClosed && (
+        <AnimatePresence>
+          <SmallAdd
+            ad={bottomRightAd}
+            position="bottom-right"
+            open={true}
+            onClose={() => setBottomRightClosed(true)}
+          />
+        </AnimatePresence>
+      )}
 
       {/* Page Layout */}
       <div className="flex h-screen bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden pt-16">
@@ -74,6 +180,7 @@ export default function Jobs() {
         <div className="hidden lg:block w-64 bg-white shadow-md border-r border-gray-200">
           <Sidebar />
         </div>
+
         {/* Main Content */}
         <main className="flex-1 overflow-y-auto p-6 relative">
           {/* Header */}
@@ -100,10 +207,11 @@ export default function Jobs() {
             </div>
           </motion.div>
 
-
           {/* Job Cards */}
           {loading ? (
-            <div className="flex justify-center py-12 text-gray-600">Loading...</div>
+            <div className="flex justify-center py-12 text-gray-600">
+              Loading...
+            </div>
           ) : filteredJobs.length > 0 ? (
             <AnimatePresence>
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 pb-20">
@@ -114,7 +222,11 @@ export default function Jobs() {
                     initial={{ opacity: 0, y: 60 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -20 }}
-                    transition={{ delay: idx * 0.05, type: "spring", stiffness: 100 }}
+                    transition={{
+                      delay: idx * 0.05,
+                      type: "spring",
+                      stiffness: 100,
+                    }}
                     whileHover={{
                       scale: 1.03,
                       boxShadow: "0 25px 40px rgba(52,211,153,0.25)",
@@ -162,7 +274,8 @@ export default function Jobs() {
                                       ? {
                                           ...j,
                                           currentImageIndex:
-                                            (j.currentImageIndex || 0) + 1 >= j.imageUrls.length
+                                            (j.currentImageIndex || 0) + 1 >=
+                                            j.imageUrls.length
                                               ? 0
                                               : (j.currentImageIndex || 0) + 1,
                                         }
@@ -178,7 +291,6 @@ export default function Jobs() {
                         )}
                       </div>
                     )}
-
 
                     {job.author && (
                       <div className="mt-2 mb-5 flex items-center gap-2 text-gray-500 ">
@@ -197,42 +309,48 @@ export default function Jobs() {
                           size={16}
                           className="text-green-700 flex-shrink-0"
                           style={{
-                            display: job.author.profileImageUrl ? "none" : "block",
+                            display: job.author.profileImageUrl
+                              ? "none"
+                              : "block",
                           }}
                         />
-                        <span className="">
+                        <span>
                           Posted by:{" "}
                           <span className="font-semibold text-gray-700">
                             {job.author.firstName} {job.author.lastName}
                           </span>
                           {job.author.role && (
-                            <span className="ml-1 text-emerald-700">({job.author.role})</span>
+                            <span className="ml-1 text-emerald-700">
+                              ({job.author.role})
+                            </span>
                           )}
                         </span>
                       </div>
                     )}
 
-
                     <div className="mb-3">
-                      <h2 className=" pb-5 font-semibold text-gray-800">{job.title}</h2>
+                      <h2 className="pb-5 font-semibold text-gray-800">
+                        {job.title}
+                      </h2>
                       <p className="text-sm text-emerald-700 flex items-center gap-1">
                         <Building2 size={14} /> {job.company}
                       </p>
                     </div>
 
-
                     <div className="space-y-2 text-gray-700">
                       <p className="flex items-center gap-2">
-                        <MapPin size={16} className="text-green-700" /> {job.location}
+                        <MapPin size={16} className="text-green-700" />{" "}
+                        {job.location}
                       </p>
                       <p className="flex items-center gap-2">
-                        <DollarSign size={16} className="text-yellow-600" /> {job.salaryRange}
+                        <DollarSign size={16} className="text-yellow-600" />{" "}
+                        {job.salaryRange}
                       </p>
                       <p className="flex items-center gap-2">
-                        <Calendar size={16} className="text-blue-600" /> {formatDate(job.applicationDeadline)}
+                        <Calendar size={16} className="text-blue-600" />{" "}
+                        {formatDate(job.applicationDeadline)}
                       </p>
                     </div>
-
 
                     <div className="mt-4 flex justify-between items-center border-t pt-3 border-emerald-200">
                       <motion.button
@@ -260,7 +378,8 @@ export default function Jobs() {
               animate={{ opacity: 1 }}
               className="text-center text-gray-500 col-span-full mt-10 text-xl"
             >
-              No results found for <span className="font-semibold">"{searchTerm}"</span>
+              No results found for{" "}
+              <span className="font-semibold">"{searchTerm}"</span>
             </motion.p>
           )}
         </main>

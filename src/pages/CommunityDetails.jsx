@@ -1,3 +1,4 @@
+// src/pages/CommunityDetails.jsx
 import React, { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -17,6 +18,19 @@ import {
 } from "lucide-react";
 import axios from "axios";
 import { toast } from "react-toastify";
+import SmallAdd from "../components/SmallAdd"; // adjust path if needed
+
+// Helper: circular index for rotating ads
+const getNextIndex = (current, total) => {
+  if (total === 0) return 0;
+  return (current + 1) % total;
+};
+
+// LocalStorage keys for CommunityDetails ads
+const SLOT_KEYS = {
+  TOP_RIGHT: "COMMUNITYDETAILS_AD_INDEX_TOP_RIGHT",
+  BOTTOM_RIGHT: "COMMUNITYDETAILS_AD_INDEX_BOTTOM_RIGHT",
+};
 
 export default function CommunityDetails() {
   const { id } = useParams();
@@ -36,6 +50,13 @@ export default function CommunityDetails() {
   const [editCommentText, setEditCommentText] = useState("");
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deletingCommentId, setDeletingCommentId] = useState(null);
+
+  // Ads state
+  const [ads, setAds] = useState([]);
+  const [topRightIndex, setTopRightIndex] = useState(0);
+  const [bottomRightIndex, setBottomRightIndex] = useState(1);
+  const [topRightClosed, setTopRightClosed] = useState(false);
+  const [bottomRightClosed, setBottomRightClosed] = useState(false);
 
   const touchStartX = useRef(0);
   const touchEndX = useRef(0);
@@ -113,9 +134,12 @@ export default function CommunityDetails() {
       if (!token) return;
 
       try {
-        const res = await axios.get("https://api.jharkhandbiharupdates.com/api/v1/user/profile", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await axios.get(
+          "https://api.jharkhandbiharupdates.com/api/v1/user/profile",
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
         if (res.data.success) setCurrentUser(res.data.data);
       } catch (error) {
         console.error("Failed to fetch current user", error);
@@ -147,6 +171,50 @@ export default function CommunityDetails() {
       return;
     }
     fetchPost();
+
+    // Fetch small ads for CommunityDetails
+    fetch(
+      "https://api.jharkhandbiharupdates.com/api/v1/banner-ads/active/small"
+    )
+      .then((res) => res.json())
+      .then((data) => {
+        if (
+          data &&
+          data.data &&
+          Array.isArray(data.data) &&
+          data.data.length > 0
+        ) {
+          const orderedAds = [...data.data];
+          setAds(orderedAds);
+
+          const total = orderedAds.length;
+          let savedTop = parseInt(
+            localStorage.getItem(SLOT_KEYS.TOP_RIGHT) ?? "0",
+            10
+          );
+          let savedBottom = parseInt(
+            localStorage.getItem(SLOT_KEYS.BOTTOM_RIGHT) ?? "1",
+            10
+          );
+
+          if (isNaN(savedTop) || savedTop < 0 || savedTop >= total) {
+            savedTop = 0;
+          }
+          if (isNaN(savedBottom) || savedBottom < 0 || savedBottom >= total) {
+            savedBottom = total > 1 ? 1 : 0;
+          }
+
+          if (savedTop === savedBottom && total > 1) {
+            savedBottom = getNextIndex(savedTop, total);
+          }
+
+          setTopRightIndex(savedTop);
+          setBottomRightIndex(savedBottom);
+        }
+      })
+      .catch((err) => {
+        console.error("Error fetching community details ads:", err);
+      });
   }, [id, token, navigate]);
 
   const fetchComments = async () => {
@@ -165,6 +233,22 @@ export default function CommunityDetails() {
   useEffect(() => {
     if (token) fetchComments();
   }, [id, token]);
+
+  // Rotate ad index on next refresh after a close
+  useEffect(() => {
+    if (!ads.length) return;
+    const total = ads.length;
+
+    if (topRightClosed) {
+      const nextTop = getNextIndex(topRightIndex, total);
+      localStorage.setItem(SLOT_KEYS.TOP_RIGHT, String(nextTop));
+    }
+
+    if (bottomRightClosed) {
+      const nextBottom = getNextIndex(bottomRightIndex, total);
+      localStorage.setItem(SLOT_KEYS.BOTTOM_RIGHT, String(nextBottom));
+    }
+  }, [topRightClosed, bottomRightClosed, topRightIndex, bottomRightIndex, ads]);
 
   const handlePostComment = async () => {
     if (!commentText.trim()) {
@@ -286,6 +370,9 @@ export default function CommunityDetails() {
     return isCommentOwner || isPostOwner;
   };
 
+  const topRightAd = ads.length ? ads[topRightIndex % ads.length] : null;
+  const bottomRightAd = ads.length ? ads[bottomRightIndex % ads.length] : null;
+
   if (loading || !post)
     return (
       <div className="flex justify-center items-center h-screen text-gray-600 text-lg animate-pulse">
@@ -296,6 +383,24 @@ export default function CommunityDetails() {
   return (
     <>
       <div className="flex h-screen bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden">
+        {/* Ads like other detail pages */}
+        {topRightAd && !topRightClosed && (
+          <SmallAdd
+            ad={topRightAd}
+            position="top-right"
+            open={true}
+            onClose={() => setTopRightClosed(true)}
+          />
+        )}
+        {bottomRightAd && !bottomRightClosed && (
+          <SmallAdd
+            ad={bottomRightAd}
+            position="bottom-right"
+            open={true}
+            onClose={() => setBottomRightClosed(true)}
+          />
+        )}
+
         <main className="flex-1 overflow-y-auto p-4 md:p-6 relative">
           <motion.button
             whileHover={{ scale: 1.05 }}
@@ -337,7 +442,7 @@ export default function CommunityDetails() {
               </div>
             )}
 
-            {/* AUTHOR INFO responsive: column on mobile, row on md+ */}
+            {/* AUTHOR INFO */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4 text-gray-700">
               <div className="flex flex-row items-center gap-3 order-1">
                 {post.author?.profileImageUrl ? (
@@ -371,7 +476,10 @@ export default function CommunityDetails() {
                 </div>
               </div>
               <div className="flex items-center gap-1 text-sm text-gray-500 order-2 sm:order-3 mt-1 sm:mt-0">
-                <MapPin size={16} className="text-green-600 flex-shrink-0" />
+                <MapPin
+                  size={16}
+                  className="text-green-600 flex-shrink-0"
+                />
                 {post.location || "Unknown Location"}
               </div>
             </div>
@@ -455,7 +563,9 @@ export default function CommunityDetails() {
                         <div
                           className="w-12 h-12 bg-green-100 text-green-700 flex items-center justify-center rounded-full font-bold text-lg shadow-sm flex-shrink-0"
                           style={{
-                            display: c.author?.profileImageUrl ? "none" : "flex",
+                            display: c.author?.profileImageUrl
+                              ? "none"
+                              : "flex",
                           }}
                         >
                           {(c.author?.firstName?.[0] || "U").toUpperCase()}

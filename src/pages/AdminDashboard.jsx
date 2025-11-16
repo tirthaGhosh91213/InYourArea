@@ -194,7 +194,7 @@ export default function AdminDashboard() {
           >
             <ImageIcon size={18} className="mr-2" />{" "}
             {/* Change to your preferred icon */}
-            ADD
+            ADs
           </motion.button>
 
           <motion.button

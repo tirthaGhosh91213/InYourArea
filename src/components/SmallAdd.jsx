@@ -1,7 +1,13 @@
+// src/components/SmallAdd.jsx
 import React, { useState } from "react";
 import { X as CloseIcon } from "lucide-react";
 
-export default function SmallAdd({ position = "bottom-right", ad, open = true, onClose }) {
+export default function SmallAdd({
+  position = "bottom-right",
+  ad,
+  open = true,
+  onClose,
+}) {
   const [localOpen, setLocalOpen] = useState(open);
 
   if (!localOpen || !ad || !ad.bannerUrl || !ad.title) return null;
@@ -17,9 +23,10 @@ export default function SmallAdd({ position = "bottom-right", ad, open = true, o
     if (onClose) onClose();
   };
 
+  // Only change: top offset for "top-right" so it appears just under the navbar
   const containerStyle =
     position === "top-right"
-      ? { position: "fixed", top: "18px", right: "12px", zIndex: 50 }
+      ? { position: "fixed", top: "70px", right: "12px", zIndex: 50 } // under navbar
       : { position: "fixed", bottom: "22px", right: "12px", zIndex: 50 };
 
   return (
@@ -44,7 +51,7 @@ export default function SmallAdd({ position = "bottom-right", ad, open = true, o
             alt={ad.title}
             className="w-full h-[80px] xs:h-[95px] sm:h-[95px] object-cover"
             draggable={false}
-            style={{ userSelect: 'none' }}
+            style={{ userSelect: "none" }}
             loading="lazy"
           />
           <div className="absolute bottom-0 left-0 w-full py-1 px-2 flex items-end bg-gradient-to-t from-black/85 via-black/55 to-transparent">

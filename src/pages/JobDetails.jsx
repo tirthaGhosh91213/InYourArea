@@ -1,3 +1,4 @@
+// src/pages/JobDetails.jsx
 import React, { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -17,6 +18,19 @@ import {
 } from "lucide-react";
 import axios from "axios";
 import { toast } from "react-toastify";
+import SmallAdd from "../components/SmallAdd"; // adjust path if needed
+
+// Helper: circular index
+const getNextIndex = (current, total) => {
+  if (total === 0) return 0;
+  return (current + 1) % total;
+};
+
+// LocalStorage keys for JobDetails ads
+const SLOT_KEYS = {
+  TOP_RIGHT: "JOBDETAILS_AD_INDEX_TOP_RIGHT",
+  BOTTOM_RIGHT: "JOBDETAILS_AD_INDEX_BOTTOM_RIGHT",
+};
 
 export default function JobDetails() {
   const { id } = useParams();
@@ -35,6 +49,13 @@ export default function JobDetails() {
   const [editCommentText, setEditCommentText] = useState("");
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deletingCommentId, setDeletingCommentId] = useState(null);
+
+  // Ads state
+  const [ads, setAds] = useState([]);
+  const [topRightIndex, setTopRightIndex] = useState(0);
+  const [bottomRightIndex, setBottomRightIndex] = useState(1);
+  const [topRightClosed, setTopRightClosed] = useState(false);
+  const [bottomRightClosed, setBottomRightClosed] = useState(false);
 
   const touchStartX = useRef(0);
   const touchEndX = useRef(0);
@@ -70,9 +91,12 @@ export default function JobDetails() {
       if (!token) return;
 
       try {
-        const res = await axios.get("https://api.jharkhandbiharupdates.com/api/v1/user/profile", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await axios.get(
+          "https://api.jharkhandbiharupdates.com/api/v1/user/profile",
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
         if (res.data.success) setCurrentUser(res.data.data);
       } catch (error) {
         console.error("Failed to fetch current user", error);
@@ -112,7 +136,8 @@ export default function JobDetails() {
   };
 
   const postComment = async () => {
-    if (!commentText.trim()) return toast.error("Comment cannot be empty");
+    if (!commentText.trim())
+      return toast.error("Comment cannot be empty");
     try {
       const res = await axios.post(
         `https://api.jharkhandbiharupdates.com/api/v1/comments/jobs/${id}`,
@@ -221,11 +246,73 @@ export default function JobDetails() {
     return isCommentOwner || isPostOwner;
   };
 
+  // Fetch job, comments, and small ads
   useEffect(() => {
     if (!token) navigate("/login");
     fetchJob();
     fetchComments();
+
+    fetch("https://api.jharkhandbiharupdates.com/api/v1/banner-ads/active/small")
+      .then((res) => res.json())
+      .then((data) => {
+        if (
+          data &&
+          data.data &&
+          Array.isArray(data.data) &&
+          data.data.length > 0
+        ) {
+          const orderedAds = [...data.data];
+          setAds(orderedAds);
+
+          const total = orderedAds.length;
+          let savedTop = parseInt(
+            localStorage.getItem(SLOT_KEYS.TOP_RIGHT) ?? "0",
+            10
+          );
+          let savedBottom = parseInt(
+            localStorage.getItem(SLOT_KEYS.BOTTOM_RIGHT) ?? "1",
+            10
+          );
+
+          if (isNaN(savedTop) || savedTop < 0 || savedTop >= total) {
+            savedTop = 0;
+          }
+          if (isNaN(savedBottom) || savedBottom < 0 || savedBottom >= total) {
+            savedBottom = total > 1 ? 1 : 0;
+          }
+
+          if (savedTop === savedBottom && total > 1) {
+            savedBottom = getNextIndex(savedTop, total);
+          }
+
+          setTopRightIndex(savedTop);
+          setBottomRightIndex(savedBottom);
+        }
+      })
+      .catch((err) => {
+        console.error("Error fetching job details ads:", err);
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, token]);
+
+  // Rotate ad index on next refresh after a close
+  useEffect(() => {
+    if (!ads.length) return;
+    const total = ads.length;
+
+    if (topRightClosed) {
+      const nextTop = getNextIndex(topRightIndex, total);
+      localStorage.setItem(SLOT_KEYS.TOP_RIGHT, String(nextTop));
+    }
+
+    if (bottomRightClosed) {
+      const nextBottom = getNextIndex(bottomRightIndex, total);
+      localStorage.setItem(SLOT_KEYS.BOTTOM_RIGHT, String(nextBottom));
+    }
+  }, [topRightClosed, bottomRightClosed, topRightIndex, bottomRightIndex, ads]);
+
+  const topRightAd = ads.length ? ads[topRightIndex % ads.length] : null;
+  const bottomRightAd = ads.length ? ads[bottomRightIndex % ads.length] : null;
 
   if (loading || !job)
     return (
@@ -237,6 +324,24 @@ export default function JobDetails() {
   return (
     <>
       <div className="flex h-screen bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden">
+        {/* Ads like Events/Jobs list/LocalNews */}
+        {topRightAd && !topRightClosed && (
+          <SmallAdd
+            ad={topRightAd}
+            position="top-right"
+            open={true}
+            onClose={() => setTopRightClosed(true)}
+          />
+        )}
+        {bottomRightAd && !bottomRightClosed && (
+          <SmallAdd
+            ad={bottomRightAd}
+            position="bottom-right"
+            open={true}
+            onClose={() => setBottomRightClosed(true)}
+          />
+        )}
+
         <main className="flex-1 overflow-y-auto p-4 md:p-6 relative">
           <motion.button
             whileHover={{ scale: 1.05 }}
@@ -277,10 +382,14 @@ export default function JobDetails() {
                 )}
               </div>
             )}
+
             {/* Responsive Job Info */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4 text-gray-700">
               <div className="flex flex-row items-center gap-3 order-1">
-                <Building2 size={24} className="text-green-600 flex-shrink-0" />
+                <Building2
+                  size={24}
+                  className="text-green-600 flex-shrink-0"
+                />
                 <div>
                   <div className="font-semibold text-gray-800 text-base sm:text-lg">
                     {job.company}
@@ -295,13 +404,19 @@ export default function JobDetails() {
                 </div>
               </div>
               <div className="flex items-center gap-1 text-sm text-gray-500 order-2 sm:order-3 mt-1 sm:mt-0">
-                <MapPin size={16} className="text-green-600 flex-shrink-0" />
+                <MapPin
+                  size={16}
+                  className="text-green-600 flex-shrink-0"
+                />
                 {job.location || "Unknown Location"}
               </div>
             </div>
             {job.salary && (
               <div className="flex items-center gap-2 text-sm text-emerald-700 font-semibold mt-1">
-                <DollarSign size={16} className="text-green-600" />
+                <DollarSign
+                  size={16}
+                  className="text-green-600"
+                />
                 {job.salary}
               </div>
             )}
@@ -392,7 +507,9 @@ export default function JobDetails() {
                         <div
                           className="w-10 h-10 bg-green-100 text-green-700 flex items-center justify-center rounded-full font-bold text-lg shadow-sm flex-shrink-0"
                           style={{
-                            display: c.author?.profileImageUrl ? "none" : "flex",
+                            display: c.author?.profileImageUrl
+                              ? "none"
+                              : "flex",
                           }}
                         >
                           {(c.author?.firstName?.[0] || "U").toUpperCase()}
@@ -406,7 +523,9 @@ export default function JobDetails() {
                                   : "Anonymous"}
                               </h4>
                               <span className="text-xs text-gray-500 italic">
-                                {new Date(c.createdAt).toLocaleDateString("en-GB", {
+                                {new Date(
+                                  c.createdAt
+                                ).toLocaleDateString("en-GB", {
                                   day: "2-digit",
                                   month: "short",
                                   year: "numeric",
@@ -415,32 +534,37 @@ export default function JobDetails() {
                             </div>
 
                             {/* Action Buttons */}
-                            {currentUser && (canEditComment(c) || canDeleteComment(c)) && (
-                              <div className="flex items-center gap-2">
-                                {canEditComment(c) && editingCommentId !== c.id && (
-                                  <motion.button
-                                    whileHover={{ scale: 1.1 }}
-                                    whileTap={{ scale: 0.95 }}
-                                    onClick={() => handleStartEdit(c)}
-                                    className="text-blue-600 hover:text-blue-700 p-1.5 rounded-lg hover:bg-blue-50 transition"
-                                    title="Edit comment"
-                                  >
-                                    <Edit2 size={16} />
-                                  </motion.button>
-                                )}
-                                {canDeleteComment(c) && editingCommentId !== c.id && (
-                                  <motion.button
-                                    whileHover={{ scale: 1.1 }}
-                                    whileTap={{ scale: 0.95 }}
-                                    onClick={() => handleOpenDeleteModal(c.id)}
-                                    className="text-red-600 hover:text-red-700 p-1.5 rounded-lg hover:bg-red-50 transition"
-                                    title="Delete comment"
-                                  >
-                                    <Trash2 size={16} />
-                                  </motion.button>
-                                )}
-                              </div>
-                            )}
+                            {currentUser &&
+                              (canEditComment(c) || canDeleteComment(c)) && (
+                                <div className="flex items-center gap-2">
+                                  {canEditComment(c) &&
+                                    editingCommentId !== c.id && (
+                                      <motion.button
+                                        whileHover={{ scale: 1.1 }}
+                                        whileTap={{ scale: 0.95 }}
+                                        onClick={() => handleStartEdit(c)}
+                                        className="text-blue-600 hover:text-blue-700 p-1.5 rounded-lg hover:bg-blue-50 transition"
+                                        title="Edit comment"
+                                      >
+                                        <Edit2 size={16} />
+                                      </motion.button>
+                                    )}
+                                  {canDeleteComment(c) &&
+                                    editingCommentId !== c.id && (
+                                      <motion.button
+                                        whileHover={{ scale: 1.1 }}
+                                        whileTap={{ scale: 0.95 }}
+                                        onClick={() =>
+                                          handleOpenDeleteModal(c.id)
+                                        }
+                                        className="text-red-600 hover:text-red-700 p-1.5 rounded-lg hover:bg-red-50 transition"
+                                        title="Delete comment"
+                                      >
+                                        <Trash2 size={16} />
+                                      </motion.button>
+                                    )}
+                                </div>
+                              )}
                           </div>
 
                           {/* Edit Mode */}
@@ -448,7 +572,9 @@ export default function JobDetails() {
                             <div className="mt-2 space-y-2">
                               <textarea
                                 value={editCommentText}
-                                onChange={(e) => setEditCommentText(e.target.value)}
+                                onChange={(e) =>
+                                  setEditCommentText(e.target.value)
+                                }
                                 className="w-full border border-gray-300 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
                                 rows="3"
                               />
@@ -491,6 +617,7 @@ export default function JobDetails() {
             </div>
           </motion.div>
         </main>
+
         <AnimatePresence>
           {isFullscreen && job.imageUrls?.length > 0 && (
             <motion.div
@@ -553,7 +680,8 @@ export default function JobDetails() {
                   Delete Comment
                 </h3>
                 <p className="text-gray-600 mb-6">
-                  Are you sure you want to delete this comment? This action cannot be undone.
+                  Are you sure you want to delete this comment? This action
+                  cannot be undone.
                 </p>
                 <div className="flex gap-3 justify-end">
                   <motion.button
