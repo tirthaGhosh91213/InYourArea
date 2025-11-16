@@ -16,8 +16,8 @@ export default function LargeAd({ ad, onClose }) {
       className="relative group rounded-2xl overflow-hidden cursor-pointer border border-gray-200 bg-black/5 hover:shadow-2xl transition-shadow duration-300"
       onClick={handleClick}
     >
-      {/* Background image fills entire card */}
-      <div className="relative w-full h-64 sm:h-72 md:h-80">
+      {/* Background image fills entire card area */}
+      <div className="relative w-full h-64 sm:h-72 md:h-96">
         <img
           src={ad.bannerUrl}
           alt={ad.title}
