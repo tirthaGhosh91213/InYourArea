@@ -89,7 +89,7 @@ export default function Footer() {
               className="underline cursor-pointer transition hover:text-green-900"
               onClick={handleMerakiClick}
               tabIndex={0}
-            >UlMIND Private Limited</span>
+            >ULMiND</span>
           </span>
         </div>
       </div>
@@ -149,7 +149,7 @@ export default function Footer() {
           {/* Company Socials */}
           <div className="w-full">
             <h2 className="font-semibold text-green-700 mb-2 text-base text-center lg:text-right animate-fade-in">
-              UlMIND Private Limited Media Links
+              ULMiND Media Links
             </h2>
             <div className="flex justify-center lg:justify-end gap-3 mb-2 animate-pop-in">
               <a href={companyLinks.linkedin} target="_blank" rel="noopener" title="LinkedIn" className="hover:scale-110 transition"><FaLinkedin size={20} /></a>
@@ -231,7 +231,7 @@ export default function Footer() {
             onClick={handleMerakiClick}
             tabIndex={0}
           >
-            UlMIND Private Limited
+          ULMiND
           </span>
         </div>
       </div>

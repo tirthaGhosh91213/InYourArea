@@ -265,7 +265,7 @@ export default function Sidebar({ sidebarOpen, onClose }) {
                     rel="noopener noreferrer"
                     className="text-green-600 font-bold underline hover:text-green-800 transition"
                   >
-                    Ulmind
+                    ULMiND
                   </a>
                 </p>
               </div>
