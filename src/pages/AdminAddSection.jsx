@@ -217,7 +217,7 @@ export default function AdminAddSection() {
       {/* Navbar */}
       <nav className="flex items-center justify-between px-4 sm:px-6 py-4 bg-white border-b border-blue-100 shadow sticky top-0 z-30">
         <div className="text-2xl md:text-3xl font-black text-blue-800 flex items-center gap-2 drop-shadow">
-          Ads Admin Panel
+          Ads 
         </div>
         <div className="flex gap-2 sm:gap-3 items-center">
           <motion.button

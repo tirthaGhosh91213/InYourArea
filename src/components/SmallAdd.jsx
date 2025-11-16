@@ -56,7 +56,7 @@ export default function SmallAdd({
           />
           <div className="absolute bottom-0 left-0 w-full py-1 px-2 flex items-end bg-gradient-to-t from-black/85 via-black/55 to-transparent">
             <span className="w-full text-xs font-bold text-white truncate drop-shadow">
-              {ad.title}
+              Ad:
             </span>
           </div>
         </div>

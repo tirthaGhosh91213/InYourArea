@@ -1,20 +1,21 @@
 // src/components/FeatureRailSmall.jsx
 
-import React from "react";
+import React, { useState, useRef } from "react";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import img1 from "../assets/locanewsPost.png";
 import img2 from "../assets/img2.png";
 import img3 from "../assets/jobPostmain.png";
 import img4 from "../assets/communityPost.png";
 
 const ACCENT = {
-  soft: "#f6f8fa",           // updated to match bg
+  soft: "#f6f8fa", // updated to match bg
   deep: "#0ea77a",
   text: "#193c3a",
   shadow: "0 8px 32px rgba(14,167,122,0.12)",
   border: "#e4e7ea",
   gradient: "linear-gradient(95deg, #ffffff 75%, #f4f6f8 100%)",
-  grayBg: "#f4f6f8",         // use as main background
+  grayBg: "#f4f6f8", // use as main background
 };
 
 const features = [
@@ -44,15 +45,16 @@ const features = [
   },
 ];
 
-function FeatureCard({ icon, title, text, img, flip }) {
+function FeatureCard({ icon, title, text, img, flip, onClick }) {
   return (
     <motion.section
       initial={{ opacity: 0, y: 50 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.8 }}
       transition={{ duration: 0.8, ease: "easeOut" }}
-      className={`flex flex-col md:flex-row ${flip ? "md:flex-row-reverse" : ""} 
-        items-center gap-8 md:gap-16 bg-white rounded-3xl p-6 md:p-12 shadow-lg`}
+      className={`flex flex-col md:flex-row ${
+        flip ? "md:flex-row-reverse" : ""
+      } items-center gap-8 md:gap-16 bg-white rounded-3xl p-6 md:p-12 shadow-lg cursor-pointer`}
       style={{
         boxShadow: ACCENT.shadow,
         border: `1.5px solid ${ACCENT.border}`,
@@ -60,6 +62,7 @@ function FeatureCard({ icon, title, text, img, flip }) {
         marginBottom: "2.6rem",
         background: ACCENT.gradient,
       }}
+      onClick={onClick}
     >
       <motion.div
         className="w-full md:w-2/5 flex justify-center items-center"
@@ -115,11 +118,61 @@ function FeatureCard({ icon, title, text, img, flip }) {
 }
 
 export default function FeatureRailSmall() {
+  const navigate = useNavigate();
+  const [showDistrictPopup, setShowDistrictPopup] = useState(false);
+  const topRef = useRef(null);
+
+  const handleFeatureClick = (title) => {
+    if (title === "Community") {
+      navigate("/community");
+      return;
+    }
+    if (title === "Jobs") {
+      navigate("/jobs");
+      return;
+    }
+    if (title === "Events") {
+      navigate("/events");
+      return;
+    }
+    if (title === "Local News") {
+      // Scroll to top
+      if (topRef.current) {
+        topRef.current.scrollIntoView({ behavior: "smooth" });
+      } else {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+      // Show popup
+      setShowDistrictPopup(true);
+    }
+  };
+
   return (
     <main
-      className="w-full min-h-screen flex flex-col items-center justify-center py-6 px-3 md:px-0"
+      ref={topRef}
+      className="w-full min-h-screen flex flex-col items-center justify-center py-6 px-3 md:px-0 relative"
       style={{ background: ACCENT.grayBg }}
     >
+      {/* Simple popup / modal */}
+      {showDistrictPopup && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-2xl shadow-xl px-6 py-5 md:px-8 md:py-6 max-w-sm w-[90%]">
+            <h3 className="text-xl font-bold mb-3 text-[#193c3a] text-center">
+              select a district
+            </h3>
+            <p className="text-sm text-[#4b5a57] text-center mb-4">
+              Please select a district to see local news tailored to your area.
+            </p>
+            <button
+              onClick={() => setShowDistrictPopup(false)}
+              className="mt-1 w-full rounded-xl bg-[#0ea77a] text-white font-semibold py-2.5 text-sm shadow-md hover:bg-[#0c9068] transition-colors"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
       <header className="mb-8 md:mt-7 flex flex-col items-center">
         <motion.h1
           className="text-4xl md:text-5xl font-extrabold mb-2 tracking-tight"
@@ -142,9 +195,15 @@ export default function FeatureRailSmall() {
           Your home for news, jobs, connection—and belonging.
         </motion.p>
       </header>
+
       <section className="w-full max-w-4xl">
         {features.map((f, i) => (
-          <FeatureCard {...f} flip={i % 2 === 1} key={f.title} />
+          <FeatureCard
+            {...f}
+            flip={i % 2 === 1}
+            key={f.title}
+            onClick={() => handleFeatureClick(f.title)}
+          />
         ))}
       </section>
     </main>
