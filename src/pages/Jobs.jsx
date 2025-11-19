@@ -1,15 +1,8 @@
-// src/pages/Jobs.jsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Building2,
-  MapPin,
-  Search as SearchIcon,
-  DollarSign,
-  Calendar,
-  MessageCircle,
-  Send,
-  UserCircle,
+  Building2, MapPin, Search as SearchIcon, DollarSign,
+  Calendar, MessageCircle, Send, UserCircle,
 } from "lucide-react";
 import Sidebar from "../components/SideBar";
 import RightSidebar from "../components/RightSidebar";
@@ -35,10 +28,11 @@ function shuffle(array) {
   return arr;
 }
 
-// Keys in localStorage for each slot (separate from Events keys)
 const SLOT_KEYS = {
   TOP_RIGHT: "JOBS_AD_INDEX_TOP_RIGHT",
   BOTTOM_RIGHT: "JOBS_AD_INDEX_BOTTOM_RIGHT",
+  LARGE_AD_1: "JOBS_LARGE_AD_INDEX_1",
+  LARGE_AD_2: "JOBS_LARGE_AD_INDEX_2"
 };
 
 export default function Jobs() {
@@ -47,22 +41,21 @@ export default function Jobs() {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Small ads (same behavior pattern as Events page)
   const [ads, setAds] = useState([]);
   const [topRightIndex, setTopRightIndex] = useState(0);
   const [bottomRightIndex, setBottomRightIndex] = useState(1);
   const [topRightClosed, setTopRightClosed] = useState(false);
   const [bottomRightClosed, setBottomRightClosed] = useState(false);
 
-  // Large banner ads (for interleaving in grid)
   const [largeAds, setLargeAds] = useState([]);
+  const [largeAdIndexes, setLargeAdIndexes] = useState([0, 1]);
+  const timerRef = useRef();
 
+  // --- Fetch JOBS, ADS, LARGE ADS ---
   const fetchJobs = async () => {
     try {
       setLoading(true);
-      const res = await axios.get(
-        "https://api.jharkhandbiharupdates.com/api/v1/jobs"
-      );
+      const res = await axios.get("https://api.jharkhandbiharupdate/api/v1/jobs");
       if (res.data.success) {
         setJobs(res.data.data.filter((job) => job.status === "APPROVED"));
       }
@@ -73,65 +66,46 @@ export default function Jobs() {
     }
   };
 
-  // Fetch jobs, small ads, and large ads
   useEffect(() => {
     fetchJobs();
 
-    // Small ads (top-right / bottom-right)
-    fetch(
-      "https://api.jharkhandbiharupdates.com/api/v1/banner-ads/active/small"
-    )
+    fetch("https://api.jharkhandbiharupdate/api/v1/banner-ads/active/small")
       .then((res) => res.json())
       .then((data) => {
-        if (
-          data &&
-          data.data &&
-          Array.isArray(data.data) &&
-          data.data.length > 0
-        ) {
-          // Keep original order a,b,c,d,e,f (as created in backend)
+        if (data && data.data && Array.isArray(data.data) && data.data.length > 0) {
           const orderedAds = [...data.data];
           setAds(orderedAds);
 
           const total = orderedAds.length;
+          let savedTop = parseInt(localStorage.getItem(SLOT_KEYS.TOP_RIGHT) ?? "0", 10);
+          let savedBottom = parseInt(localStorage.getItem(SLOT_KEYS.BOTTOM_RIGHT) ?? "1", 10);
 
-          // Load saved indexes from localStorage (jobs-specific keys)
-          let savedTop = parseInt(
-            localStorage.getItem(SLOT_KEYS.TOP_RIGHT) ?? "0",
-            10
-          );
-          let savedBottom = parseInt(
-            localStorage.getItem(SLOT_KEYS.BOTTOM_RIGHT) ?? "1",
-            10
-          );
-
-          // Normalize
-          if (isNaN(savedTop) || savedTop < 0 || savedTop >= total) {
-            savedTop = 0;
-          }
-          if (isNaN(savedBottom) || savedBottom < 0 || savedBottom >= total) {
-            savedBottom = total > 1 ? 1 : 0;
-          }
-
-          // Ensure different ads for top and bottom if possible
-          if (savedTop === savedBottom && total > 1) {
-            savedBottom = getNextIndex(savedTop, total);
-          }
+          if (isNaN(savedTop) || savedTop < 0 || savedTop >= total) savedTop = 0;
+          if (isNaN(savedBottom) || savedBottom < 0 || savedBottom >= total) savedBottom = total > 1 ? 1 : 0;
+          if (savedTop === savedBottom && total > 1) savedBottom = getNextIndex(savedTop, total);
 
           setTopRightIndex(savedTop);
           setBottomRightIndex(savedBottom);
         }
       })
-      .catch((err) => {
-        console.error("Error fetching jobs small ads:", err);
-      });
+      .catch((err) => console.error("Error fetching jobs small ads:", err));
 
-    // Large ads (for grid, shuffled every page load)
-    fetch("https://api.jharkhandbiharupdates.com/api/v1/banner-ads/active/large")
+    fetch("https://api.jharkhandbiharupdate/api/v1/banner-ads/active/large")
       .then((r) => r.json())
       .then((data) => {
         if (data && Array.isArray(data.data)) {
-          setLargeAds(shuffle(data.data));
+          const shuffled = shuffle(data.data);
+          setLargeAds(shuffled);
+
+          let largeAdIdx1 = parseInt(localStorage.getItem(SLOT_KEYS.LARGE_AD_1) ?? "0", 10);
+          let largeAdIdx2 = parseInt(localStorage.getItem(SLOT_KEYS.LARGE_AD_2) ?? "1", 10);
+          const total = shuffled.length;
+
+          if (isNaN(largeAdIdx1) || largeAdIdx1 < 0 || largeAdIdx1 >= total) largeAdIdx1 = 0;
+          if (isNaN(largeAdIdx2) || largeAdIdx2 < 0 || largeAdIdx2 >= total) largeAdIdx2 = total > 1 ? 1 : 0;
+          if (largeAdIdx1 === largeAdIdx2 && total > 1) largeAdIdx2 = getNextIndex(largeAdIdx1, total);
+
+          setLargeAdIndexes([largeAdIdx1, largeAdIdx2]);
         }
       })
       .catch((err) => {
@@ -139,28 +113,54 @@ export default function Jobs() {
       });
   }, []);
 
-  // When a slot is closed, update localStorage so that on next refresh
-  // it moves to the next ad (same pattern as Events page)
   useEffect(() => {
     if (!ads.length) return;
     const total = ads.length;
-
     if (topRightClosed) {
       const nextTop = getNextIndex(topRightIndex, total);
       localStorage.setItem(SLOT_KEYS.TOP_RIGHT, String(nextTop));
     }
-
     if (bottomRightClosed) {
       const nextBottom = getNextIndex(bottomRightIndex, total);
       localStorage.setItem(SLOT_KEYS.BOTTOM_RIGHT, String(nextBottom));
     }
   }, [topRightClosed, bottomRightClosed, topRightIndex, bottomRightIndex, ads]);
 
+  useEffect(() => {
+    if (largeAds.length === 0) return;
+    if (timerRef.current) clearInterval(timerRef.current);
+
+    timerRef.current = setInterval(() => {
+      setLargeAdIndexes(([idx1, idx2]) => {
+        const total = largeAds.length;
+        let nextIdx1 = getNextIndex(idx1, total);
+        let nextIdx2 = getNextIndex(idx2, total);
+        if (nextIdx1 === nextIdx2 && total > 1) nextIdx2 = getNextIndex(nextIdx1, total);
+
+        localStorage.setItem(SLOT_KEYS.LARGE_AD_1, String(nextIdx1));
+        localStorage.setItem(SLOT_KEYS.LARGE_AD_2, String(nextIdx2));
+        return [nextIdx1, nextIdx2];
+      });
+    }, 10000); // 10 seconds
+
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [largeAds]);
+
   const filteredJobs = jobs.filter((job) =>
     [job.title, job.company, job.location].some((field) =>
       field?.toLowerCase().includes(searchTerm.toLowerCase())
     )
   );
+
+  // Split jobs evenly between two columns
+  const leftJobs = [];
+  const centerJobs = [];
+  filteredJobs.forEach((job, idx) => {
+    if (idx % 2 === 0) leftJobs.push(job);
+    else centerJobs.push(job);
+  });
 
   const formatDate = (date) =>
     new Date(date).toLocaleString("en-GB", {
@@ -172,26 +172,6 @@ export default function Jobs() {
   const topRightAd = ads.length ? ads[topRightIndex % ads.length] : null;
   const bottomRightAd = ads.length ? ads[bottomRightIndex % ads.length] : null;
 
-  // Interleave large ads and jobs in the grid (ad -> job -> job -> ad ...)
-  function buildInterleavedGrid(jobsArr, adsArr) {
-    const result = [];
-    let jobIdx = 0,
-      adIdx = 0;
-    while (jobIdx < jobsArr.length || adIdx < adsArr.length) {
-      if (adIdx < adsArr.length) {
-        result.push({ type: "ad", data: adsArr[adIdx] });
-        adIdx++;
-      }
-      for (let k = 0; k < 2 && jobIdx < jobsArr.length; k++) {
-        result.push({ type: "job", data: jobsArr[jobIdx] });
-        jobIdx++;
-      }
-    }
-    return result;
-  }
-
-  const gridItems = buildInterleavedGrid(filteredJobs, largeAds);
-
   return (
     <>
       {/* Top Navbar */}
@@ -199,7 +179,7 @@ export default function Jobs() {
         <RightSidebar refreshJobs={fetchJobs} />
       </div>
 
-      {/* Small Ads - same layout/behavior as Events page */}
+      {/* Small Ads */}
       {topRightAd && !topRightClosed && (
         <AnimatePresence>
           <SmallAdd
@@ -210,7 +190,6 @@ export default function Jobs() {
           />
         </AnimatePresence>
       )}
-
       {bottomRightAd && !bottomRightClosed && (
         <AnimatePresence>
           <SmallAdd
@@ -223,27 +202,26 @@ export default function Jobs() {
       )}
 
       {/* Page Layout */}
-      <div className="flex h-screen bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden pt-16">
+      <div className="flex min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 pt-16">
         {/* Left Sidebar */}
         <div className="hidden lg:block w-64 bg-white shadow-md border-r border-gray-200">
           <Sidebar />
         </div>
-
         {/* Main Content */}
-        <main className="flex-1 overflow-y-auto p-6 relative">
-          {/* Header */}
+        <main className="flex-1 flex flex-col items-center px-2 pt-6">
+          {/* Top Green Heading + Search (unchanged) */}
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ type: "spring", stiffness: 80 }}
-            className="bg-emerald-700 text-white rounded-xl p-6 mb-6 shadow-lg"
+            className="bg-emerald-700 sticky top-0 z-20 text-white rounded-xl p-6 mb-6 shadow-lg w-full max-w-7xl"
           >
             <h2 className="text-2xl font-semibold text-center mb-4">
               Job Board
             </h2>
-            <div className="flex justify-center">
-              <div className="relative w-full sm:w-96">
-                <div className="absolute inset-y-0 left-2 flex items-center justify-center pointer-events-none">
+            <div className="flex  justify-center">
+              <div className=" relative w-full sm:w-96">
+                <div className=" inset-y-0 left-2 flex items-center justify-center pointer-events-none">
                   <SearchIcon size={18} className="text-emerald-700" />
                 </div>
                 <input
@@ -257,201 +235,155 @@ export default function Jobs() {
             </div>
           </motion.div>
 
-          {/* Job + Large Ads Grid */}
-          {loading ? (
-            <div className="flex justify-center py-12 text-gray-600">
-              Loading...
-            </div>
-          ) : gridItems.length > 0 ? (
-            <AnimatePresence>
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 pb-20">
-                {gridItems.map((item, idx) =>
-                  item.type === "ad" ? (
-                    <LargeAd
-                      key={"ad-" + (item.data.id ?? idx)}
-                      ad={item.data}
-                      onClose={() => {
-                        setLargeAds((prev) =>
-                          prev.filter((a) => a.id !== item.data.id)
-                        );
+          {/* Main 3-column grid */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-5xl">
+            {/* First Column: Jobs (even indexes) */}
+            <div className="flex flex-col gap-6">
+              {leftJobs.length === 0 && !loading && (
+                <div className="text-center text-gray-500 mt-12">No jobs found.</div>
+              )}
+              {leftJobs.map((job, idx) => (
+                <motion.div
+                  key={job.id}
+                  layout
+                  initial={{ opacity: 0, y: 40 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{
+                    delay: idx * 0.05,
+                    type: "spring",
+                    stiffness: 100,
+                  }}
+                  whileHover={{
+                    scale: 1.03,
+                    boxShadow: "0 25px 40px rgba(52,211,153,0.25)",
+                  }}
+                  className="relative rounded-2xl overflow-hidden p-5 flex flex-col justify-between bg-white shadow-md border border-green-100 cursor-pointer hover:bg-gradient-to-r hover:from-emerald-100"
+                  onClick={() => navigate(`/jobs/${job.id}`)}
+                >
+                  {job.imageUrls?.length > 0 && (
+                    <div className="relative w-full h-48 mb-4 rounded-xl overflow-hidden">
+                      <img
+                        src={job.imageUrls[job.currentImageIndex || 0]}
+                        alt={job.title}
+                        className="w-full h-full object-cover rounded-xl"
+                      />
+                    </div>
+                  )}
+                  <div className="mb-3">
+                    <h2 className="pb-5 font-semibold text-gray-800">
+                      {job.title}
+                    </h2>
+                  </div>
+                  <div className="space-y-2 text-gray-700">
+                    <p className="flex items-center gap-2">
+                      <MapPin size={16} className="text-green-700" /> {job.location}
+                    </p>
+                    <p className="flex items-center gap-2">
+                      <DollarSign size={16} className="text-yellow-600" /> {job.salaryRange}
+                    </p>
+                    <p className="flex items-center gap-2">
+                      <Calendar size={16} className="text-blue-600" /> {formatDate(job.applicationDeadline)}
+                    </p>
+                  </div>
+                  <div className="mt-4 flex justify-between items-center border-t pt-3 border-emerald-200">
+                    <motion.button
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        window.open(job.reglink || "", "_blank");
                       }}
-                    />
-                  ) : (
-                    <motion.div
-                      key={item.data.id}
-                      layout
-                      initial={{ opacity: 0, y: 60 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -20 }}
-                      transition={{
-                        delay: idx * 0.05,
-                        type: "spring",
-                        stiffness: 100,
-                      }}
-                      whileHover={{
-                        scale: 1.03,
-                        boxShadow: "0 25px 40px rgba(52,211,153,0.25)",
-                      }}
-                      className="relative rounded-2xl overflow-hidden p-5 flex flex-col justify-between bg-white/90 shadow-md border border-green-100 backdrop-blur transition-all cursor-pointer hover:bg-gradient-to-r hover:from-emerald-100 hover:via-green-50 hover:to-teal-100"
-                      onClick={() => navigate(`/jobs/${item.data.id}`)}
+                      className="flex items-center gap-2 text-green-700 font-semibold hover:text-teal-700 transition"
                     >
-                      {/* Image slider */}
-                      {item.data.imageUrls?.length > 0 && (
-                        <div className="relative w-full h-48 mb-4 rounded-xl overflow-hidden">
-                          <img
-                            src={
-                              item.data.imageUrls[
-                                item.data.currentImageIndex || 0
-                              ]
-                            }
-                            alt={item.data.title}
-                            className="w-full h-full object-cover rounded-xl"
-                          />
-                          {item.data.imageUrls.length > 1 && (
-                            <>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setJobs((prev) =>
-                                    prev.map((j) =>
-                                      j.id === item.data.id
-                                        ? {
-                                            ...j,
-                                            currentImageIndex:
-                                              (j.currentImageIndex || 0) - 1 <
-                                              0
-                                                ? j.imageUrls.length - 1
-                                                : (j.currentImageIndex || 0) -
-                                                  1,
-                                          }
-                                        : j
-                                    )
-                                  );
-                                }}
-                                className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black/30 text-white p-1 rounded-full hover:bg-black/50 transition"
-                              >
-                                &#8592;
-                              </button>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setJobs((prev) =>
-                                    prev.map((j) =>
-                                      j.id === item.data.id
-                                        ? {
-                                            ...j,
-                                            currentImageIndex:
-                                              (j.currentImageIndex || 0) + 1 >=
-                                              j.imageUrls.length
-                                                ? 0
-                                                : (j.currentImageIndex || 0) +
-                                                  1,
-                                          }
-                                        : j
-                                    )
-                                  );
-                                }}
-                                className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black/30 text-white p-1 rounded-full hover:bg-black/50 transition"
-                              >
-                                &#8594;
-                              </button>
-                            </>
-                          )}
-                        </div>
-                      )}
-
-                      {item.data.author && (
-                        <div className="mt-2 mb-5 flex items-center gap-2 text-gray-500 ">
-                          {item.data.author.profileImageUrl ? (
-                            <img
-                              src={item.data.author.profileImageUrl}
-                              alt={`${item.data.author.firstName} ${item.data.author.lastName}`}
-                              className="w-6 h-6 rounded-full object-cover border border-green-300 flex-shrink-0"
-                              onError={(e) => {
-                                e.target.style.display = "none";
-                                e.target.nextSibling.style.display = "block";
-                              }}
-                            />
-                          ) : null}
-                          <UserCircle
-                            size={16}
-                            className="text-green-700 flex-shrink-0"
-                            style={{
-                              display: item.data.author.profileImageUrl
-                                ? "none"
-                                : "block",
-                            }}
-                          />
-                          <span>
-                            Posted by:{" "}
-                            <span className="font-semibold text-gray-700">
-                              {item.data.author.firstName}{" "}
-                              {item.data.author.lastName}
-                            </span>
-                            {item.data.author.role && (
-                              <span className="ml-1 text-emerald-700">
-                                ({item.data.author.role})
-                              </span>
-                            )}
-                          </span>
-                        </div>
-                      )}
-
-                      <div className="mb-3">
-                        <h2 className="pb-5 font-semibold text-gray-800">
-                          {item.data.title}
-                        </h2>
-                        <p className="text-sm text-emerald-700 flex items-center gap-1">
-                          <Building2 size={14} /> {item.data.company}
-                        </p>
-                      </div>
-
-                      <div className="space-y-2 text-gray-700">
-                        <p className="flex items-center gap-2">
-                          <MapPin size={16} className="text-green-700" />{" "}
-                          {item.data.location}
-                        </p>
-                        <p className="flex items-center gap-2">
-                          <DollarSign size={16} className="text-yellow-600" />{" "}
-                          {item.data.salaryRange}
-                        </p>
-                        <p className="flex items-center gap-2">
-                          <Calendar size={16} className="text-blue-600" />{" "}
-                          {formatDate(item.data.applicationDeadline)}
-                        </p>
-                      </div>
-
-                      <div className="mt-4 flex justify-between items-center border-t pt-3 border-emerald-200">
-                        <motion.button
-                          whileHover={{ scale: 1.1 }}
-                          whileTap={{ scale: 0.95 }}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            window.open(item.data.reglink || "", "_blank");
-                          }}
-                          className="flex items-center gap-2 text-green-700 font-semibold hover:text-teal-700 transition"
-                        >
-                          <Send size={18} /> Apply Now
-                        </motion.button>
-                        <motion.div className="flex items-center gap-2 text-gray-500 hover:text-emerald-600 transition">
-                          <MessageCircle size={18} /> Comment
-                        </motion.div>
-                      </div>
+                      <Send size={18} /> Apply Now
+                    </motion.button>
+                    <motion.div className="flex items-center gap-2 text-gray-500 hover:text-emerald-600 transition">
+                      <MessageCircle size={18} /> Comment
                     </motion.div>
-                  )
-                )}
-              </div>
-            </AnimatePresence>
-          ) : (
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="text-center text-gray-500 col-span-full mt-10 text-xl"
-            >
-              No results found for{" "}
-              <span className="font-semibold">"{searchTerm}"</span>
-            </motion.p>
-          )}
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+            {/* Second Column: Jobs (odd indexes) */}
+            <div className="flex flex-col gap-6">
+              {centerJobs.map((job, idx) => (
+                <motion.div
+                  key={job.id}
+                  layout
+                  initial={{ opacity: 0, y: 40 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{
+                    delay: idx * 0.05,
+                    type: "spring",
+                    stiffness: 100,
+                  }}
+                  whileHover={{
+                    scale: 1.03,
+                    boxShadow: "0 25px 40px rgba(52,211,153,0.25)",
+                  }}
+                  className="relative rounded-2xl overflow-hidden p-5 flex flex-col justify-between bg-white shadow-md border border-green-100 cursor-pointer hover:bg-gradient-to-r hover:from-emerald-100"
+                  onClick={() => navigate(`/jobs/${job.id}`)}
+                >
+                  {job.imageUrls?.length > 0 && (
+                    <div className="relative w-full h-48 mb-4 rounded-xl overflow-hidden">
+                      <img
+                        src={job.imageUrls[job.currentImageIndex || 0]}
+                        alt={job.title}
+                        className="w-full h-full object-cover rounded-xl"
+                      />
+                    </div>
+                  )}
+                  <div className="mb-3">
+                    <h2 className="pb-5 font-semibold text-gray-800">
+                      {job.title}
+                    </h2>
+                  </div>
+                  <div className="space-y-2 text-gray-700">
+                    <p className="flex items-center gap-2">
+                      <MapPin size={16} className="text-green-700" /> {job.location}
+                    </p>
+                    <p className="flex items-center gap-2">
+                      <DollarSign size={16} className="text-yellow-600" /> {job.salaryRange}
+                    </p>
+                    <p className="flex items-center gap-2">
+                      <Calendar size={16} className="text-blue-600" /> {formatDate(job.applicationDeadline)}
+                    </p>
+                  </div>
+                  <div className="mt-4 flex justify-between items-center border-t pt-3 border-emerald-200">
+                    <motion.button
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        window.open(job.reglink || "", "_blank");
+                      }}
+                      className="flex items-center gap-2 text-green-700 font-semibold hover:text-teal-700 transition"
+                    >
+                      <Send size={18} /> Apply Now
+                    </motion.button>
+                    <motion.div className="flex items-center gap-2 text-gray-500 hover:text-emerald-600 transition">
+                      <MessageCircle size={18} /> Comment
+                    </motion.div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+            {/* Third Column: Sponsored Ads (Large Ads, stacked) */}
+            <div className="flex flex-col gap-6">
+              {largeAds.length > 0 && largeAdIndexes.map((idx, i) =>
+                largeAds[idx] ? (
+                  <LargeAd
+                    key={"fixed-large-ad-" + i}
+                    ad={largeAds[idx]}
+                    className="rounded-2xl shadow-md border border-green-100"
+                    style={{ height: "250px", minHeight: "250px" }}
+                  />
+                ) : null
+              )}
+            </div>
+          </div>
         </main>
       </div>
     </>

@@ -20,7 +20,7 @@ import {
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 
-const BASE_API = "https://api.jharkhandbiharupdates.com/api/v1";
+const BASE_API = "https://api.jharkhandbiharupdate/api/v1";
 const TABS = [
   { key: "events", label: "Events" },
   { key: "jobs", label: "Jobs" },

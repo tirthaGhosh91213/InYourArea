@@ -11,7 +11,7 @@ export default function Properties() {
 
   useEffect(() => {
     fetch(
-      "https://api.jharkhandbiharupdates.com/api/v1/properties/recent?days=15"
+      "https://api.jharkhandbiharupdate/api/v1/properties/recent?days=15"
     )
       .then((res) => {
         if (!res.ok) {

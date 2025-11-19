@@ -48,7 +48,7 @@ export default function RightSidebar() {
       const token = localStorage.getItem("accessToken");
       if (!token) return;
       const res = await axios.get(
-        "https://api.jharkhandbiharupdates.com/api/v1/notifications/recent?limit=50",
+        "https://api.jharkhandbiharupdate/api/v1/notifications/recent?limit=50",
         { headers: { Authorization: `Bearer ${token}` } }
       );
       const data = res.data?.data || [];

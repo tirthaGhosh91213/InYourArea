@@ -51,7 +51,7 @@ export default function Events() {
     try {
       setLoading(true);
       const res = await axios.get(
-        "https://api.jharkhandbiharupdates.com/api/v1/events"
+        "https://api.jharkhandbiharupdate/api/v1/events"
       );
       setEvents(res.data.data || []);
     } catch (err) {
@@ -63,7 +63,7 @@ export default function Events() {
 
   // Fetch small ads
   useEffect(() => {
-    fetch("https://api.jharkhandbiharupdates.com/api/v1/banner-ads/active/small")
+    fetch("https://api.jharkhandbiharupdate/api/v1/banner-ads/active/small")
       .then((res) => res.json())
       .then((data) => {
         if (
@@ -92,7 +92,7 @@ export default function Events() {
     fetchEvents();
 
     // Fetch large ads once (shuffle every time page renders)
-    fetch("https://api.jharkhandbiharupdates.com/api/v1/banner-ads/active/large")
+    fetch("https://api.jharkhandbiharupdate/api/v1/banner-ads/active/large")
       .then((r) => r.json())
       .then((data) => {
         if (data && Array.isArray(data.data)) {

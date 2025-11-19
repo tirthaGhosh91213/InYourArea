@@ -128,7 +128,7 @@ export default function LocalNewsDetails() {
 
       try {
         const res = await axios.get(
-          "https://api.jharkhandbiharupdates.com/api/v1/user/profile",
+          "https://api.jharkhandbiharupdate/api/v1/user/profile",
           {
             headers: { Authorization: `Bearer ${token}` },
           }
@@ -147,7 +147,7 @@ export default function LocalNewsDetails() {
       try {
         setLoading(true);
         const res = await axios.get(
-          `https://api.jharkhandbiharupdates.com/api/v1/district-news/details/${id}`
+          `https://api.jharkhandbiharupdate/api/v1/district-news/details/${id}`
         );
         if (res.data.success) setNews(res.data.data);
       } catch {
@@ -163,7 +163,7 @@ export default function LocalNewsDetails() {
   const fetchComments = async () => {
     try {
       const res = await axios.get(
-        `https://api.jharkhandbiharupdates.com/api/v1/comments/district-news/${id}`
+        `https://api.jharkhandbiharupdate/api/v1/comments/district-news/${id}`
       );
       if (res.data.success) setComments(res.data.data);
     } catch {
@@ -177,7 +177,7 @@ export default function LocalNewsDetails() {
 
   // Fetch small ads for LocalNewsDetails
   useEffect(() => {
-    fetch("https://api.jharkhandbiharupdates.com/api/v1/banner-ads/active/small")
+    fetch("https://api.jharkhandbiharupdate/api/v1/banner-ads/active/small")
       .then((res) => res.json())
       .then((data) => {
         if (
@@ -251,7 +251,7 @@ export default function LocalNewsDetails() {
     try {
       setPosting(true);
       const res = await axios.post(
-        `https://api.jharkhandbiharupdates.com/api/v1/comments/district-news/${id}`,
+        `https://api.jharkhandbiharupdate/api/v1/comments/district-news/${id}`,
         { content: commentText },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -295,7 +295,7 @@ export default function LocalNewsDetails() {
 
     try {
       const res = await axios.put(
-        `https://api.jharkhandbiharupdates.com/api/v1/comments/${commentId}`,
+        `https://api.jharkhandbiharupdate/api/v1/comments/${commentId}`,
         { content: editCommentText },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -339,7 +339,7 @@ export default function LocalNewsDetails() {
 
     try {
       const res = await axios.delete(
-        `https://api.jharkhandbiharupdates.com/api/v1/comments/${deletingCommentId}`,
+        `https://api.jharkhandbiharupdate/api/v1/comments/${deletingCommentId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 

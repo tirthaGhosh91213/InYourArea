@@ -27,70 +27,18 @@ export default function LocalNews() {
 
   const districts = [
     "----------- Jharkhand -----------",
-    "Bokaro",
-    "Chatra",
-    "Deoghar",
-    "Dhanbad",
-    "Dumka",
-    "East Singhbhum",
-    "Garhwa",
-    "Giridih",
-    "Godda",
-    "Gumla",
-    "Hazaribagh",
-    "Jamtara",
-    "Jamshedpur",
-    "Khunti",
-    "Koderma",
-    "Latehar",
-    "Lohardaga",
-    "Pakur",
-    "Palamu",
-    "Ramgarh",
-    "Ranchi",
-    "Sahibganj",
-    "Seraikela-Kharsawan",
-    "Simdega",
-    "West Singhbhum",
+    "Bokaro", "Chatra", "Deoghar", "Dhanbad", "Dumka", "East Singhbhum",
+    "Garhwa", "Giridih", "Godda", "Gumla", "Hazaribagh", "Jamtara", "Jamshedpur",
+    "Khunti", "Koderma", "Latehar", "Lohardaga", "Pakur", "Palamu", "Ramgarh",
+    "Ranchi", "Sahibganj", "Seraikela-Kharsawan", "Simdega", "West Singhbhum",
     "----------- Bihar -----------",
-    "Araria",
-    "Arwal",
-    "Aurangabad",
-    "Banka",
-    "Begusarai",
-    "Bhagalpur",
-    "Bhojpur",
-    "Buxar",
-    "Darbhanga",
-    "East Champaran (Motihari)",
-    "Gaya",
-    "Gopalganj",
-    "Jamui",
-    "Jehanabad",
-    "Kaimur (Bhabua)",
-    "Katihar",
-    "Khagaria",
-    "Kishanganj",
-    "Lakhisarai",
-    "Madhepura",
-    "Madhubani",
-    "Munger",
-    "Muzaffarpur",
-    "Nalanda",
-    "Nawada",
-    "Patna",
-    "Purnia",
-    "Rohtas",
-    "Saharsa",
-    "Samastipur",
-    "Saran (Chhapra)",
-    "Sheikhpura",
-    "Sheohar",
-    "Sitamarhi",
-    "Siwan",
-    "Supaul",
-    "Vaishali",
-    "West Champaran (Bettiah)",
+    "Araria", "Arwal", "Aurangabad", "Banka", "Begusarai", "Bhagalpur", "Bhojpur",
+    "Buxar", "Darbhanga", "East Champaran (Motihari)", "Gaya", "Gopalganj",
+    "Jamui", "Jehanabad", "Kaimur (Bhabua)", "Katihar", "Khagaria", "Kishanganj",
+    "Lakhisarai", "Madhepura", "Madhubani", "Munger", "Muzaffarpur", "Nalanda",
+    "Nawada", "Patna", "Purnia", "Rohtas", "Saharsa", "Samastipur",
+    "Saran (Chhapra)", "Sheikhpura", "Sheohar", "Sitamarhi", "Siwan", "Supaul",
+    "Vaishali", "West Champaran (Bettiah)",
   ];
 
   // Prevent heading as selected value
@@ -144,7 +92,7 @@ export default function LocalNews() {
       setError("");
       try {
         const res = await axios.get(
-          `https://api.jharkhandbiharupdates.com/api/v1/district-news/${district}`,
+          `https://api.jharkhandbiharupdate/api/v1/district-news/${district}`,
           token ? { headers: { Authorization: `Bearer ${token}` } } : {}
         );
         if (res.data.success) {
@@ -162,38 +110,20 @@ export default function LocalNews() {
 
   // Fetch small ads for Local News
   useEffect(() => {
-    fetch("https://api.jharkhandbiharupdates.com/api/v1/banner-ads/active/small")
+    fetch("https://api.jharkhandbiharupdate/api/v1/banner-ads/active/small")
       .then((res) => res.json())
       .then((data) => {
-        if (
-          data &&
-          data.data &&
-          Array.isArray(data.data) &&
-          data.data.length > 0
-        ) {
+        if (data && data.data && Array.isArray(data.data) && data.data.length > 0) {
           const orderedAds = [...data.data];
           setAds(orderedAds);
 
           const total = orderedAds.length;
-          let savedTop = parseInt(
-            localStorage.getItem(SLOT_KEYS.TOP_RIGHT) ?? "0",
-            10
-          );
-          let savedBottom = parseInt(
-            localStorage.getItem(SLOT_KEYS.BOTTOM_RIGHT) ?? "1",
-            10
-          );
+          let savedTop = parseInt(localStorage.getItem(SLOT_KEYS.TOP_RIGHT) ?? "0", 10);
+          let savedBottom = parseInt(localStorage.getItem(SLOT_KEYS.BOTTOM_RIGHT) ?? "1", 10);
 
-          if (isNaN(savedTop) || savedTop < 0 || savedTop >= total) {
-            savedTop = 0;
-          }
-          if (isNaN(savedBottom) || savedBottom < 0 || savedBottom >= total) {
-            savedBottom = total > 1 ? 1 : 0;
-          }
-
-          if (savedTop === savedBottom && total > 1) {
-            savedBottom = getNextIndex(savedTop, total);
-          }
+          if (isNaN(savedTop) || savedTop < 0 || savedTop >= total) savedTop = 0;
+          if (isNaN(savedBottom) || savedBottom < 0 || savedBottom >= total) savedBottom = total > 1 ? 1 : 0;
+          if (savedTop === savedBottom && total > 1) savedBottom = getNextIndex(savedTop, total);
 
           setTopRightIndex(savedTop);
           setBottomRightIndex(savedBottom);
@@ -206,7 +136,7 @@ export default function LocalNews() {
 
   // Fetch large ads for interleaving (same pattern as Events/Jobs/Community)
   useEffect(() => {
-    fetch("https://api.jharkhandbiharupdates.com/api/v1/banner-ads/active/large")
+    fetch("https://api.jharkhandbiharupdate/api/v1/banner-ads/active/large")
       .then((r) => r.json())
       .then((data) => {
         if (data && Array.isArray(data.data)) {
@@ -245,7 +175,7 @@ export default function LocalNews() {
   const handleNewsClick = (id) => navigate(`/localnews/details/${id}`);
   const handleCommentClick = (id) => navigate(`/localnews/details/${id}`);
 
-  // Desktop layout logic (kept as-is for content grouping)
+  // Desktop layout logic
   const getDesktopNewsLayout = () => {
     const bigTop = newsList.slice(0, 2);
     const smallBoxes = newsList.slice(2, 4);
@@ -254,7 +184,6 @@ export default function LocalNews() {
   };
   const { bigTop, smallBoxes, bigMore } = getDesktopNewsLayout();
 
-  // Helper to render first media item (image or video)
   const renderMedia = (url, alt, className) => {
     const isVideo =
       url &&
@@ -269,39 +198,42 @@ export default function LocalNews() {
   const topRightAd = ads.length ? ads[topRightIndex % ads.length] : null;
   const bottomRightAd = ads.length ? ads[bottomRightIndex % ads.length] : null;
 
-  // Interleaved list for MOBILE (ad -> news -> news -> ad ...)
+  // Mobile interleaved: news then ads
   function buildInterleavedList(newsArr, adsArr) {
     const result = [];
     let newsIdx = 0;
     let adIdx = 0;
+    let initialNews = 2;
+    for (let i = 0; i < initialNews && newsIdx < newsArr.length; i++) {
+      result.push({ type: "news", data: newsArr[newsIdx++] });
+    }
     while (newsIdx < newsArr.length || adIdx < adsArr.length) {
       if (adIdx < adsArr.length) {
-        result.push({ type: "ad", data: adsArr[adIdx] });
-        adIdx++;
+        result.push({ type: "ad", data: adsArr[adIdx++] });
       }
       for (let k = 0; k < 2 && newsIdx < newsArr.length; k++) {
-        result.push({ type: "news", data: newsArr[newsIdx] });
-        newsIdx++;
+        result.push({ type: "news", data: newsArr[newsIdx++] });
       }
     }
     return result;
   }
-
   const mobileItems = buildInterleavedList(newsList, largeAds);
+
+  // Choose ads for desktop columns
+  const desktopLargeBoxAds = largeAds.slice(0, 2);
+  const desktopSmallBoxAds = largeAds.slice(2, 4);
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      {/* Left Sidebar */}
       <div className="hidden lg:block w-64 fixed h-full top-0 left-0 z-20">
         <Sidebar />
       </div>
       <div className="flex-1 flex flex-col lg:ml-64">
-        {/* Header bar */}
         <div className="fixed top-0 w-full z-30">
           <RightSidebar />
         </div>
 
-        {/* Small ads like Events/Jobs/Community */}
+        {/* Small ads top/bottom right */}
         <AnimatePresence>
           {topRightAd && !topRightClosed && (
             <SmallAdd
@@ -324,7 +256,6 @@ export default function LocalNews() {
         </AnimatePresence>
 
         <main className="flex-1 flex flex-col gap-6 p-6 pt-24 items-center">
-          {/* Header */}
           <motion.div
             className="bg-emerald-700 text-white rounded-xl p-5 shadow-lg w-full max-w-6xl flex flex-col sm:flex-row items-center justify-between gap-4"
             initial={{ opacity: 0, y: -30 }}
@@ -338,7 +269,6 @@ export default function LocalNews() {
                 Latest updates from {district || "your district"}
               </p>
             </div>
-            {/* Select input removed as requested */}
           </motion.div>
 
           {loading ? (
@@ -356,7 +286,7 @@ export default function LocalNews() {
             )
           ) : (
             <>
-              {/* Mobile: interleaved large ads + news */}
+              {/* Mobile: interleaved large ads + news (content first) */}
               <div className="w-full max-w-6xl lg:hidden flex flex-col gap-6">
                 {mobileItems.map((item, i) =>
                   item.type === "ad" ? (
@@ -425,9 +355,9 @@ export default function LocalNews() {
                 )}
               </div>
 
-              {/* Desktop: existing two-column layout preserved (no interleaving, just content) */}
+              {/* Desktop: two columns, show ads as boxes after news */}
               <div className="w-full max-w-6xl hidden lg:grid grid-cols-[2fr_1fr] gap-6 items-start">
-                {/* Left: Big boxes */}
+                {/* Left: Big boxes (news, then large ads, then more news) */}
                 <div className="flex flex-col gap-6">
                   {bigTop.map((news, i) => (
                     <motion.div
@@ -475,6 +405,18 @@ export default function LocalNews() {
                         </button>
                       </div>
                     </motion.div>
+                  ))}
+                  {/* Show large ads after the news entries in "big boxes" */}
+                  {desktopLargeBoxAds.map((ad, i) => (
+                    <LargeAd
+                      key={"ad-desktop-large-" + (ad.id ?? i)}
+                      ad={ad}
+                      className="rounded-3xl shadow-lg border border-green-100"
+                      style={{ height: "520px" }}
+                      onClose={() =>
+                        setLargeAds((prev) => prev.filter((a) => a.id !== ad.id))
+                      }
+                    />
                   ))}
                   {bigMore.map((news, i) => (
                     <motion.div
@@ -524,64 +466,73 @@ export default function LocalNews() {
                     </motion.div>
                   ))}
                 </div>
-
-                {/* Right: small boxes (2 & 3) */}
-                {smallBoxes.length > 0 && (
-                  <div className="flex flex-col gap-6 sticky top-24 h-[520px]">
-                    {smallBoxes.map((news, i) => (
-                      <motion.div
-                        key={news.id || `small-${i}`}
-                        className="relative rounded-2xl overflow-hidden shadow-md border border-green-100 cursor-pointer group flex-1"
-                        onClick={() => handleNewsClick(news.id)}
-                        initial={{ opacity: 0, y: 40 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: (bigTop.length + i) * 0.05 }}
-                      >
-                        {Array.isArray(news.imageUrls) &&
-                          news.imageUrls.length > 0 &&
-                          renderMedia(
-                            news.imageUrls[0],
-                            news.title,
-                            "w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                          )}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent" />
-                        <div className="absolute bottom-0 p-4 text-white w-full">
-                          <h3
-                            className="text-lg font-semibold capitalize mb-1 line-clamp-1"
-                            dangerouslySetInnerHTML={{
-                              __html: news.title,
-                            }}
-                          />
-                          <div
-                            className="text-xs text-gray-200 line-clamp-2 mb-1"
-                            dangerouslySetInnerHTML={{
-                              __html: news.content,
-                            }}
-                          />
-                          <div className="flex items-center justify-between text-xs text-gray-300">
-                            <span>
-                              {news.author?.firstName}{" "}
-                              {news.author?.lastName}
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <Clock size={12} />{" "}
-                              {formatDate(news.createdAt)}
-                            </span>
-                          </div>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleCommentClick(news.id);
-                            }}
-                            className="mt-2 flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium px-3 py-1.5 rounded-md shadow-sm transition-all"
-                          >
-                            <MessageSquare size={14} /> Comment
-                          </button>
+                {/* Right: Small boxes (news then large ads, styled as small) */}
+                <div className="flex flex-col gap-6 sticky top-24 h-[520px]">
+                  {smallBoxes.map((news, i) => (
+                    <motion.div
+                      key={news.id || `small-${i}`}
+                      className="relative rounded-2xl overflow-hidden shadow-md border border-green-100 cursor-pointer group flex-1"
+                      onClick={() => handleNewsClick(news.id)}
+                      initial={{ opacity: 0, y: 40 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.05 }}
+                    >
+                      {Array.isArray(news.imageUrls) &&
+                        news.imageUrls.length > 0 &&
+                        renderMedia(
+                          news.imageUrls[0],
+                          news.title,
+                          "w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        )}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent" />
+                      <div className="absolute bottom-0 p-4 text-white w-full">
+                        <h3
+                          className="text-lg font-semibold capitalize mb-1 line-clamp-1"
+                          dangerouslySetInnerHTML={{
+                            __html: news.title,
+                          }}
+                        />
+                        <div
+                          className="text-xs text-gray-200 line-clamp-2 mb-1"
+                          dangerouslySetInnerHTML={{
+                            __html: news.content,
+                          }}
+                        />
+                        <div className="flex items-center justify-between text-xs text-gray-300">
+                          <span>
+                            {news.author?.firstName}{" "}
+                            {news.author?.lastName}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Clock size={12} />{" "}
+                            {formatDate(news.createdAt)}
+                          </span>
                         </div>
-                      </motion.div>
-                    ))}
-                  </div>
-                )}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleCommentClick(news.id);
+                          }}
+                          className="mt-2 flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium px-3 py-1.5 rounded-md shadow-sm transition-all"
+                        >
+                          <MessageSquare size={14} /> Comment
+                        </button>
+                      </div>
+                    </motion.div>
+                  ))}
+                  {/* Show large ads in small box column */}
+                  {desktopSmallBoxAds.map((ad, i) => (
+                    <LargeAd
+                      key={"ad-desktop-small-" + (ad.id ?? i)}
+                      ad={ad}
+                      className="rounded-2xl shadow-md border border-green-100 flex-1"
+                      style={{ minHeight: "220px", height: "220px" }}
+                      onClose={() =>
+                        setLargeAds((prev) => prev.filter((a) => a.id !== ad.id))
+                      }
+                    />
+                  ))}
+                </div>
               </div>
             </>
           )}

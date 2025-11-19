@@ -16,9 +16,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "react-toastify";
 
 const tabDefs = [
-  { key: "ALL", label: "All Ads", api: "https://api.jharkhandbiharupdates.com/api/v1/banner-ads" },
-  { key: "SMALL_ACTIVE", label: "Active Small", api: "https://api.jharkhandbiharupdates.com/api/v1/banner-ads/active/small" },
-  { key: "LARGE_ACTIVE", label: "Active Large", api: "https://api.jharkhandbiharupdates.com/api/v1/banner-ads/active/large" }
+  { key: "ALL", label: "All Ads", api: "https://api.jharkhandbiharupdate/api/v1/banner-ads" },
+  { key: "SMALL_ACTIVE", label: "Active Small", api: "https://api.jharkhandbiharupdate/api/v1/banner-ads/active/small" },
+  { key: "LARGE_ACTIVE", label: "Active Large", api: "https://api.jharkhandbiharupdate/api/v1/banner-ads/active/large" }
 ];
 
 const STATUS_OPTIONS = ["ACTIVE", "INACTIVE"];
@@ -114,7 +114,7 @@ export default function AdminAddSection() {
   const handleStatusChange = async (adId, newStatus) => {
     try {
       await axios.patch(
-        `https://api.jharkhandbiharupdates.com/api/v1/banner-ads/${adId}/status?status=${newStatus}`,
+        `https://api.jharkhandbiharupdate/api/v1/banner-ads/${adId}/status?status=${newStatus}`,
         {},
         getAuth()
       );
@@ -128,7 +128,7 @@ export default function AdminAddSection() {
   const handleDelete = async (adId) => {
     if (!window.confirm("Delete this ad?")) return;
     try {
-      await axios.delete(`https://api.jharkhandbiharupdates.com/api/v1/banner-ads/${adId}`, getAuth());
+      await axios.delete(`https://api.jharkhandbiharupdate/api/v1/banner-ads/${adId}`, getAuth());
       toast.success("Ad deleted successfully");
       fetchAds();
     } catch {

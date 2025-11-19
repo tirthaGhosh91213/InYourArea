@@ -15,7 +15,7 @@ import { IoPersonCircleOutline } from "react-icons/io5"; // Ionicons profile ima
 const fetchProfileImage = async (userId) => {
   try {
     const res = await axios.get(
-      `https://api.jharkhandbiharupdates.com/api/v1/user/profile/${userId}`
+      `https://api.jharkhandbiharupdate/api/v1/user/profile/${userId}`
     );
     if (
       res.data &&
@@ -82,7 +82,7 @@ export default function Community() {
     try {
       setLoading(true);
       const res = await axios.get(
-        "https://api.jharkhandbiharupdates.com/api/v1/community",
+        "https://api.jharkhandbiharupdate/api/v1/community",
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (res.data.success) {
@@ -106,7 +106,7 @@ export default function Community() {
 
     // Fetch small ads for Community
     fetch(
-      "https://api.jharkhandbiharupdates.com/api/v1/banner-ads/active/small"
+      "https://api.jharkhandbiharupdate/api/v1/banner-ads/active/small"
     )
       .then((res) => res.json())
       .then((data) => {
@@ -150,7 +150,7 @@ export default function Community() {
       });
 
     // Fetch large ads for Community interleaving
-    fetch("https://api.jharkhandbiharupdates.com/api/v1/banner-ads/active/large")
+    fetch("https://api.jharkhandbiharupdate/api/v1/banner-ads/active/large")
       .then((r) => r.json())
       .then((data) => {
         if (data && Array.isArray(data.data)) {
@@ -181,7 +181,7 @@ export default function Community() {
   const fetchComments = async (postId) => {
     try {
       const res = await axios.get(
-        `https://api.jharkhandbiharupdates.com/api/v1/comments/community-posts/${postId}`,
+        `https://api.jharkhandbiharupdate/api/v1/comments/community-posts/${postId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (res.data.success) {
@@ -206,7 +206,7 @@ export default function Community() {
     if (!commentText[postId]) return toast.error("Comment cannot be empty");
     try {
       const res = await axios.post(
-        `https://api.jharkhandbiharupdates.com/api/v1/comments/community-posts/${postId}`,
+        `https://api.jharkhandbiharupdate/api/v1/comments/community-posts/${postId}`,
         { content: commentText[postId] },
         { headers: { Authorization: `Bearer ${token}` } }
       );

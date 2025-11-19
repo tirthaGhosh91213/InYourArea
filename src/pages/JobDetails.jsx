@@ -92,7 +92,7 @@ export default function JobDetails() {
 
       try {
         const res = await axios.get(
-          "https://api.jharkhandbiharupdates.com/api/v1/user/profile",
+          "https://api.jharkhandbiharupdate/api/v1/user/profile",
           {
             headers: { Authorization: `Bearer ${token}` },
           }
@@ -109,7 +109,7 @@ export default function JobDetails() {
     try {
       setLoading(true);
       const res = await axios.get(
-        `https://api.jharkhandbiharupdates.com/api/v1/jobs`,
+        `https://api.jharkhandbiharupdate/api/v1/jobs`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -126,7 +126,7 @@ export default function JobDetails() {
   const fetchComments = async () => {
     try {
       const res = await axios.get(
-        `https://api.jharkhandbiharupdates.com/api/v1/comments/jobs/${id}`,
+        `https://api.jharkhandbiharupdate/api/v1/comments/jobs/${id}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (res.data.success) setComments(res.data.data);
@@ -140,7 +140,7 @@ export default function JobDetails() {
       return toast.error("Comment cannot be empty");
     try {
       const res = await axios.post(
-        `https://api.jharkhandbiharupdates.com/api/v1/comments/jobs/${id}`,
+        `https://api.jharkhandbiharupdate/api/v1/comments/jobs/${id}`,
         { content: commentText },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -175,7 +175,7 @@ export default function JobDetails() {
 
     try {
       const res = await axios.put(
-        `https://api.jharkhandbiharupdates.com/api/v1/comments/${commentId}`,
+        `https://api.jharkhandbiharupdate/api/v1/comments/${commentId}`,
         { content: editCommentText },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -213,7 +213,7 @@ export default function JobDetails() {
   const handleDeleteComment = async () => {
     try {
       const res = await axios.delete(
-        `https://api.jharkhandbiharupdates.com/api/v1/comments/${deletingCommentId}`,
+        `https://api.jharkhandbiharupdate/api/v1/comments/${deletingCommentId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -252,7 +252,7 @@ export default function JobDetails() {
     fetchJob();
     fetchComments();
 
-    fetch("https://api.jharkhandbiharupdates.com/api/v1/banner-ads/active/small")
+    fetch("https://api.jharkhandbiharupdate/api/v1/banner-ads/active/small")
       .then((res) => res.json())
       .then((data) => {
         if (
