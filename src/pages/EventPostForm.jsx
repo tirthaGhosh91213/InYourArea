@@ -81,7 +81,7 @@ export default function CreateEventPost() {
 
       const accessToken = localStorage.getItem("accessToken");
 
-      const res = await axios.post("https://api.jharkhandbiharupdate/api/v1/events", data, {
+      const res = await axios.post("https://api.jharkhandbiharupdates.com/api/v1/events", data, {
         headers: {
           "Content-Type": "multipart/form-data",
           Authorization: `Bearer ${accessToken}`,

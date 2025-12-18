@@ -23,7 +23,7 @@ export default function NotificationPanel({
       }
 
       const res = await axios.get(
-        "https://api.jharkhandbiharupdate/api/v1/notifications/recent?limit=50",
+        "https://api.jharkhandbiharupdates.com/api/v1/notifications/recent?limit=50",
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -51,7 +51,7 @@ export default function NotificationPanel({
         return;
       }
 
-      await axios.delete("https://api.jharkhandbiharupdate/api/v1/notifications/clear-all", {
+      await axios.delete("https://api.jharkhandbiharupdates.com/api/v1/notifications/clear-all", {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -70,7 +70,7 @@ export default function NotificationPanel({
         return;
       }
 
-      await axios.delete(`https://api.jharkhandbiharupdate/api/v1/notifications/${id}`, {
+      await axios.delete(`https://api.jharkhandbiharupdates.com/api/v1/notifications/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 

@@ -101,7 +101,7 @@ export default function EventDetails() {
 
       try {
         const res = await axios.get(
-          "https://api.jharkhandbiharupdate/api/v1/user/profile",
+          "https://api.jharkhandbiharupdates.com/api/v1/user/profile",
           {
             headers: { Authorization: `Bearer ${token}` },
           }
@@ -117,7 +117,7 @@ export default function EventDetails() {
   const fetchComments = async () => {
     try {
       const res = await axios.get(
-        `https://api.jharkhandbiharupdate/api/v1/comments/events/${id}`,
+        `https://api.jharkhandbiharupdates.com/api/v1/comments/events/${id}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (res.data.success) setComments(res.data.data);
@@ -132,7 +132,7 @@ export default function EventDetails() {
       try {
         setLoading(true);
         const res = await axios.get(
-          `https://api.jharkhandbiharupdate/api/v1/events/${id}`,
+          `https://api.jharkhandbiharupdates.com/api/v1/events/${id}`,
           {
             headers: { Authorization: `Bearer ${token}` },
           }
@@ -149,7 +149,7 @@ export default function EventDetails() {
 
     // Fetch small ads
     fetch(
-      "https://api.jharkhandbiharupdate/api/v1/banner-ads/active/small"
+      "https://api.jharkhandbiharupdates.com/api/v1/banner-ads/active/small"
     )
       .then((res) => res.json())
       .then((data) => {
@@ -216,7 +216,7 @@ export default function EventDetails() {
     try {
       setPosting(true);
       const res = await axios.post(
-        `https://api.jharkhandbiharupdate/api/v1/comments/events/${id}`,
+        `https://api.jharkhandbiharupdates.com/api/v1/comments/events/${id}`,
         { content: commentText },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -253,7 +253,7 @@ export default function EventDetails() {
 
     try {
       const res = await axios.put(
-        `https://api.jharkhandbiharupdate/api/v1/comments/${commentId}`,
+        `https://api.jharkhandbiharupdates.com/api/v1/comments/${commentId}`,
         { content: editCommentText },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -291,7 +291,7 @@ export default function EventDetails() {
   const handleDeleteComment = async () => {
     try {
       const res = await axios.delete(
-        `https://api.jharkhandbiharupdate/api/v1/comments/${deletingCommentId}`,
+        `https://api.jharkhandbiharupdates.com/api/v1/comments/${deletingCommentId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
