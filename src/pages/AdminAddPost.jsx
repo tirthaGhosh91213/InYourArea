@@ -60,7 +60,7 @@ export default function AdminAddPost() {
         }
       });
 
-      toast.success("Banner Ad Created Successfully");
+      toast.success("Advertisement Created Successfully");
       navigate("/add");
     } catch (error) {
       if (error?.response?.status === 403) {
