@@ -2,6 +2,8 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import { Helmet } from "react-helmet-async";
+
 import {
   ArrowLeft,
   ChevronLeft,
@@ -382,8 +384,29 @@ export default function LocalNewsDetails() {
       </div>
     );
 
+    const plainTitle = news.title?.replace(/<[^>]*>/g, "") || "News Details";
+const plainDescription = news.content?.replace(/<[^>]*>/g, "").substring(0, 200) || "Read the latest news from Jharkhand Bihar Updates";
+
   return (
     <>
+      <Helmet>
+      <title>{plainTitle}</title>
+      <meta name="description" content={plainDescription} />
+      
+      <meta property="og:type" content="article" />
+      <meta property="og:title" content={plainTitle} />
+      <meta property="og:description" content={plainDescription} />
+      <meta property="og:image" content={news.imageUrls?.[0] || "https://jharkhandbiharupdates.com/default-image.jpg"} />
+      <meta property="og:url" content={window.location.href} />
+      <meta property="og:site_name" content="Jharkhand Bihar Updates" />
+      
+      <meta name="twitter:card" content="summary_large_image" />
+      <meta name="twitter:title" content={plainTitle} />
+      <meta name="twitter:description" content={plainDescription} />
+      <meta name="twitter:image" content={news.imageUrls?.[0] || "https://jharkhandbiharupdates.com/default-image.jpg"} />
+    </Helmet>
+
+
       <div className="flex h-screen bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden">
         {/* Ads like Events/Jobs (top-right just under navbar, bottom-right) */}
         {topRightAd && !topRightClosed && (
@@ -479,10 +502,36 @@ export default function LocalNewsDetails() {
                   </div>
                 </div>
               </div>
-              <div className="flex items-center gap-1 text-gray-500 text-sm">
-                <MapPin size={16} className="text-green-600" />{" "}
-                {news.districtName || "Unknown District"}
-              </div>
+              <div className="flex items-center gap-3">
+  <div className="flex items-center gap-1 text-gray-500 text-sm">
+    <MapPin size={16} className="text-green-600" />{" "}
+    {news.districtName || "Unknown District"}
+  </div>
+
+  <motion.button
+    whileHover={{ scale: 1.05 }}
+    whileTap={{ scale: 0.95 }}
+    onClick={() => {
+      const shareData = {
+        title: plainTitle,
+        text: plainDescription,
+        url: window.location.href,
+      };
+      if (navigator.share) {
+        navigator.share(shareData).catch(err => console.error("Share failed", err));
+      } else {
+        navigator.clipboard.writeText(window.location.href)
+          .then(() => toast.success("Link copied to clipboard!"))
+          .catch(() => toast.error("Unable to copy link."));
+      }
+    }}
+    className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg px-4 py-2 text-sm transition"
+  >
+    <Send size={16} />
+    Share
+  </motion.button>
+</div>
+
             </div>
 
             {/* Title & Content */}
