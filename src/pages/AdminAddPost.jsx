@@ -14,7 +14,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 
-const BASE_API = "https://api.jharkhandbiharupdate/api/v1";
+const BASE_API = "https://api.jharkhandbiharupdates.com/api/v1";
 const SIZES = [
   { label: "Small", value: "SMALL" },
   { label: "Large", value: "LARGE" }
