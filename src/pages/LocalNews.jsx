@@ -92,7 +92,7 @@ export default function LocalNews() {
       setError("");
       try {
         const res = await axios.get(
-          `https://api.jharkhandbiharupdate/api/v1/district-news/${district}`,
+          `https://api.jharkhandbiharupdates.com/api/v1/district-news/${district}`,
           token ? { headers: { Authorization: `Bearer ${token}` } } : {}
         );
         if (res.data.success) {
@@ -110,7 +110,7 @@ export default function LocalNews() {
 
   // Fetch small ads for Local News
   useEffect(() => {
-    fetch("https://api.jharkhandbiharupdate/api/v1/banner-ads/active/small")
+    fetch("https://api.jharkhandbiharupdates.com/api/v1/banner-ads/active/small")
       .then((res) => res.json())
       .then((data) => {
         if (data && data.data && Array.isArray(data.data) && data.data.length > 0) {
@@ -136,7 +136,7 @@ export default function LocalNews() {
 
   // Fetch large ads for interleaving (same pattern as Events/Jobs/Community)
   useEffect(() => {
-    fetch("https://api.jharkhandbiharupdate/api/v1/banner-ads/active/large")
+    fetch("https://api.jharkhandbiharupdates.com/api/v1/banner-ads/active/large")
       .then((r) => r.json())
       .then((data) => {
         if (data && Array.isArray(data.data)) {

@@ -55,7 +55,7 @@ export default function Jobs() {
   const fetchJobs = async () => {
     try {
       setLoading(true);
-      const res = await axios.get("https://api.jharkhandbiharupdate/api/v1/jobs");
+      const res = await axios.get("https://api.jharkhandbiharupdates.com/api/v1/jobs");
       if (res.data.success) {
         setJobs(res.data.data.filter((job) => job.status === "APPROVED"));
       }
@@ -69,7 +69,7 @@ export default function Jobs() {
   useEffect(() => {
     fetchJobs();
 
-    fetch("https://api.jharkhandbiharupdate/api/v1/banner-ads/active/small")
+    fetch("https://api.jharkhandbiharupdates.com/api/v1/banner-ads/active/small")
       .then((res) => res.json())
       .then((data) => {
         if (data && data.data && Array.isArray(data.data) && data.data.length > 0) {
@@ -90,7 +90,7 @@ export default function Jobs() {
       })
       .catch((err) => console.error("Error fetching jobs small ads:", err));
 
-    fetch("https://api.jharkhandbiharupdate/api/v1/banner-ads/active/large")
+    fetch("https://api.jharkhandbiharupdates.com/api/v1/banner-ads/active/large")
       .then((r) => r.json())
       .then((data) => {
         if (data && Array.isArray(data.data)) {

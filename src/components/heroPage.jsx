@@ -62,7 +62,7 @@ export default function InYourArea() {
 
   // Fetch small ads for InYourArea
   useEffect(() => {
-    fetch("https://api.jharkhandbiharupdate/api/v1/banner-ads/active/small")
+    fetch("https://api.jharkhandbiharupdates.com/api/v1/banner-ads/active/small")
       .then((res) => res.json())
       .then((data) => {
         if (
