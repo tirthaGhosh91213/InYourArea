@@ -549,11 +549,10 @@ export default function LocalNewsDetails() {
                     className="flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg transition"
                     title="Share this post"
                   >
-                    <Share2 size={20} className="sm:hidden" />
-                    <Share2 size={22} className="hidden sm:block" />
+                    <Share2 size={20} />
                   </motion.button>
 
-                  {/* Horizontal Share Menu - Fully Responsive */}
+                  {/* Horizontal Share Menu - Fixed Responsive */}
                   <AnimatePresence>
                     {showShareMenu && (
                       <>
@@ -571,20 +570,19 @@ export default function LocalNewsDetails() {
                           animate={{ opacity: 1, y: 0, scale: 1 }}
                           exit={{ opacity: 0, y: -10, scale: 0.9 }}
                           transition={{ duration: 0.2 }}
-                          className="absolute top-16 sm:top-20 right-0 z-50 
-                                   w-[280px] xs:w-[300px] sm:w-auto"
+                          className="absolute top-16 sm:top-20 left-1/2 -translate-x-1/2 sm:left-auto sm:right-0 sm:translate-x-0 z-50"
                         >
-                          <div className="bg-blue-600 rounded-full shadow-2xl px-2 sm:px-3 py-2.5 sm:py-3 flex items-center gap-2 sm:gap-3">
+                          <div className="bg-blue-600 rounded-full shadow-2xl px-1.5 sm:px-3 py-2 sm:py-3 flex items-center gap-1 sm:gap-2 md:gap-3">
                             {/* Close Button */}
                             <motion.button
                               whileHover={{ scale: 1.1, rotate: 90 }}
                               whileTap={{ scale: 0.95 }}
                               onClick={() => setShowShareMenu(false)}
-                              className="w-10 h-10 sm:w-12 sm:h-12 bg-gray-900 hover:bg-gray-800 rounded-full flex items-center justify-center text-white transition flex-shrink-0"
+                              className="w-9 h-9 sm:w-11 sm:h-11 md:w-12 md:h-12 bg-gray-900 hover:bg-gray-800 rounded-full flex items-center justify-center text-white transition flex-shrink-0"
                               title="Close"
                             >
-                              <X size={18} className="sm:hidden" />
-                              <X size={20} className="hidden sm:block" />
+                              <X size={16} className="sm:hidden" />
+                              <X size={18} className="hidden sm:block" />
                             </motion.button>
 
                             {/* WhatsApp */}
@@ -592,11 +590,11 @@ export default function LocalNewsDetails() {
                               whileHover={{ scale: 1.15 }}
                               whileTap={{ scale: 0.95 }}
                               onClick={handleShareWhatsApp}
-                              className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center text-white hover:bg-blue-700 rounded-full transition flex-shrink-0"
+                              className="w-9 h-9 sm:w-11 sm:h-11 md:w-12 md:h-12 flex items-center justify-center text-white hover:bg-blue-700 rounded-full transition flex-shrink-0"
                               title="Share on WhatsApp"
                             >
                               <svg
-                                className="w-5 h-5 sm:w-6 sm:h-6"
+                                className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6"
                                 fill="currentColor"
                                 viewBox="0 0 24 24"
                               >
@@ -609,11 +607,11 @@ export default function LocalNewsDetails() {
                               whileHover={{ scale: 1.15 }}
                               whileTap={{ scale: 0.95 }}
                               onClick={handleShareFacebook}
-                              className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center text-white hover:bg-blue-700 rounded-full transition flex-shrink-0"
+                              className="w-9 h-9 sm:w-11 sm:h-11 md:w-12 md:h-12 flex items-center justify-center text-white hover:bg-blue-700 rounded-full transition flex-shrink-0"
                               title="Share on Facebook"
                             >
                               <svg
-                                className="w-5 h-5 sm:w-6 sm:h-6"
+                                className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6"
                                 fill="currentColor"
                                 viewBox="0 0 24 24"
                               >
@@ -626,11 +624,11 @@ export default function LocalNewsDetails() {
                               whileHover={{ scale: 1.15 }}
                               whileTap={{ scale: 0.95 }}
                               onClick={handleShareInstagram}
-                              className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center text-white hover:bg-blue-700 rounded-full transition flex-shrink-0"
+                              className="w-9 h-9 sm:w-11 sm:h-11 md:w-12 md:h-12 flex items-center justify-center text-white hover:bg-blue-700 rounded-full transition flex-shrink-0"
                               title="Share on Instagram"
                             >
                               <svg
-                                className="w-5 h-5 sm:w-6 sm:h-6"
+                                className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6"
                                 fill="currentColor"
                                 viewBox="0 0 24 24"
                               >
@@ -643,11 +641,11 @@ export default function LocalNewsDetails() {
                               whileHover={{ scale: 1.15 }}
                               whileTap={{ scale: 0.95 }}
                               onClick={handleShareTwitter}
-                              className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center text-white hover:bg-blue-700 rounded-full transition flex-shrink-0"
+                              className="w-9 h-9 sm:w-11 sm:h-11 md:w-12 md:h-12 flex items-center justify-center text-white hover:bg-blue-700 rounded-full transition flex-shrink-0"
                               title="Share on X (Twitter)"
                             >
                               <svg
-                                className="w-4 h-4 sm:w-5 sm:h-5"
+                                className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5"
                                 fill="currentColor"
                                 viewBox="0 0 24 24"
                               >
@@ -660,11 +658,12 @@ export default function LocalNewsDetails() {
                               whileHover={{ scale: 1.15 }}
                               whileTap={{ scale: 0.95 }}
                               onClick={handleCopyLink}
-                              className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center text-white hover:bg-blue-700 rounded-full transition flex-shrink-0"
+                              className="w-9 h-9 sm:w-11 sm:h-11 md:w-12 md:h-12 flex items-center justify-center text-white hover:bg-blue-700 rounded-full transition flex-shrink-0"
                               title="Copy link"
                             >
-                              <Link2 size={18} className="sm:hidden" />
-                              <Link2 size={20} className="hidden sm:block" />
+                              <Link2 size={16} className="sm:hidden" />
+                              <Link2 size={18} className="hidden sm:block md:hidden" />
+                              <Link2 size={20} className="hidden md:block" />
                             </motion.button>
                           </div>
                         </motion.div>
