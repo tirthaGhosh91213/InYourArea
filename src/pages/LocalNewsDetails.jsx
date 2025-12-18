@@ -509,27 +509,31 @@ const plainDescription = news.content?.replace(/<[^>]*>/g, "").substring(0, 200)
   </div>
 
   <motion.button
-    whileHover={{ scale: 1.05 }}
-    whileTap={{ scale: 0.95 }}
-    onClick={() => {
-      const shareData = {
-        title: plainTitle,
-        text: plainDescription,
-        url: window.location.href,
-      };
-      if (navigator.share) {
-        navigator.share(shareData).catch(err => console.error("Share failed", err));
-      } else {
-        navigator.clipboard.writeText(window.location.href)
-          .then(() => toast.success("Link copied to clipboard!"))
-          .catch(() => toast.error("Unable to copy link."));
-      }
-    }}
-    className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg px-4 py-2 text-sm transition"
-  >
-    <Send size={16} />
-    Share
-  </motion.button>
+  whileHover={{ scale: 1.05 }}
+  whileTap={{ scale: 0.95 }}
+  onClick={() => {
+    // Correct URL with /api/v1 prefix
+    const shareUrl = `https://api.jharkhandbiharupdates.com/api/v1/district-news/localnews/${id}`;
+    const shareData = {
+      title: plainTitle,
+      text: plainDescription,
+      url: shareUrl,
+    };
+    if (navigator.share) {
+      navigator.share(shareData).catch(err => console.error("Share failed", err));
+    } else {
+      navigator.clipboard.writeText(shareUrl)
+        .then(() => toast.success("Link copied to clipboard!"))
+        .catch(() => toast.error("Unable to copy link."));
+    }
+  }}
+  className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg px-4 py-2 text-sm transition"
+>
+  <Send size={16} />
+  Share
+</motion.button>
+
+
 </div>
 
             </div>
