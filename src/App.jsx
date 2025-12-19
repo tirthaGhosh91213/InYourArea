@@ -26,7 +26,6 @@ import Properties from "./pages/Properties";
 import CreatePropertyPost from "./pages/CreatePropertyPost";
 import AdminAddPost from "./pages/AdminAddPost";
 import AdminAddSection from "./pages/AdminAddSection";
-import InstallPrompt from "./components/InstallPrompt";  // ✅ ADD THIS
 
 
 // ✅ Home component
@@ -99,9 +98,6 @@ export default function App() {
            <Route path="/add" element={<AdminAddSection />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
-
-      {/* ✅ PWA Install Prompt - ADD THIS */}
-      <InstallPrompt />
     </Router>
   );
 }
