@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "react-toastify";
+import Loader from '../components/Loader';
 
 const tabDefs = [
   { key: "ALL", label: "All Ads", api: "https://api.jharkhandbiharupdates.com/api/v1/banner-ads" },
@@ -262,15 +263,15 @@ export default function AdminAddSection() {
       <main className="flex-1 px-2 sm:px-4 md:px-8 pt-2 pb-10 w-full max-w-6xl mx-auto">
         <AnimatePresence mode="wait">
           {loading ? (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="flex flex-col items-center justify-center text-gray-500 my-14 min-h-[30vh]"
-            >
-              <Loader2 className="w-10 h-10 animate-spin mb-3" />
-              <div className="font-medium text-lg">Loading Ads...</div>
-            </motion.div>
+  <motion.div
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
+    exit={{ opacity: 0 }}
+    className="flex flex-col items-center justify-center min-h-[30vh]"
+  >
+    <Loader />
+  </motion.div>
+
           ) : fetchError ? (
             <motion.div
               initial={{ opacity: 0 }}
