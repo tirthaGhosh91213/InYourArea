@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "react-toastify";
+import Loader from "./Loader.jsx";
 import {
   User,
   Calendar,
@@ -399,12 +400,15 @@ export default function UserDashboard() {
     tabs.push({ key: "localNews", label: "Local News", icon: FileText });
 
   if (!profile || !stats || !content) {
-    return (
-      <div className="text-center mt-10 text-gray-500">
-        Loading dashboard...
+  return (
+    <div className="flex items-center justify-center min-h-[80vh]">
+      <div className="w-64">  {/* Control loader width */}
+        <Loader />
       </div>
-    );
-  }
+    </div>
+  );
+}
+
 
   return (
     <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-8">
