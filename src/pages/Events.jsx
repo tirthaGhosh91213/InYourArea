@@ -261,23 +261,7 @@ export default function Events() {
               </motion.button>
             </div>
             {/* Filter Buttons */}
-            <div className="flex justify-center mt-4 gap-2 flex-wrap">
-              {["All", "Bokaro"].map((loc) => (
-                <motion.button
-                  key={loc}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className={`px-4 py-1.5 rounded-full border text-sm font-medium transition-all ${
-                    filterCity === loc
-                      ? "bg-white text-blue-700 border-blue-300 shadow-md"
-                      : "border-blue-200 text-blue-200 hover:border-blue-300 hover:text-blue-100"
-                  }`}
-                  onClick={() => setFilterCity(loc)}
-                >
-                  {loc}
-                </motion.button>
-              ))}
-            </div>
+            
           </motion.div>
 
           {/* Main 3-column grid */}
@@ -303,7 +287,7 @@ export default function Events() {
                     scale: 1.03,
                     boxShadow: "0 25px 40px rgba(59,130,246,0.25)",
                   }}
-                  className="relative rounded-2xl overflow-hidden p-5 flex flex-col justify-between bg-white shadow-md border border-blue-100 cursor-pointer hover:bg-gradient-to-r hover:from-blue-100"
+                  className="relative rounded-2xl overflow-hidden p-5 flex flex-col justify-between bg-gray-200 shadow-md border border-blue-100 cursor-pointer hover:bg-gradient-to-r hover:from-blue-100"
                   onClick={() => navigate(`/events/${event.id}`)}
                 >
                   {Array.isArray(event.imageUrls) && event.imageUrls.length > 0 ? (
@@ -389,7 +373,7 @@ export default function Events() {
                     scale: 1.03,
                     boxShadow: "0 25px 40px rgba(59,130,246,0.25)",
                   }}
-                  className="relative rounded-2xl overflow-hidden p-5 flex flex-col justify-between bg-white shadow-md border border-blue-100 cursor-pointer hover:bg-gradient-to-r hover:from-blue-100"
+                  className="relative rounded-2xl overflow-hidden p-5 flex flex-col justify-between bg-gray-200 shadow-md border border-blue-100 cursor-pointer hover:bg-gradient-to-r hover:from-blue-100"
                   onClick={() => navigate(`/events/${event.id}`)}
                 >
                   {Array.isArray(event.imageUrls) && event.imageUrls.length > 0 ? (
@@ -475,7 +459,7 @@ export default function Events() {
                   >
                     {/* Close button for mobile only */}
                     <motion.button
-                      className="absolute -top-3 -right-3 z-20 lg:hidden bg-white rounded-full p-1.5 shadow-lg border-2 border-gray-200 hover:bg-gray-100 transition-all duration-200"
+                      className="absolute -top-0 -right-0 z-20 lg:hidden bg-white rounded-full p-1.5 shadow-lg border-2 border-gray-200 hover:bg-gray-100 transition-all duration-200"
                       whileHover={{ scale: 1.1 }}
                       whileTap={{ scale: 0.95 }}
                       onClick={() => {
