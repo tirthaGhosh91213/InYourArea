@@ -406,7 +406,7 @@ export default function Jobs() {
                   >
                     {/* Close button for mobile only */}
                     <motion.button
-                      className="absolute -top-3 -right-3 z-20 lg:hidden bg-white rounded-full p-1.5 shadow-lg border-2 border-gray-200 hover:bg-gray-100 transition-all duration-200"
+                      className="absolute -top-0 -right-0 z-20 lg:hidden bg-white rounded-full p-1.5 shadow-lg border-2 border-gray-200 hover:bg-gray-100 transition-all duration-200"
                       whileHover={{ scale: 1.1 }}
                       whileTap={{ scale: 0.95 }}
                       onClick={() => {
