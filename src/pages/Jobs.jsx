@@ -49,6 +49,8 @@ export default function Jobs() {
 
   const [largeAds, setLargeAds] = useState([]);
   const [largeAdIndexes, setLargeAdIndexes] = useState([0, 1]);
+  const [largeAd1Closed, setLargeAd1Closed] = useState(false);
+  const [largeAd2Closed, setLargeAd2Closed] = useState(false);
   const timerRef = useRef();
 
   // --- Fetch JOBS, ADS, LARGE ADS ---
@@ -197,7 +199,7 @@ export default function Jobs() {
         <RightSidebar refreshJobs={fetchJobs} />
       </div>
 
-      {/* Small Ads - Mobile responsive with close button */}
+      {/* Small Ads - Close button for both desktop & mobile */}
       <AnimatePresence>
         {topRightAd && !topRightClosed && (
           <SmallAdd
@@ -386,20 +388,42 @@ export default function Jobs() {
                 </motion.div>
               ))}
             </div>
-            {/* Third Column: Sponsored Ads (Large Ads, stacked) */}
+            {/* Third Column: Sponsored Ads (Large Ads with mobile close button) */}
             <div className="flex flex-col gap-6">
-              {largeAds.length > 0 && (
-                largeAdIndexes.map((idx, i) =>
-                  largeAds[idx] ? (
+              {largeAds.length > 0 && largeAdIndexes.map((idx, i) => {
+                if (i === 0 && largeAd1Closed) return null;
+                if (i === 1 && largeAd2Closed) return null;
+                if (!largeAds[idx]) return null;
+
+                return (
+                  <motion.div
+                    key={"large-ad-wrapper-" + i}
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    className="relative rounded-2xl shadow-md border border-green-100 overflow-hidden"
+                    style={{ height: "250px", minHeight: "250px" }}
+                  >
+                    {/* Close button for mobile only */}
+                    <motion.button
+                      className="absolute -top-3 -right-3 z-20 lg:hidden bg-white rounded-full p-1.5 shadow-lg border-2 border-gray-200 hover:bg-gray-100 transition-all duration-200"
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => {
+                        if (i === 0) setLargeAd1Closed(true);
+                        if (i === 1) setLargeAd2Closed(true);
+                      }}
+                    >
+                      <X className="w-4 h-4 text-gray-700" />
+                    </motion.button>
+                    
                     <LargeAd
-                      key={"fixed-large-ad-" + i}
                       ad={largeAds[idx]}
-                      className="rounded-2xl shadow-md border border-green-100"
-                      style={{ height: "250px", minHeight: "250px" }}
+                      className="w-full h-full"
                     />
-                  ) : null
-                )
-              )}
+                  </motion.div>
+                );
+              })}
             </div>
           </div>
         </main>
