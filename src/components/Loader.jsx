@@ -17,9 +17,14 @@ const Loader = () => {
 }
 
 const StyledWrapper = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+
   .loader-con {
     position: relative;
-    width: 50%;
+    width: 200px;  /* Fixed width instead of 50% */
     height: 100px;
     overflow: hidden;
   }
@@ -78,6 +83,7 @@ const StyledWrapper = styled.div`
 
   .pfile {
     animation-delay: calc(var(--i) * 0.6s);
-  }`;
+  }
+`;
 
 export default Loader;
