@@ -10,6 +10,7 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import { IoPersonCircleOutline } from "react-icons/io5"; // Ionicons profile image
+import Loader from '../components/Loader';
 
 // Helper: fetch avatar for any user ID
 const fetchProfileImage = async (userId) => {
@@ -359,9 +360,10 @@ export default function Community() {
             </motion.div>
 
             {loading ? (
-              <div className="flex justify-center py-12 text-gray-600">
-                Loading...
-              </div>
+  <div className="flex justify-center py-12">
+    <Loader />
+  </div>
+
             ) : gridItems.length > 0 ? (
               <AnimatePresence>
                 <div className="space-y-5 mx-0 sm:mx-4">
