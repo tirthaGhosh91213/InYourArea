@@ -26,10 +26,13 @@ import Properties from "./pages/Properties";
 import CreatePropertyPost from "./pages/CreatePropertyPost";
 import AdminAddPost from "./pages/AdminAddPost";
 import AdminAddSection from "./pages/AdminAddSection";
+import InstallPrompt from "./components/InstallPrompt";  // ✅ ADD THIS
+
 
 // ✅ Home component
 function Home() {
   const [postcode, setPostcode] = React.useState("");
+
 
   const handleSubmit = () => {
     if (postcode.trim() === "") {
@@ -38,6 +41,7 @@ function Home() {
     }
     window.location.href = "/localnews"; // Navigate to localnews
   };
+
 
   return (
     <>
@@ -52,6 +56,7 @@ function Home() {
   );
 }
 
+
 // ✅ App component
 export default function App() {
   const token = localStorage.getItem("accessToken");
@@ -61,11 +66,13 @@ export default function App() {
       {/* Fixed Navbar */}
       
 
+
       {/* Routes */}
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/localnews/:district" element={<LocalNews />} />
         <Route path="/auth/google/callback" element={<GoogleCallback />} />
+
 
         <Route path="/community" element={<Community />} />
         <Route path="/jobs" element={<Jobs />} />
@@ -92,6 +99,9 @@ export default function App() {
            <Route path="/add" element={<AdminAddSection />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
+
+      {/* ✅ PWA Install Prompt - ADD THIS */}
+      <InstallPrompt />
     </Router>
   );
 }
