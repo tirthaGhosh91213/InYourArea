@@ -21,6 +21,7 @@ import {
 import axios from "axios";
 import { toast } from "react-toastify";
 import SmallAdd from "../components/SmallAdd";
+import Loader from '../components/Loader';
 
 // Helper: circular index
 const getNextIndex = (current, total) => {
@@ -379,11 +380,12 @@ export default function JobDetails() {
   const bottomRightAd = ads.length ? ads[bottomRightIndex % ads.length] : null;
 
   if (loading || !job)
-    return (
-      <div className="flex justify-center items-center h-screen text-gray-600 text-lg animate-pulse">
-        Loading...
-      </div>
-    );
+  return (
+    <div className="flex justify-center items-center h-screen">
+      <Loader />
+    </div>
+  );
+
 
   return (
     <>
