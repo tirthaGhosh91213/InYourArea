@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Building2, MapPin, Search as SearchIcon, DollarSign,
-  Calendar, MessageCircle, Send, UserCircle,
+  Calendar, MessageCircle, Send, UserCircle, X,
 } from "lucide-react";
 import Sidebar from "../components/SideBar";
 import RightSidebar from "../components/RightSidebar";
@@ -80,12 +80,21 @@ export default function Jobs() {
           let savedTop = parseInt(localStorage.getItem(SLOT_KEYS.TOP_RIGHT) ?? "0", 10);
           let savedBottom = parseInt(localStorage.getItem(SLOT_KEYS.BOTTOM_RIGHT) ?? "1", 10);
 
-          if (isNaN(savedTop) || savedTop < 0 || savedTop >= total) savedTop = 0;
-          if (isNaN(savedBottom) || savedBottom < 0 || savedBottom >= total) savedBottom = total > 1 ? 1 : 0;
-          if (savedTop === savedBottom && total > 1) savedBottom = getNextIndex(savedTop, total);
+          if (total === 1) {
+            // Single ad: show only once, no rotation
+            setTopRightIndex(0);
+            setBottomRightIndex(-1); // Invalid to hide bottom
+            localStorage.setItem(SLOT_KEYS.TOP_RIGHT, "0");
+            localStorage.removeItem(SLOT_KEYS.BOTTOM_RIGHT);
+          } else {
+            // Multiple ads: normal rotation logic
+            if (isNaN(savedTop) || savedTop < 0 || savedTop >= total) savedTop = 0;
+            if (isNaN(savedBottom) || savedBottom < 0 || savedBottom >= total) savedBottom = total > 1 ? 1 : 0;
+            if (savedTop === savedBottom && total > 1) savedBottom = getNextIndex(savedTop, total);
 
-          setTopRightIndex(savedTop);
-          setBottomRightIndex(savedBottom);
+            setTopRightIndex(savedTop);
+            setBottomRightIndex(savedBottom);
+          }
         }
       })
       .catch((err) => console.error("Error fetching jobs small ads:", err));
@@ -101,11 +110,19 @@ export default function Jobs() {
           let largeAdIdx2 = parseInt(localStorage.getItem(SLOT_KEYS.LARGE_AD_2) ?? "1", 10);
           const total = shuffled.length;
 
-          if (isNaN(largeAdIdx1) || largeAdIdx1 < 0 || largeAdIdx1 >= total) largeAdIdx1 = 0;
-          if (isNaN(largeAdIdx2) || largeAdIdx2 < 0 || largeAdIdx2 >= total) largeAdIdx2 = total > 1 ? 1 : 0;
-          if (largeAdIdx1 === largeAdIdx2 && total > 1) largeAdIdx2 = getNextIndex(largeAdIdx1, total);
+          if (total === 1) {
+            // Single large ad: show only one
+            setLargeAdIndexes([0]);
+            localStorage.setItem(SLOT_KEYS.LARGE_AD_1, "0");
+            localStorage.removeItem(SLOT_KEYS.LARGE_AD_2);
+          } else {
+            // Multiple large ads: normal rotation
+            if (isNaN(largeAdIdx1) || largeAdIdx1 < 0 || largeAdIdx1 >= total) largeAdIdx1 = 0;
+            if (isNaN(largeAdIdx2) || largeAdIdx2 < 0 || largeAdIdx2 >= total) largeAdIdx2 = total > 1 ? 1 : 0;
+            if (largeAdIdx1 === largeAdIdx2 && total > 1) largeAdIdx2 = getNextIndex(largeAdIdx1, total);
 
-          setLargeAdIndexes([largeAdIdx1, largeAdIdx2]);
+            setLargeAdIndexes([largeAdIdx1, largeAdIdx2]);
+          }
         }
       })
       .catch((err) => {
@@ -114,7 +131,7 @@ export default function Jobs() {
   }, []);
 
   useEffect(() => {
-    if (!ads.length) return;
+    if (!ads.length || ads.length === 1) return;
     const total = ads.length;
     if (topRightClosed) {
       const nextTop = getNextIndex(topRightIndex, total);
@@ -127,7 +144,7 @@ export default function Jobs() {
   }, [topRightClosed, bottomRightClosed, topRightIndex, bottomRightIndex, ads]);
 
   useEffect(() => {
-    if (largeAds.length === 0) return;
+    if (largeAds.length === 0 || largeAds.length === 1) return;
     if (timerRef.current) clearInterval(timerRef.current);
 
     timerRef.current = setInterval(() => {
@@ -169,8 +186,9 @@ export default function Jobs() {
       year: "numeric",
     });
 
-  const topRightAd = ads.length ? ads[topRightIndex % ads.length] : null;
-  const bottomRightAd = ads.length ? ads[bottomRightIndex % ads.length] : null;
+  // Handle single ad case
+  const topRightAd = ads.length === 1 ? ads[0] : (ads.length ? ads[topRightIndex % ads.length] : null);
+  const bottomRightAd = ads.length > 1 && !topRightClosed && bottomRightIndex >= 0 ? ads[bottomRightIndex % ads.length] : null;
 
   return (
     <>
@@ -179,27 +197,25 @@ export default function Jobs() {
         <RightSidebar refreshJobs={fetchJobs} />
       </div>
 
-      {/* Small Ads */}
-      {topRightAd && !topRightClosed && (
-        <AnimatePresence>
+      {/* Small Ads - Mobile responsive with close button */}
+      <AnimatePresence>
+        {topRightAd && !topRightClosed && (
           <SmallAdd
             ad={topRightAd}
             position="top-right"
             open={true}
             onClose={() => setTopRightClosed(true)}
           />
-        </AnimatePresence>
-      )}
-      {bottomRightAd && !bottomRightClosed && (
-        <AnimatePresence>
+        )}
+        {bottomRightAd && !bottomRightClosed && (
           <SmallAdd
             ad={bottomRightAd}
             position="bottom-right"
             open={true}
             onClose={() => setBottomRightClosed(true)}
           />
-        </AnimatePresence>
-      )}
+        )}
+      </AnimatePresence>
 
       {/* Page Layout */}
       <div className="flex min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 pt-16">
@@ -219,9 +235,9 @@ export default function Jobs() {
             <h2 className="text-2xl font-semibold text-center mb-4">
               Job Board
             </h2>
-            <div className="flex  justify-center">
-              <div className=" relative w-full sm:w-96">
-                <div className=" inset-y-0 left-2 flex items-center justify-center pointer-events-none">
+            <div className="flex justify-center">
+              <div className="relative w-full sm:w-96">
+                <div className="absolute inset-y-0 left-2 flex items-center justify-center pointer-events-none">
                   <SearchIcon size={18} className="text-emerald-700" />
                 </div>
                 <input
@@ -372,15 +388,17 @@ export default function Jobs() {
             </div>
             {/* Third Column: Sponsored Ads (Large Ads, stacked) */}
             <div className="flex flex-col gap-6">
-              {largeAds.length > 0 && largeAdIndexes.map((idx, i) =>
-                largeAds[idx] ? (
-                  <LargeAd
-                    key={"fixed-large-ad-" + i}
-                    ad={largeAds[idx]}
-                    className="rounded-2xl shadow-md border border-green-100"
-                    style={{ height: "250px", minHeight: "250px" }}
-                  />
-                ) : null
+              {largeAds.length > 0 && (
+                largeAdIndexes.map((idx, i) =>
+                  largeAds[idx] ? (
+                    <LargeAd
+                      key={"fixed-large-ad-" + i}
+                      ad={largeAds[idx]}
+                      className="rounded-2xl shadow-md border border-green-100"
+                      style={{ height: "250px", minHeight: "250px" }}
+                    />
+                  ) : null
+                )
               )}
             </div>
           </div>
