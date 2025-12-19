@@ -10,6 +10,7 @@ import SmallAdd from "../components/SmallAdd";
 import LargeAd from "../components/LargeAd";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import Loader from '../components/Loader';
 
 // Helper: Get next index in circular manner
 function getNextIndex(current, total) {
@@ -261,11 +262,19 @@ export default function Events() {
               </motion.button>
             </div>
             {/* Filter Buttons */}
-            
-          </motion.div>
 
-          {/* Main 3-column grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-5xl">
+</motion.div>
+
+{/* Show loader while loading */}
+{loading ? (
+  <div className="flex justify-center items-center py-20">
+    <Loader />
+  </div>
+) : (
+  <>
+    {/* Main 3-column grid */}
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-5xl">
+
             {/* First Column: Events (even indexes) */}
             <div className="flex flex-col gap-6">
               {leftEvents.length === 0 && !loading && (
@@ -479,6 +488,8 @@ export default function Events() {
               })}
             </div>
           </div>
+           </>
+      )}
         </main>
       </div>
     </>
