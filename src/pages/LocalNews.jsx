@@ -8,6 +8,7 @@ import RightSidebar from "../components/RightSidebar";
 import SmallAdd from "../components/SmallAdd";
 import LargeAd from "../components/LargeAd";
 import { Clock, Loader2, MessageSquare } from "lucide-react";
+import Loader from '../components/Loader';
 
 // Helper: circular next index
 function getNextIndex(current, total) {
@@ -272,9 +273,10 @@ export default function LocalNews() {
           </motion.div>
 
           {loading ? (
-            <div className="flex justify-center items-center h-64">
-              <Loader2 className="animate-spin text-green-600" size={40} />
-            </div>
+  <div className="flex justify-center items-center h-64">
+    <Loader />
+  </div>
+
           ) : error ? (
             <div className="text-center text-red-500 font-semibold">{error}</div>
           ) : newsList.length === 0 ? (
