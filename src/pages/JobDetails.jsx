@@ -24,10 +24,25 @@ import SmallAdd from "../components/SmallAdd";
 import Loader from '../components/Loader';
 
 // Helper: circular index
+// Helper: circular index
 const getNextIndex = (current, total) => {
   if (total === 0) return 0;
   return (current + 1) % total;
 };
+
+// Helper: Format date and time
+const formatDateTime = (dateString) => {
+  if (!dateString) return "N/A";
+  const date = new Date(dateString);
+  const day = date.getDate().toString().padStart(2, '0');
+  const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const month = monthNames[date.getMonth()];
+  const year = date.getFullYear();
+  const hours = date.getHours().toString().padStart(2, '0');
+  const minutes = date.getMinutes().toString().padStart(2, '0');
+  return `${day} ${month} ${year} ${hours}:${minutes}`;
+};
+
 
 // LocalStorage keys for JobDetails ads
 const SLOT_KEYS = {
@@ -467,12 +482,13 @@ export default function JobDetails() {
                       {job.company}
                     </div>
                     <div className="text-sm text-gray-500 flex items-center gap-1 flex-wrap">
-                      <Calendar size={14} className="shrink-0" />
-                      <span>Deadline:</span>
-                      <span className="text-red-500">
-                        {job.applicationDeadline}
-                      </span>
-                    </div>
+  <Calendar size={14} className="shrink-0" />
+  <span>Deadline:</span>
+  <span className="text-red-500">
+    {formatDateTime(job.applicationDeadline)}
+  </span>
+</div>
+
                   </div>
                 </div>
 
