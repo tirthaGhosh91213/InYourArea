@@ -1,22 +1,23 @@
-import React, { useState, useEffect } from "react";
-import axios from "axios";
+import React, { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Calendar, MapPin, Clock, PlusCircle, Search as SearchIcon,
+  MessageCircle, Link as LinkIcon, X,
+} from "lucide-react";
 import Sidebar from "../components/SideBar";
 import RightSidebar from "../components/RightSidebar";
 import SmallAdd from "../components/SmallAdd";
 import LargeAd from "../components/LargeAd";
-import { motion, AnimatePresence } from "framer-motion";
-import {
-  Calendar,
-  MapPin,
-  Clock,
-  PlusCircle,
-  Search,
-  MessageCircle,
-  Link as LinkIcon,
-} from "lucide-react";
+import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
-// Helper: Shuffle an array
+// Helper: Get next index in circular manner
+function getNextIndex(current, total) {
+  if (total === 0) return 0;
+  return (current + 1) % total;
+}
+
+// Helper: Shuffle an array (for large ads order)
 function shuffle(array) {
   const arr = [...array];
   for (let i = arr.length - 1; i > 0; i--) {
@@ -26,33 +27,37 @@ function shuffle(array) {
   return arr;
 }
 
+const SLOT_KEYS = {
+  TOP_RIGHT: "EVENTS_AD_INDEX_TOP_RIGHT",
+  BOTTOM_RIGHT: "EVENTS_AD_INDEX_BOTTOM_RIGHT",
+  LARGE_AD_1: "EVENTS_LARGE_AD_INDEX_1",
+  LARGE_AD_2: "EVENTS_LARGE_AD_INDEX_2"
+};
+
 export default function Events() {
+  const navigate = useNavigate();
   const [events, setEvents] = useState([]);
   const [search, setSearch] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [filterCity, setFilterCity] = useState("All");
-  const [ads, setAds] = useState([]);
-  const [largeAds, setLargeAds] = useState([]);
 
+  const [ads, setAds] = useState([]);
   const [topRightIndex, setTopRightIndex] = useState(0);
   const [bottomRightIndex, setBottomRightIndex] = useState(1);
   const [topRightClosed, setTopRightClosed] = useState(false);
   const [bottomRightClosed, setBottomRightClosed] = useState(false);
-  const navigate = useNavigate();
 
-  // Slot keys for persistent small ad positions
-  const SLOT_KEYS = {
-    TOP_RIGHT: "EVENTS_AD_INDEX_TOP_RIGHT",
-    BOTTOM_RIGHT: "EVENTS_AD_INDEX_BOTTOM_RIGHT",
-  };
+  const [largeAds, setLargeAds] = useState([]);
+  const [largeAdIndexes, setLargeAdIndexes] = useState([0, 1]);
+  const [largeAd1Closed, setLargeAd1Closed] = useState(false);
+  const [largeAd2Closed, setLargeAd2Closed] = useState(false);
+  const timerRef = useRef();
 
   // Fetch events
   const fetchEvents = async () => {
     try {
       setLoading(true);
-      const res = await axios.get(
-        "https://api.jharkhandbiharupdates.com/api/v1/events"
-      );
+      const res = await axios.get("https://api.jharkhandbiharupdates.com/api/v1/events");
       setEvents(res.data.data || []);
     } catch (err) {
       console.error("Error fetching events:", err);
@@ -61,61 +66,106 @@ export default function Events() {
     }
   };
 
-  // Fetch small ads
   useEffect(() => {
+    fetchEvents();
+
+    // Fetch small ads
     fetch("https://api.jharkhandbiharupdates.com/api/v1/banner-ads/active/small")
       .then((res) => res.json())
       .then((data) => {
-        if (
-          data &&
-          data.data &&
-          Array.isArray(data.data) &&
-          data.data.length > 0
-        ) {
+        if (data && data.data && Array.isArray(data.data) && data.data.length > 0) {
           const orderedAds = [...data.data];
           setAds(orderedAds);
+
           const total = orderedAds.length;
-          let savedTop = parseInt(
-            localStorage.getItem(SLOT_KEYS.TOP_RIGHT) ?? "0", 10
-          );
-          let savedBottom = parseInt(
-            localStorage.getItem(SLOT_KEYS.BOTTOM_RIGHT) ?? "1", 10
-          );
-          if (isNaN(savedTop) || savedTop < 0 || savedTop >= total) savedTop = 0;
-          if (isNaN(savedBottom) || savedBottom < 0 || savedBottom >= total) savedBottom = total > 1 ? 1 : 0;
-          if (savedTop === savedBottom && total > 1) savedBottom = (savedTop + 1) % total;
-          setTopRightIndex(savedTop);
-          setBottomRightIndex(savedBottom);
+          let savedTop = parseInt(localStorage.getItem(SLOT_KEYS.TOP_RIGHT) ?? "0", 10);
+          let savedBottom = parseInt(localStorage.getItem(SLOT_KEYS.BOTTOM_RIGHT) ?? "1", 10);
+
+          if (total === 1) {
+            // Single ad: show only once, no rotation
+            setTopRightIndex(0);
+            setBottomRightIndex(-1);
+            localStorage.setItem(SLOT_KEYS.TOP_RIGHT, "0");
+            localStorage.removeItem(SLOT_KEYS.BOTTOM_RIGHT);
+          } else {
+            // Multiple ads: normal rotation logic
+            if (isNaN(savedTop) || savedTop < 0 || savedTop >= total) savedTop = 0;
+            if (isNaN(savedBottom) || savedBottom < 0 || savedBottom >= total) savedBottom = total > 1 ? 1 : 0;
+            if (savedTop === savedBottom && total > 1) savedBottom = getNextIndex(savedTop, total);
+
+            setTopRightIndex(savedTop);
+            setBottomRightIndex(savedBottom);
+          }
         }
-      }).catch(console.error);
+      })
+      .catch((err) => console.error("Error fetching events small ads:", err));
 
-    fetchEvents();
-
-    // Fetch large ads once (shuffle every time page renders)
+    // Fetch large ads
     fetch("https://api.jharkhandbiharupdates.com/api/v1/banner-ads/active/large")
       .then((r) => r.json())
       .then((data) => {
         if (data && Array.isArray(data.data)) {
-          setLargeAds(shuffle(data.data));
+          const shuffled = shuffle(data.data);
+          setLargeAds(shuffled);
+
+          let largeAdIdx1 = parseInt(localStorage.getItem(SLOT_KEYS.LARGE_AD_1) ?? "0", 10);
+          let largeAdIdx2 = parseInt(localStorage.getItem(SLOT_KEYS.LARGE_AD_2) ?? "1", 10);
+          const total = shuffled.length;
+
+          if (total === 1) {
+            // Single large ad: show only one
+            setLargeAdIndexes([0]);
+            localStorage.setItem(SLOT_KEYS.LARGE_AD_1, "0");
+            localStorage.removeItem(SLOT_KEYS.LARGE_AD_2);
+          } else {
+            // Multiple large ads: normal rotation
+            if (isNaN(largeAdIdx1) || largeAdIdx1 < 0 || largeAdIdx1 >= total) largeAdIdx1 = 0;
+            if (isNaN(largeAdIdx2) || largeAdIdx2 < 0 || largeAdIdx2 >= total) largeAdIdx2 = total > 1 ? 1 : 0;
+            if (largeAdIdx1 === largeAdIdx2 && total > 1) largeAdIdx2 = getNextIndex(largeAdIdx1, total);
+
+            setLargeAdIndexes([largeAdIdx1, largeAdIdx2]);
+          }
         }
       })
-      .catch(console.error);
-
-    // eslint-disable-next-line
+      .catch((err) => {
+        console.error("Error fetching events large ads:", err);
+      });
   }, []);
 
   useEffect(() => {
-    if (!ads.length) return;
+    if (!ads.length || ads.length === 1) return;
     const total = ads.length;
     if (topRightClosed) {
-      const nextTop = (topRightIndex + 1) % total;
+      const nextTop = getNextIndex(topRightIndex, total);
       localStorage.setItem(SLOT_KEYS.TOP_RIGHT, String(nextTop));
     }
     if (bottomRightClosed) {
-      const nextBottom = (bottomRightIndex + 1) % total;
+      const nextBottom = getNextIndex(bottomRightIndex, total);
       localStorage.setItem(SLOT_KEYS.BOTTOM_RIGHT, String(nextBottom));
     }
   }, [topRightClosed, bottomRightClosed, topRightIndex, bottomRightIndex, ads]);
+
+  useEffect(() => {
+    if (largeAds.length === 0 || largeAds.length === 1) return;
+    if (timerRef.current) clearInterval(timerRef.current);
+
+    timerRef.current = setInterval(() => {
+      setLargeAdIndexes(([idx1, idx2]) => {
+        const total = largeAds.length;
+        let nextIdx1 = getNextIndex(idx1, total);
+        let nextIdx2 = getNextIndex(idx2, total);
+        if (nextIdx1 === nextIdx2 && total > 1) nextIdx2 = getNextIndex(nextIdx1, total);
+
+        localStorage.setItem(SLOT_KEYS.LARGE_AD_1, String(nextIdx1));
+        localStorage.setItem(SLOT_KEYS.LARGE_AD_2, String(nextIdx2));
+        return [nextIdx1, nextIdx2];
+      });
+    }, 10000); // 10 seconds
+
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [largeAds]);
 
   // Filter events
   const filteredEvents = events.filter((e) => {
@@ -129,224 +179,324 @@ export default function Events() {
     return matchesSearch && matchesFilter;
   });
 
-  const topRightAd = ads.length ? ads[topRightIndex % ads.length] : null;
-  const bottomRightAd = ads.length ? ads[bottomRightIndex % ads.length] : null;
+  // Split events evenly between two columns
+  const leftEvents = [];
+  const centerEvents = [];
+  filteredEvents.forEach((event, idx) => {
+    if (idx % 2 === 0) leftEvents.push(event);
+    else centerEvents.push(event);
+  });
 
-  // Final grid: interleave large ads and events (ad -> event -> event -> ad ...)
-  function buildInterleavedGrid(eventsArr, adsArr) {
-    const result = [];
-    let eventIdx = 0, adIdx = 0;
-    while (eventIdx < eventsArr.length || adIdx < adsArr.length) {
-      if (adIdx < adsArr.length) {
-        result.push({ type: "ad", data: adsArr[adIdx] });
-        adIdx++;
-      }
-      for (let k = 0; k < 2 && eventIdx < eventsArr.length; k++) {
-        result.push({ type: "event", data: eventsArr[eventIdx] });
-        eventIdx++;
-      }
-    }
-    return result;
-  }
-  const gridItems = buildInterleavedGrid(filteredEvents, largeAds);
+  // Handle single ad case
+  const topRightAd = ads.length === 1 ? ads[0] : (ads.length ? ads[topRightIndex % ads.length] : null);
+  const bottomRightAd = ads.length > 1 && !topRightClosed && bottomRightIndex >= 0 ? ads[bottomRightIndex % ads.length] : null;
 
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 relative">
-      {/* Ad: Top-right */}
-      {topRightAd && !topRightClosed && (
-        <AnimatePresence>
+    <>
+      {/* Top Navbar */}
+      <div className="w-full fixed top-0 left-0 z-50 bg-white shadow-md border-b border-gray-200">
+        <RightSidebar refreshEvents={fetchEvents} />
+      </div>
+
+      {/* Small Ads - Close button for both desktop & mobile */}
+      <AnimatePresence>
+        {topRightAd && !topRightClosed && (
           <SmallAdd
             ad={topRightAd}
             position="top-right"
             open={true}
             onClose={() => setTopRightClosed(true)}
           />
-        </AnimatePresence>
-      )}
-      {/* Ad: Bottom-right */}
-      {bottomRightAd && !bottomRightClosed && (
-        <AnimatePresence>
+        )}
+        {bottomRightAd && !bottomRightClosed && (
           <SmallAdd
             ad={bottomRightAd}
             position="bottom-right"
             open={true}
             onClose={() => setBottomRightClosed(true)}
           />
-        </AnimatePresence>
-      )}
+        )}
+      </AnimatePresence>
 
-      <header className="w-full fixed top-0 left-0 z-50 bg-white shadow-md border-b border-gray-200">
-        <RightSidebar refreshEvents={fetchEvents} />
-      </header>
-
-      <div className="flex flex-1 pt-16 overflow-hidden">
-        <aside className="hidden lg:block w-64 bg-white shadow-md border-r border-gray-200">
+      {/* Page Layout */}
+      <div className="flex min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 pt-16">
+        {/* Left Sidebar */}
+        <div className="hidden lg:block w-64 bg-white shadow-md border-r border-gray-200">
           <Sidebar activePage="events" />
-        </aside>
-        <main className="flex-1 p-4 sm:p-6 overflow-y-auto">
-          <div className="flex justify-between items-center mb-6 flex-wrap gap-3">
-            <motion.h1
-              initial={{ y: -20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ duration: 0.5 }}
-              className="text-2xl sm:text-3xl font-bold text-gray-800"
-            >
+        </div>
+        {/* Main Content */}
+        <main className="flex-1 flex flex-col items-center px-2 pt-6">
+          {/* Top Blue Heading + Search */}
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ type: "spring", stiffness: 80 }}
+            className="bg-emerald-700 top-0 z-20 text-white rounded-xl p-6 mb-6 shadow-lg w-full max-w-7xl"
+          >
+            <h2 className="text-2xl font-semibold text-center mb-4">
               Upcoming Events
-            </motion.h1>
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => navigate("/create/events")}
-              className="flex items-center gap-2 bg-blue-600 text-white px-3 sm:px-4 py-2 rounded-xl shadow-lg hover:bg-blue-700 transition text-sm sm:text-base"
-            >
-              <PlusCircle className="w-5 h-5" /> Add Event
-            </motion.button>
-          </div>
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-6 relative">
-            <Search className="absolute left-3 top-3 text-gray-400 w-5 h-5" />
-            <input
-              type="text"
-              placeholder="Search events..."
-              className="w-full pl-10 pr-4 py-2 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition placeholder-gray-400 text-sm sm:text-base"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </motion.div>
-          <div className="flex gap-2 sm:gap-3 mb-6 flex-wrap">
-            {["All", "Bokaro"].map((loc) => (
+            </h2>
+            <div className="flex justify-between items-center flex-wrap gap-3">
+              <div className="flex-1 min-w-0">
+                <div className="relative w-full sm:w-96">
+                  <div className="absolute inset-y-0 left-2 flex items-center justify-center pointer-events-none">
+                    <SearchIcon size={18} className="text-blue-300" />
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Search events..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 rounded-full border border-blue-300 text-gray-700 focus:ring-2 focus:ring-blue-500 outline-none transition placeholder-gray-300"
+                  />
+                </div>
+              </div>
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                key={loc}
-                className={`px-3 sm:px-4 py-1 rounded-full border text-sm sm:text-base ${
-                  filterCity === loc
-                    ? "bg-blue-600 text-white border-blue-600"
-                    : "border-gray-300 text-gray-700"
-                }`}
-                onClick={() => setFilterCity(loc)}
+                onClick={() => navigate("/create/events")}
+                className="flex items-center gap-2 bg-white text-blue-700 px-4 py-2 rounded-xl shadow-lg hover:bg-blue-50 transition font-semibold"
               >
-                {loc}
+                <PlusCircle size={18} /> Add Event
               </motion.button>
-            ))}
-          </div>
-          <AnimatePresence>
-            {loading ? (
-              <motion.div className="text-gray-500 text-center">
-                Loading events...
-              </motion.div>
-            ) : gridItems.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-                {gridItems.map((item, idx) =>
-                  item.type === "ad" ? (
-                    <LargeAd
-  key={"ad-" + (item.data.id ?? idx)}
-  ad={item.data}
-  onClose={() => {
-    setLargeAds((prev) => prev.filter((a) => a.id !== item.data.id));
-  }}
-/>
+            </div>
+            {/* Filter Buttons */}
+            <div className="flex justify-center mt-4 gap-2 flex-wrap">
+              {["All", "Bokaro"].map((loc) => (
+                <motion.button
+                  key={loc}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className={`px-4 py-1.5 rounded-full border text-sm font-medium transition-all ${
+                    filterCity === loc
+                      ? "bg-white text-blue-700 border-blue-300 shadow-md"
+                      : "border-blue-200 text-blue-200 hover:border-blue-300 hover:text-blue-100"
+                  }`}
+                  onClick={() => setFilterCity(loc)}
+                >
+                  {loc}
+                </motion.button>
+              ))}
+            </div>
+          </motion.div>
 
+          {/* Main 3-column grid */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-5xl">
+            {/* First Column: Events (even indexes) */}
+            <div className="flex flex-col gap-6">
+              {leftEvents.length === 0 && !loading && (
+                <div className="text-center text-gray-500 mt-12 col-span-full">No events found.</div>
+              )}
+              {leftEvents.map((event, idx) => (
+                <motion.div
+                  key={event.id}
+                  layout
+                  initial={{ opacity: 0, y: 40 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{
+                    delay: idx * 0.05,
+                    type: "spring",
+                    stiffness: 100,
+                  }}
+                  whileHover={{
+                    scale: 1.03,
+                    boxShadow: "0 25px 40px rgba(59,130,246,0.25)",
+                  }}
+                  className="relative rounded-2xl overflow-hidden p-5 flex flex-col justify-between bg-white shadow-md border border-blue-100 cursor-pointer hover:bg-gradient-to-r hover:from-blue-100"
+                  onClick={() => navigate(`/events/${event.id}`)}
+                >
+                  {Array.isArray(event.imageUrls) && event.imageUrls.length > 0 ? (
+                    <div className="relative w-full h-48 mb-4 rounded-xl overflow-hidden">
+                      <img
+                        src={event.imageUrls[0]}
+                        alt={event.title}
+                        className="w-full h-full object-cover rounded-xl"
+                      />
+                    </div>
                   ) : (
-                    <motion.div
-                      key={"event-" + item.data.id}
-                      layout
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -20 }}
-                      whileHover={{
-                        scale: 1.03,
-                        boxShadow: "0 20px 30px rgba(0,0,0,0.08)",
+                    <div className="w-full h-48 bg-gray-100 flex items-center justify-center rounded-xl mb-4 text-gray-400">
+                      No image
+                    </div>
+                  )}
+                  <div className="mb-3">
+                    <h2 className="pb-5 font-semibold text-gray-800 text-lg">
+                      {event.title}
+                    </h2>
+                  </div>
+                  <div className="space-y-2 text-gray-700 mb-3">
+                    <p className="flex items-center gap-2">
+                      <MapPin size={16} className="text-blue-700" /> {event.location}
+                    </p>
+                    <p className="flex items-center gap-2">
+                      <Calendar size={16} className="text-blue-600" />
+                      {event.eventDate
+                        ? new Date(event.eventDate).toLocaleDateString()
+                        : "-"}
+                    </p>
+                    <p className="flex items-center gap-2">
+                      <Clock size={16} className="text-indigo-600" />
+                      {event.eventDate
+                        ? new Date(event.eventDate).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })
+                        : "-"}
+                    </p>
+                  </div>
+                  <div className="mt-4 flex justify-between items-center border-t pt-3 border-blue-200">
+                    <motion.button
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (event.reglink) {
+                          window.open(event.reglink, "_blank");
+                        }
                       }}
-                      className="bg-white rounded-2xl p-4 relative hover:bg-gradient-to-r hover:from-blue-50 hover:to-blue-100 transition cursor-pointer"
-                      onClick={() => navigate(`/events/${item.data.id}`)}
+                      className="flex items-center gap-2 text-blue-700 font-semibold hover:text-blue-900 transition"
                     >
-                      {Array.isArray(item.data.imageUrls) && item.data.imageUrls.length > 0 ? (
-                        <img
-                          src={item.data.imageUrls[0]}
-                          alt={item.data.title}
-                          className="w-full h-44 object-cover rounded-lg mb-3"
-                        />
-                      ) : (
-                        <div className="w-full h-44 bg-gray-100 flex items-center justify-center rounded-lg text-gray-400 mb-3">
-                          No image
-                        </div>
-                      )}
-                      <h2 className="text-lg font-semibold">{item.data.title}</h2>
-                      <p className="text-sm text-gray-600">
-                        {item.data.description?.slice(0, 100)}
-                        {item.data.description && item.data.description.length > 100 ? "…" : ""}
-                      </p>
-                      <div className="mt-3 text-gray-600 text-sm flex gap-3 items-center flex-wrap">
-                        <span className="flex items-center gap-1">
-                          <MapPin className="w-4 h-4" /> {item.data.location}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Calendar className="w-4 h-4" />{" "}
-                          {item.data.eventDate
-                            ? new Date(item.data.eventDate).toLocaleDateString()
-                            : "-"}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Clock className="w-4 h-4" />{" "}
-                          {item.data.eventDate
-                            ? new Date(item.data.eventDate).toLocaleTimeString(
-                                [],
-                                {
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                                }
-                              )
-                            : "-"}
-                        </span>
-                      </div>
-                      <p className="text-xs text-gray-400 mt-2">
-                        Posted by:{" "}
-                        {item.data.author
-                          ? `${item.data.author.firstName} ${item.data.author.lastName}`
-                          : "Unknown"}
-                      </p>
-                      <div className="mt-3 flex gap-2">
-                        <motion.button
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(`/events/${item.data.id}`);
-                          }}
-                          className="flex-1 flex items-center justify-center gap-2 bg-green-600 text-white py-2 rounded-xl text-sm hover:bg-green-700 transition"
-                        >
-                          <MessageCircle className="w-4 h-4" /> Comment
-                        </motion.button>
-                        <motion.button
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (item.data.reglink) {
-                              window.open(item.data.reglink, "_blank");
-                            }
-                          }}
-                          className="flex-1 flex items-center justify-center gap-2 bg-blue-600 text-white py-2 rounded-xl text-sm hover:bg-blue-700 transition"
-                        >
-                          <LinkIcon className="w-4 h-4" /> Register
-                        </motion.button>
-                      </div>
+                      <LinkIcon size={18} /> Register
+                    </motion.button>
+                    <motion.div className="flex items-center gap-2 text-gray-500 hover:text-blue-600 transition">
+                      <MessageCircle size={18} /> Comment
                     </motion.div>
-                  )
-                )}
-              </div>
-            ) : (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="text-center text-gray-500 text-xl mt-10"
-              >
-                No events found 🔍
-              </motion.div>
-            )}
-          </AnimatePresence>
+                  </div>
+                  {event.author && (
+                    <p className="text-xs text-gray-400 mt-2">
+                      Posted by: {event.author.firstName} {event.author.lastName}
+                    </p>
+                  )}
+                </motion.div>
+              ))}
+            </div>
+
+            {/* Second Column: Events (odd indexes) */}
+            <div className="flex flex-col gap-6">
+              {centerEvents.map((event, idx) => (
+                <motion.div
+                  key={event.id}
+                  layout
+                  initial={{ opacity: 0, y: 40 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{
+                    delay: idx * 0.05,
+                    type: "spring",
+                    stiffness: 100,
+                  }}
+                  whileHover={{
+                    scale: 1.03,
+                    boxShadow: "0 25px 40px rgba(59,130,246,0.25)",
+                  }}
+                  className="relative rounded-2xl overflow-hidden p-5 flex flex-col justify-between bg-white shadow-md border border-blue-100 cursor-pointer hover:bg-gradient-to-r hover:from-blue-100"
+                  onClick={() => navigate(`/events/${event.id}`)}
+                >
+                  {Array.isArray(event.imageUrls) && event.imageUrls.length > 0 ? (
+                    <div className="relative w-full h-48 mb-4 rounded-xl overflow-hidden">
+                      <img
+                        src={event.imageUrls[0]}
+                        alt={event.title}
+                        className="w-full h-full object-cover rounded-xl"
+                      />
+                    </div>
+                  ) : (
+                    <div className="w-full h-48 bg-gray-100 flex items-center justify-center rounded-xl mb-4 text-gray-400">
+                      No image
+                    </div>
+                  )}
+                  <div className="mb-3">
+                    <h2 className="pb-5 font-semibold text-gray-800 text-lg">
+                      {event.title}
+                    </h2>
+                  </div>
+                  <div className="space-y-2 text-gray-700 mb-3">
+                    <p className="flex items-center gap-2">
+                      <MapPin size={16} className="text-blue-700" /> {event.location}
+                    </p>
+                    <p className="flex items-center gap-2">
+                      <Calendar size={16} className="text-blue-600" />
+                      {event.eventDate
+                        ? new Date(event.eventDate).toLocaleDateString()
+                        : "-"}
+                    </p>
+                    <p className="flex items-center gap-2">
+                      <Clock size={16} className="text-indigo-600" />
+                      {event.eventDate
+                        ? new Date(event.eventDate).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })
+                        : "-"}
+                    </p>
+                  </div>
+                  <div className="mt-4 flex justify-between items-center border-t pt-3 border-blue-200">
+                    <motion.button
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (event.reglink) {
+                          window.open(event.reglink, "_blank");
+                        }
+                      }}
+                      className="flex items-center gap-2 text-blue-700 font-semibold hover:text-blue-900 transition"
+                    >
+                      <LinkIcon size={18} /> Register
+                    </motion.button>
+                    <motion.div className="flex items-center gap-2 text-gray-500 hover:text-blue-600 transition">
+                      <MessageCircle size={18} /> Comment
+                    </motion.div>
+                  </div>
+                  {event.author && (
+                    <p className="text-xs text-gray-400 mt-2">
+                      Posted by: {event.author.firstName} {event.author.lastName}
+                    </p>
+                  )}
+                </motion.div>
+              ))}
+            </div>
+
+            {/* Third Column: Sponsored Ads (Large Ads with mobile close button) */}
+            <div className="flex flex-col gap-6">
+              {largeAds.length > 0 && largeAdIndexes.map((idx, i) => {
+                if (i === 0 && largeAd1Closed) return null;
+                if (i === 1 && largeAd2Closed) return null;
+                if (!largeAds[idx]) return null;
+
+                return (
+                  <motion.div
+                    key={"large-ad-wrapper-" + i}
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    className="relative rounded-2xl shadow-md border border-blue-100 overflow-hidden"
+                    style={{ height: "250px", minHeight: "250px" }}
+                  >
+                    {/* Close button for mobile only */}
+                    <motion.button
+                      className="absolute -top-3 -right-3 z-20 lg:hidden bg-white rounded-full p-1.5 shadow-lg border-2 border-gray-200 hover:bg-gray-100 transition-all duration-200"
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => {
+                        if (i === 0) setLargeAd1Closed(true);
+                        if (i === 1) setLargeAd2Closed(true);
+                      }}
+                    >
+                      <X className="w-4 h-4 text-gray-700" />
+                    </motion.button>
+                    
+                    <LargeAd
+                      ad={largeAds[idx]}
+                      className="w-full h-full"
+                    />
+                  </motion.div>
+                );
+              })}
+            </div>
+          </div>
         </main>
       </div>
-    </div>
+    </>
   );
 }
