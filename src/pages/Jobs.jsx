@@ -11,6 +11,7 @@ import LargeAd from "../components/LargeAd";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
+import Loader from '../components/Loader';
 
 // Helper: Get next index in circular manner
 function getNextIndex(current, total) {
@@ -251,10 +252,18 @@ export default function Jobs() {
                 />
               </div>
             </div>
-          </motion.div>
+                    </motion.div>
 
-          {/* Main 3-column grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-5xl">
+          {/* Show loader while loading */}
+          {loading ? (
+            <div className="flex justify-center items-center py-20">
+              <Loader />
+            </div>
+          ) : (
+            <>
+              {/* Main 3-column grid */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-5xl">
+
             {/* First Column: Jobs (even indexes) */}
             <div className="flex flex-col gap-6">
               {leftJobs.length === 0 && !loading && (
@@ -426,6 +435,8 @@ export default function Jobs() {
               })}
             </div>
           </div>
+           </>
+      )}
         </main>
       </div>
     </>
