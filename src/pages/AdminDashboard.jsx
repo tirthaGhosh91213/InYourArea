@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
+import Loader from "../components/Loader";
 
 const BASE_API = "https://api.jharkhandbiharupdates.com/api/v1";
 const TABS = [
@@ -235,9 +236,10 @@ export default function AdminDashboard() {
       {/* Content */}
       <main className="flex-1 overflow-y-auto px-4 sm:px-8 py-6">
         {loading ? (
-          <div className="flex justify-center items-center h-64">
-            <Loader2 className="animate-spin text-green-600 w-10 h-10" />
-          </div>
+  <div className="flex justify-center items-center h-64">
+    <Loader />
+  </div>
+
         ) : items.length === 0 ? (
           <div className="text-center py-16 text-gray-500 text-lg">
             No pending {activeTab} posts 🎉
@@ -454,10 +456,11 @@ export default function AdminDashboard() {
                 )}
 
               {loadingDetails && activeTab === "properties" && (
-                <div className="flex items-center justify-center h-32">
-                  <Loader2 size={32} className="animate-spin text-green-600" />
-                </div>
-              )}
+  <div className="flex items-center justify-center h-32">
+    <Loader />
+  </div>
+)}
+
 
               {/* For non-property tabs */}
               {activeTab !== "properties" && (
