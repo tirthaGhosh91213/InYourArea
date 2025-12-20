@@ -42,9 +42,6 @@ export default function UserDashboard() {
   const [editMode, setEditMode] = useState(false);
   const [formData, setFormData] = useState({ firstName: "", lastName: "" });
   const [loading, setLoading] = useState(false);
-  const [modalContent, setModalContent] = useState(null);
-  const [modalType, setModalType] = useState(null);
-  const [showFullContent, setShowFullContent] = useState(false);
 
   // Image, crop, and modal state
   const [profileImageUrl, setProfileImageUrl] = useState(null);
@@ -272,23 +269,16 @@ export default function UserDashboard() {
     setRotation(0);
   };
 
-  // FIXED: Use correct detail endpoint for local news
-  const handleView = async (type, id) => {
-    try {
-      let url = "";
-      if (type === "events") url = `https://api.jharkhandbiharupdates.com/api/v1/events/${id}`;
-      else if (type === "jobs") url = `https://api.jharkhandbiharupdates.com/api/v1/jobs/${id}`;
-      else if (type === "community")
-        url = `https://api.jharkhandbiharupdates.com/api/v1/community/${id}`;
-      else if (type === "localNews")
-        url = `https://api.jharkhandbiharupdates.com/api/v1/district-news/details/${id}`;
-      const res = await axios.get(url, { headers });
-      setModalContent(res.data.data);
-      setModalType(type);
-      setShowFullContent(false);
-    } catch (error) {
-      toast.error("Failed to fetch details");
-      console.error("View error:", error);
+  // ✅ NEW: Redirect to post details instead of showing modal
+  const handleViewDetails = (type, id) => {
+    if (type === "events") {
+      navigate(`/events/${id}`);
+    } else if (type === "jobs") {
+      navigate(`/jobs/${id}`);
+    } else if (type === "community") {
+      navigate(`/community/${id}`);
+    } else if (type === "localNews") {
+      navigate(`/news/${id}`);
     }
   };
 
@@ -345,18 +335,6 @@ export default function UserDashboard() {
     }
   };
 
-  // Utils
-  const truncateText = (text, wordLimit = 50) => {
-    if (!text) return "";
-    const words = text.split(" ");
-    if (words.length <= wordLimit) return text;
-    return words.slice(0, wordLimit).join(" ") + "...";
-  };
-  const needsTruncation = (text, wordLimit = 50) => {
-    if (!text) return false;
-    return text.split(" ").length > wordLimit;
-  };
-
   const handleImageClick = (url, e) => {
     e.stopPropagation();
     setLightboxImage(url);
@@ -400,15 +378,14 @@ export default function UserDashboard() {
     tabs.push({ key: "localNews", label: "Local News", icon: FileText });
 
   if (!profile || !stats || !content) {
-  return (
-    <div className="flex items-center justify-center min-h-[80vh]">
-      <div className="w-64">  {/* Control loader width */}
-        <Loader />
+    return (
+      <div className="flex items-center justify-center min-h-[80vh]">
+        <div className="w-64">
+          <Loader />
+        </div>
       </div>
-    </div>
-  );
-}
-
+    );
+  }
 
   return (
     <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-8">
@@ -560,12 +537,12 @@ export default function UserDashboard() {
               whileHover={{ scale: 1.02 }}
             >
               <div className="flex-1">
-                <div className="flex   items-center flex-wrap gap-3">
+                <div className="flex items-center flex-wrap gap-3">
                   <h3 className="text-lg font-semibold text-gray-900">
                     {item.title}
                   </h3>
                   <span
-                    className={`px-3  py-1 text-xs rounded-full ${getStatusColor(
+                    className={`px-3 py-1 text-xs rounded-full ${getStatusColor(
                       item.status
                     )}`}
                   >
@@ -598,9 +575,9 @@ export default function UserDashboard() {
 
               {activeTab !== "comments" && (
                 <div className="flex gap-2 mt-2">
-                  {/* View Details button for all */}
+                  {/* ✅ CHANGED: View Details now redirects instead of opening modal */}
                   <button
-                    onClick={() => handleView(activeTab, item.id)}
+                    onClick={() => handleViewDetails(activeTab, item.id)}
                     className="flex items-center gap-2 bg-indigo-50 text-indigo-700 px-3 py-1 rounded-lg hover:bg-indigo-100 transition"
                   >
                     <Eye size={14} /> View Details
@@ -645,154 +622,6 @@ export default function UserDashboard() {
           ))
         )}
       </div>
-      {/* View Details Modal */}
-      <AnimatePresence>
-        {modalContent && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4"
-            onClick={() => {
-              setModalContent(null);
-              setShowFullContent(false);
-            }}
-          >
-            <motion.div
-              initial={{ y: 40, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: 40, opacity: 0 }}
-              className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl overflow-y-auto max-h-[90vh] p-6 relative"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <button
-                onClick={() => {
-                  setModalContent(null);
-                  setShowFullContent(false);
-                }}
-                className="absolute right-3 top-3 bg-gray-200 rounded-full w-8 h-8 flex items-center justify-center text-gray-600 hover:bg-gray-300 transition z-10"
-              >
-                ✕
-              </button>
-
-              <h2 className="text-2xl font-bold text-gray-900 mb-4 pr-8">
-                {modalContent.title}
-              </h2>
-              <div className="mb-6">
-                <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                  <FileText size={18} className="text-indigo-600" />
-                  {modalType === "localNews"
-                    ? "Content"
-                    : modalType === "community"
-                    ? "Description"
-                    : "Description"}
-                </h3>
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <p className="text-gray-700 whitespace-pre-wrap leading-relaxed">
-                    {showFullContent
-                      ? modalType === "community"
-                        ? modalContent.content
-                        : modalType === "localNews"
-                        ? modalContent.content
-                        : modalContent.description || modalContent.content
-                      : truncateText(
-                          modalType === "community"
-                            ? modalContent.content
-                            : modalType === "localNews"
-                            ? modalContent.content
-                            : modalContent.description || modalContent.content,
-                          50
-                        )}
-                  </p>
-                  {needsTruncation(
-                    modalType === "community"
-                      ? modalContent.content
-                      : modalType === "localNews"
-                      ? modalContent.content
-                      : modalContent.description || modalContent.content,
-                    50
-                  ) && (
-                    <button
-                      onClick={() => setShowFullContent(!showFullContent)}
-                      className="mt-3 flex items-center gap-1 text-indigo-600 hover:text-indigo-700 font-semibold text-sm transition"
-                    >
-                      {showFullContent ? (
-                        <>
-                          <ChevronUp size={16} /> See Less
-                        </>
-                      ) : (
-                        <>
-                          <ChevronDown size={16} /> See More
-                        </>
-                      )}
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              {modalType === "localNews" && (
-                <div className="mb-6 space-y-3 bg-purple-50 p-4 rounded-lg">
-                  <p className="text-sm text-gray-700">
-                    <span className="font-semibold">District:</span>{" "}
-                    {modalContent.districtName || "N/A"}
-                  </p>
-                  {modalContent.author && (
-                    <p className="text-sm text-gray-700">
-                      <span className="font-semibold">Author:</span>{" "}
-                      {modalContent.author.firstName}{" "}
-                      {modalContent.author.lastName}
-                      <span className="ml-2 px-2 py-0.5 bg-white rounded text-xs">
-                        {modalContent.author.role}
-                      </span>
-                    </p>
-                  )}
-                </div>
-              )}
-
-              {modalContent.imageUrls && modalContent.imageUrls.length > 0 && (
-                <div className="mt-6">
-                  <h3 className="font-semibold text-gray-800 mb-3">Images</h3>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                    {modalContent.imageUrls.map((url, i) => (
-                      <img
-                        key={i}
-                        src={url}
-                        alt={`Post ${i + 1}`}
-                        className="rounded-lg w-full h-40 object-cover cursor-pointer shadow-md hover:shadow-xl transition-shadow"
-                        onClick={(e) => handleImageClick(url, e)}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Timestamps */}
-              <div className="mt-6 pt-4 border-t border-gray-200 text-xs text-gray-500 space-y-1">
-                <p>
-                  <span className="font-semibold">Created:</span>{" "}
-                  {new Date(modalContent.createdAt).toLocaleString("en-IN", {
-                    dateStyle: "medium",
-                    timeStyle: "short",
-                  })}
-                </p>
-                {modalContent.updatedAt &&
-                  modalContent.updatedAt !== modalContent.createdAt && (
-                    <p>
-                      <span className="font-semibold">Last Updated:</span>{" "}
-                      {new Date(modalContent.updatedAt).toLocaleString(
-                        "en-IN",
-                        {
-                          dateStyle: "medium",
-                          timeStyle: "short",
-                        }
-                      )}
-                    </p>
-                  )}
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* Image Lightbox */}
       <AnimatePresence>
@@ -867,8 +696,6 @@ export default function UserDashboard() {
                       />
                     </div>
                     <canvas ref={canvasRef} style={{ display: "none" }} />
-                    {/* Zoom & rotate controls as in previous code */}
-                    {/* ... */}
                     {/* Crop Controls */}
                     <div className="w-full space-y-3 mb-4">
                       {/* Zoom Control */}
