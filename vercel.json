@@ -3,31 +3,24 @@
     {
       "source": "/OneSignalSDKWorker.js",
       "headers": [
-        { "key": "Content-Type", "value": "application/javascript" },
+        { "key": "Content-Type", "value": "application/javascript; charset=utf-8" },
         { "key": "Service-Worker-Allowed", "value": "/" }
       ]
     },
     {
       "source": "/OneSignalSDKWorkerUpdater.js",
       "headers": [
-        { "key": "Content-Type", "value": "application/javascript" },
+        { "key": "Content-Type", "value": "application/javascript; charset=utf-8" },
         { "key": "Service-Worker-Allowed", "value": "/" }
       ]
     }
   ],
   "rewrites": [
-    {
-      "source": "/OneSignalSDKWorker.js",
-      "destination": "/OneSignalSDKWorker.js"
-    },
-    {
-      "source": "/OneSignalSDKWorkerUpdater.js",
-      "destination": "/OneSignalSDKWorkerUpdater.js"
-    },
-    {
-      "source": "/(.*)",
-      "destination": "/index.html"
-    }
+    { "source": "/OneSignalSDKWorker.js", "destination": "/OneSignalSDKWorker.js" },
+    { "source": "/OneSignalSDKWorkerUpdater.js", "destination": "/OneSignalSDKWorkerUpdater.js" },
+    { "source": "/service-worker.js", "destination": "/service-worker.js" },
+    { "source": "/manifest.json", "destination": "/manifest.json" },
+    { "source": "/(.*)", "destination": "/index.html" }
   ],
   "installCommand": "npm install --legacy-peer-deps"
 }
