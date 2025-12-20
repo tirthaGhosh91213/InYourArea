@@ -1,68 +1,75 @@
-const CACHE_NAME = 'jharkhand-bihar-updates-v2'; // ✅ Changed version to force update
+const CACHE_NAME = 'jharkhand-bihar-updates-v3';
 
-// Install - cache important files
+const APP_SHELL = [
+  '/',
+  '/index.html',
+  '/manifest.json',
+  '/icon-192x192.png',
+  '/icon-512x512.png',
+  '/logo.png'
+];
+
+// Install
 self.addEventListener('install', (event) => {
-  console.log('✅ Service Worker installing...');
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll([
-        '/',
-        '/index.html',
-        '/manifest.json',
-        '/icon-192x192.png',
-        '/icon-512x512.png',
-        '/logo.png'
-      ]).catch((err) => {
-        console.log('Cache addAll error:', err);
-      });
-    })
-  );
-  self.skipWaiting(); // Force activate immediately
-});
-
-// Fetch - Network first, then cache (better for dynamic content)
-self.addEventListener('fetch', (event) => {
-  // Skip non-GET requests
-  if (event.request.method !== 'GET') return;
-  
-  // Skip chrome-extension and other non-http requests
-  if (!event.request.url.startsWith('http')) return;
-
-  event.respondWith(
-    fetch(event.request)
-      .then((response) => {
-        // Clone the response before caching
-        const responseToCache = response.clone();
-        
-        caches.open(CACHE_NAME).then((cache) => {
-          cache.put(event.request, responseToCache);
-        });
-        
-        return response;
-      })
-      .catch(() => {
-        // If network fails, try cache
-        return caches.match(event.request).then((response) => {
-          return response || caches.match('/index.html');
-        });
-      })
-  );
+  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL)));
+  self.skipWaiting();
 });
 
 // Activate - clean old caches
 self.addEventListener('activate', (event) => {
-  console.log('✅ Service Worker activated');
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME) {
-            console.log('🗑️ Deleting old cache:', cacheName);
-            return caches.delete(cacheName); // Delete old caches
-          }
-        })
-      );
+    caches.keys().then((names) =>
+      Promise.all(names.map((n) => (n !== CACHE_NAME ? caches.delete(n) : null)))
+    )
+  );
+  self.clients.claim();
+});
+
+// Fetch
+self.addEventListener('fetch', (event) => {
+  if (event.request.method !== 'GET') return;
+
+  const url = new URL(event.request.url);
+
+  // 1) Never cache or fallback for OneSignal / SW scripts (must be real JS, never HTML)
+  const isOneSignal =
+    url.hostname.includes('onesignal.com') ||
+    url.pathname.startsWith('/OneSignalSDKWorker') ||
+    url.pathname.startsWith('/OneSignalSDK') ||
+    url.pathname.startsWith('/OneSignalSDKWorkerUpdater');
+
+  const isServiceWorkerScript =
+    url.pathname === '/service-worker.js' ||
+    event.request.destination === 'serviceworker';
+
+  if (isOneSignal || isServiceWorkerScript) {
+    event.respondWith(fetch(event.request));
+    return;
+  }
+
+  // 2) Only cache same-origin requests (avoid caching random cross-origin stuff)
+  if (url.origin !== self.location.origin) {
+    event.respondWith(fetch(event.request));
+    return;
+  }
+
+  // 3) Navigation requests: network-first, fallback to cached index.html
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request).catch(() => caches.match('/index.html'))
+    );
+    return;
+  }
+
+  // 4) Static assets: cache-first, fallback to network
+  event.respondWith(
+    caches.match(event.request).then((cached) => {
+      if (cached) return cached;
+      return fetch(event.request).then((res) => {
+        const copy = res.clone();
+        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+        return res;
+      });
     })
   );
-  return self.clients.claim(); // Take control immediately
 });
