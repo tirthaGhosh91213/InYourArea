@@ -12,7 +12,8 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import Loader from "../components/Loader";
-import { promptAndSyncNotifications } from "../utils/enableNotifications";
+// 🔔 NEW: OneSignal hook (REMOVED old promptAndSyncNotifications)
+import { useOneSignalAfterLogin } from "../hooks/useOneSignalAfterLogin";
 
 // Helper: Get next index in circular manner
 function getNextIndex(current, total) {
@@ -39,6 +40,10 @@ const SLOT_KEYS = {
 
 export default function Jobs() {
   const navigate = useNavigate();
+  
+  // 🔔 NEW: OneSignal hook - handles post-login subscription sync
+  useOneSignalAfterLogin();
+  
   const [searchTerm, setSearchTerm] = useState("");
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -158,17 +163,7 @@ export default function Jobs() {
       });
   }, []);
 
-  // 🔔 Auto prompt notifications once after login
-  useEffect(() => {
-    const accessToken = localStorage.getItem("accessToken");
-    if (!accessToken) return;
-
-    const alreadyAsked = localStorage.getItem("notifPromptShown");
-    if (!alreadyAsked) {
-      localStorage.setItem("notifPromptShown", "true");
-      promptAndSyncNotifications();
-    }
-  }, []);
+  // 🔔 REMOVED: Old notification useEffect - hook handles it now
 
   useEffect(() => {
     if (!ads.length || ads.length === 1) return;
