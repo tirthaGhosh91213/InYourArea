@@ -120,34 +120,59 @@ function LogIn() {
   };
 
   // ===== LOGIN =====
-  const handleSignin = async (e) => {
-    e.preventDefault();
-    try {
-      const res = await fetch("https://api.jharkhandbiharupdates.com/api/v1/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(signinForm),
-      });
+const handleSignin = async (e) => {
+  e.preventDefault();
+  try {
+    const res = await fetch("https://api.jharkhandbiharupdates.com/api/v1/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(signinForm),
+    });
+    
+    const result = await res.json();
+    const token = result?.accessToken;
+    const role = result?.role === "ROLE_ADMIN" ? "admin" : "user";
 
-      const result = await res.json();
-      const token = result?.accessToken;
-      const role = result?.role === "ROLE_ADMIN" ? "admin" : "user";
+    if (res.ok && token) {
+      localStorage.setItem("accessToken", token);
+      localStorage.setItem("role", role);
+      showPopup("Login successful!");
 
-      if (res.ok && token) {
-        localStorage.setItem("accessToken", token);
-        localStorage.setItem("role", role);
-        showPopup("Login successful!");
+      // ✅ NEW: Sync OneSignal Player ID to backend
+      setTimeout(async () => {
+        try {
+          const subscriptionId = await window.OneSignal?.User?.PushSubscription?.id;
+          
+          if (subscriptionId) {
+            await fetch('https://api.jharkhandbiharupdates.com/api/v1/users/onesignal-id', {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify({ playerId: subscriptionId })
+            });
+            
+            console.log("✅ OneSignal Player ID synced:", subscriptionId);
+          } else {
+            console.warn("⚠️ No OneSignal subscription ID found yet");
+          }
+        } catch (e) {
+          console.error("❌ Failed to sync OneSignal ID:", e);
+        }
+      }, 2000); // Wait 2 seconds for OneSignal to be ready
 
-        setTimeout(() => {
-          navigate("/jobs");
-        }, 500);
-      } else {
-        showPopup(result.message || "Invalid credentials", "error");
-      }
-    } catch (err) {
-      showPopup(err.message, "error");
+      setTimeout(() => {
+        navigate("/jobs");
+      }, 500);
+    } else {
+      showPopup(result.message || "Invalid credentials", "error");
     }
-  };
+  } catch (err) {
+    showPopup(err.message, "error");
+  }
+};
+
 
   // ===== FORGOT PASSWORD =====
   const handleForgotPassword = async (e) => {
