@@ -1,8 +1,24 @@
 {
-  "rewrites": [
+  "routes": [
     {
-      "source": "/(.*)",
-      "destination": "/index.html"
+      "src": "/OneSignalSDKWorker.js",
+      "dest": "/OneSignalSDKWorker.js",
+      "headers": {
+        "Content-Type": "application/javascript; charset=utf-8",
+        "Service-Worker-Allowed": "/"
+      }
+    },
+    {
+      "src": "/OneSignalSDKWorkerUpdater.js",
+      "dest": "/OneSignalSDKWorkerUpdater.js",
+      "headers": {
+        "Content-Type": "application/javascript; charset=utf-8",
+        "Service-Worker-Allowed": "/"
+      }
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
     }
   ],
   "installCommand": "npm install --legacy-peer-deps"
