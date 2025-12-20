@@ -40,7 +40,7 @@ function GoogleCallback() {
             const subscriptionId = await window.OneSignal?.User?.PushSubscription?.id;
             
             if (subscriptionId) {
-              const response = await fetch('https://api.jharkhandbiharupdates.com/api/v1/users/onesignal-id', {
+              const response = await fetch('https://api.jharkhandbiharupdates.com/api/v1/user/onesignal-id', {
                 method: 'PUT',
                 headers: {
                   'Content-Type': 'application/json',
