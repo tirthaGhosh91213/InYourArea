@@ -1,5 +1,6 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { useOneSignal } from "./hooks/useOneSignal"; // ✅ Import OneSignal hook
 import HeroPage from "./components/heroPage";
 import Footer from "./components/Footer";
 import LocalNews from "./pages/LocalNews"; 
@@ -27,11 +28,9 @@ import CreatePropertyPost from "./pages/CreatePropertyPost";
 import AdminAddPost from "./pages/AdminAddPost";
 import AdminAddSection from "./pages/AdminAddSection";
 
-
 // ✅ Home component
 function Home() {
   const [postcode, setPostcode] = React.useState("");
-
 
   const handleSubmit = () => {
     if (postcode.trim() === "") {
@@ -41,37 +40,28 @@ function Home() {
     window.location.href = "/localnews"; // Navigate to localnews
   };
 
-
   return (
     <>
-   
       <HeroPage
         onSubmit={handleSubmit}
         setPostcode={setPostcode}
         postcode={postcode}
       />
-    
     </>
   );
 }
 
-
 // ✅ App component
 export default function App() {
-  const token = localStorage.getItem("accessToken");
+  useOneSignal(); // ✅ Initialize OneSignal push notifications
+
   return (
-    
     <Router>
-      {/* Fixed Navbar */}
-      
-
-
       {/* Routes */}
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/localnews/:district" element={<LocalNews />} />
         <Route path="/auth/google/callback" element={<GoogleCallback />} />
-
 
         <Route path="/community" element={<Community />} />
         <Route path="/jobs" element={<Jobs />} />
@@ -86,16 +76,16 @@ export default function App() {
         <Route path="/admin/:type/:id" element={<AdminItemDetail />} />
         <Route
           path="/community/:id"
-          element= {<CommunityDetails /> }
+          element={<CommunityDetails />}
         />
-          <Route path="/jobs/:id" element={<JobDetails />} />
-          <Route path="/events/:id" element={<EventDetails />} />
-          <Route path="/localnews/details/:id" element={<LocalNewsDetails />} />
-          <Route path="/user-dashboard" element={<UserDashboard />} />
-           <Route path="/properties" element={<Properties />} />
-           <Route path="/createPropertyPost" element={<CreatePropertyPost />} />
-           <Route path="/add-post" element={<AdminAddPost />} />
-           <Route path="/add" element={<AdminAddSection />} />
+        <Route path="/jobs/:id" element={<JobDetails />} />
+        <Route path="/events/:id" element={<EventDetails />} />
+        <Route path="/localnews/details/:id" element={<LocalNewsDetails />} />
+        <Route path="/user-dashboard" element={<UserDashboard />} />
+        <Route path="/properties" element={<Properties />} />
+        <Route path="/createPropertyPost" element={<CreatePropertyPost />} />
+        <Route path="/add-post" element={<AdminAddPost />} />
+        <Route path="/add" element={<AdminAddSection />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </Router>
