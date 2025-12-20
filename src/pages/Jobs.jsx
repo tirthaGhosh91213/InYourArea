@@ -1,8 +1,15 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Building2, MapPin, Search as SearchIcon, DollarSign,
-  Calendar, MessageCircle, Send, UserCircle, X,
+  Building2,
+  MapPin,
+  Search as SearchIcon,
+  DollarSign,
+  Calendar,
+  MessageCircle,
+  Send,
+  UserCircle,
+  X,
 } from "lucide-react";
 import Sidebar from "../components/SideBar";
 import RightSidebar from "../components/RightSidebar";
@@ -11,7 +18,9 @@ import LargeAd from "../components/LargeAd";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
-import Loader from '../components/Loader';
+import Loader from "../components/Loader";
+import OneSignal from "react-onesignal";
+import { syncPlayerIdToBackend } from "../utils/onesignalSync";
 
 // Helper: Get next index in circular manner
 function getNextIndex(current, total) {
@@ -33,7 +42,7 @@ const SLOT_KEYS = {
   TOP_RIGHT: "JOBS_AD_INDEX_TOP_RIGHT",
   BOTTOM_RIGHT: "JOBS_AD_INDEX_BOTTOM_RIGHT",
   LARGE_AD_1: "JOBS_LARGE_AD_INDEX_1",
-  LARGE_AD_2: "JOBS_LARGE_AD_INDEX_2"
+  LARGE_AD_2: "JOBS_LARGE_AD_INDEX_2",
 };
 
 export default function Jobs() {
@@ -54,11 +63,55 @@ export default function Jobs() {
   const [largeAd2Closed, setLargeAd2Closed] = useState(false);
   const timerRef = useRef();
 
+  // 🔔 Ask for notifications once after login and sync playerId
+  useEffect(() => {
+    const accessToken = localStorage.getItem("accessToken");
+    if (!accessToken) return;
+
+    const alreadyAsked = localStorage.getItem("notifPromptShown");
+    if (alreadyAsked === "true") return;
+
+    localStorage.setItem("notifPromptShown", "true");
+
+    const askAndSync = async () => {
+      try {
+        // Show OneSignal prompt
+        await OneSignal.Slidedown.promptPush();
+
+        // After user responds, wait a bit and fetch playerId
+        setTimeout(async () => {
+          try {
+            // react-onesignal wrapper
+            const subscriptionId = await OneSignal.User.PushSubscription.id();
+            const token = localStorage.getItem("accessToken");
+
+            if (subscriptionId && token) {
+              await syncPlayerIdToBackend(subscriptionId, token);
+            } else {
+              console.warn("Jobs notif prompt: missing subscriptionId or token", {
+                subscriptionId,
+                token,
+              });
+            }
+          } catch (e) {
+            console.error("Jobs notif prompt: error getting playerId", e);
+          }
+        }, 1000);
+      } catch (e) {
+        console.error("Jobs notif prompt: error during prompt", e);
+      }
+    };
+
+    askAndSync();
+  }, []);
+
   // --- Fetch JOBS, ADS, LARGE ADS ---
   const fetchJobs = async () => {
     try {
       setLoading(true);
-      const res = await axios.get("https://api.jharkhandbiharupdates.com/api/v1/jobs");
+      const res = await axios.get(
+        "https://api.jharkhandbiharupdates.com/api/v1/jobs"
+      );
       if (res.data.success) {
         setJobs(res.data.data.filter((job) => job.status === "APPROVED"));
       }
@@ -72,16 +125,29 @@ export default function Jobs() {
   useEffect(() => {
     fetchJobs();
 
-    fetch("https://api.jharkhandbiharupdates.com/api/v1/banner-ads/active/small")
+    fetch(
+      "https://api.jharkhandbiharupdates.com/api/v1/banner-ads/active/small"
+    )
       .then((res) => res.json())
       .then((data) => {
-        if (data && data.data && Array.isArray(data.data) && data.data.length > 0) {
+        if (
+          data &&
+          data.data &&
+          Array.isArray(data.data) &&
+          data.data.length > 0
+        ) {
           const orderedAds = [...data.data];
           setAds(orderedAds);
 
           const total = orderedAds.length;
-          let savedTop = parseInt(localStorage.getItem(SLOT_KEYS.TOP_RIGHT) ?? "0", 10);
-          let savedBottom = parseInt(localStorage.getItem(SLOT_KEYS.BOTTOM_RIGHT) ?? "1", 10);
+          let savedTop = parseInt(
+            localStorage.getItem(SLOT_KEYS.TOP_RIGHT) ?? "0",
+            10
+          );
+          let savedBottom = parseInt(
+            localStorage.getItem(SLOT_KEYS.BOTTOM_RIGHT) ?? "1",
+            10
+          );
 
           if (total === 1) {
             // Single ad: show only once, no rotation
@@ -91,9 +157,12 @@ export default function Jobs() {
             localStorage.removeItem(SLOT_KEYS.BOTTOM_RIGHT);
           } else {
             // Multiple ads: normal rotation logic
-            if (isNaN(savedTop) || savedTop < 0 || savedTop >= total) savedTop = 0;
-            if (isNaN(savedBottom) || savedBottom < 0 || savedBottom >= total) savedBottom = total > 1 ? 1 : 0;
-            if (savedTop === savedBottom && total > 1) savedBottom = getNextIndex(savedTop, total);
+            if (isNaN(savedTop) || savedTop < 0 || savedTop >= total)
+              savedTop = 0;
+            if (isNaN(savedBottom) || savedBottom < 0 || savedBottom >= total)
+              savedBottom = total > 1 ? 1 : 0;
+            if (savedTop === savedBottom && total > 1)
+              savedBottom = getNextIndex(savedTop, total);
 
             setTopRightIndex(savedTop);
             setBottomRightIndex(savedBottom);
@@ -109,8 +178,14 @@ export default function Jobs() {
           const shuffled = shuffle(data.data);
           setLargeAds(shuffled);
 
-          let largeAdIdx1 = parseInt(localStorage.getItem(SLOT_KEYS.LARGE_AD_1) ?? "0", 10);
-          let largeAdIdx2 = parseInt(localStorage.getItem(SLOT_KEYS.LARGE_AD_2) ?? "1", 10);
+          let largeAdIdx1 = parseInt(
+            localStorage.getItem(SLOT_KEYS.LARGE_AD_1) ?? "0",
+            10
+          );
+          let largeAdIdx2 = parseInt(
+            localStorage.getItem(SLOT_KEYS.LARGE_AD_2) ?? "1",
+            10
+          );
           const total = shuffled.length;
 
           if (total === 1) {
@@ -120,9 +195,12 @@ export default function Jobs() {
             localStorage.removeItem(SLOT_KEYS.LARGE_AD_2);
           } else {
             // Multiple large ads: normal rotation
-            if (isNaN(largeAdIdx1) || largeAdIdx1 < 0 || largeAdIdx1 >= total) largeAdIdx1 = 0;
-            if (isNaN(largeAdIdx2) || largeAdIdx2 < 0 || largeAdIdx2 >= total) largeAdIdx2 = total > 1 ? 1 : 0;
-            if (largeAdIdx1 === largeAdIdx2 && total > 1) largeAdIdx2 = getNextIndex(largeAdIdx1, total);
+            if (isNaN(largeAdIdx1) || largeAdIdx1 < 0 || largeAdIdx1 >= total)
+              largeAdIdx1 = 0;
+            if (isNaN(largeAdIdx2) || largeAdIdx2 < 0 || largeAdIdx2 >= total)
+              largeAdIdx2 = total > 1 ? 1 : 0;
+            if (largeAdIdx1 === largeAdIdx2 && total > 1)
+              largeAdIdx2 = getNextIndex(largeAdIdx1, total);
 
             setLargeAdIndexes([largeAdIdx1, largeAdIdx2]);
           }
@@ -155,7 +233,8 @@ export default function Jobs() {
         const total = largeAds.length;
         let nextIdx1 = getNextIndex(idx1, total);
         let nextIdx2 = getNextIndex(idx2, total);
-        if (nextIdx1 === nextIdx2 && total > 1) nextIdx2 = getNextIndex(nextIdx1, total);
+        if (nextIdx1 === nextIdx2 && total > 1)
+          nextIdx2 = getNextIndex(nextIdx1, total);
 
         localStorage.setItem(SLOT_KEYS.LARGE_AD_1, String(nextIdx1));
         localStorage.setItem(SLOT_KEYS.LARGE_AD_2, String(nextIdx2));
@@ -190,8 +269,16 @@ export default function Jobs() {
     });
 
   // Handle single ad case
-  const topRightAd = ads.length === 1 ? ads[0] : (ads.length ? ads[topRightIndex % ads.length] : null);
-  const bottomRightAd = ads.length > 1 && !topRightClosed && bottomRightIndex >= 0 ? ads[bottomRightIndex % ads.length] : null;
+  const topRightAd =
+    ads.length === 1
+      ? ads[0]
+      : ads.length
+      ? ads[topRightIndex % ads.length]
+      : null;
+  const bottomRightAd =
+    ads.length > 1 && !topRightClosed && bottomRightIndex >= 0
+      ? ads[bottomRightIndex % ads.length]
+      : null;
 
   return (
     <>
@@ -200,7 +287,7 @@ export default function Jobs() {
         <RightSidebar refreshJobs={fetchJobs} />
       </div>
 
-      {/* Small Ads - Close button for both desktop & mobile */}
+      {/* Small Ads */}
       <AnimatePresence>
         {topRightAd && !topRightClosed && (
           <SmallAdd
@@ -228,7 +315,7 @@ export default function Jobs() {
         </div>
         {/* Main Content */}
         <main className="flex-1 flex flex-col items-center px-2 pt-6">
-          {/* Top Green Heading + Search (unchanged) */}
+          {/* Top Heading + Search */}
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -252,9 +339,9 @@ export default function Jobs() {
                 />
               </div>
             </div>
-                    </motion.div>
+          </motion.div>
 
-          {/* Show loader while loading */}
+          {/* Loader or content */}
           {loading ? (
             <div className="flex justify-center items-center py-20">
               <Loader />
@@ -263,180 +350,187 @@ export default function Jobs() {
             <>
               {/* Main 3-column grid */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-5xl">
-
-            {/* First Column: Jobs (even indexes) */}
-            <div className="flex flex-col gap-6">
-              {leftJobs.length === 0 && !loading && (
-                <div className="text-center text-gray-500 mt-12">No jobs found.</div>
-              )}
-              {leftJobs.map((job, idx) => (
-                <motion.div
-                  key={job.id}
-                  layout
-                  initial={{ opacity: 0, y: 40 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  transition={{
-                    delay: idx * 0.05,
-                    type: "spring",
-                    stiffness: 100,
-                  }}
-                  whileHover={{
-                    scale: 1.03,
-                    boxShadow: "0 25px 40px rgba(52,211,153,0.25)",
-                  }}
-                  className="relative rounded-2xl overflow-hidden p-5 flex flex-col justify-between bg-white shadow-md border border-green-100 cursor-pointer hover:bg-gradient-to-r hover:from-emerald-100"
-                  onClick={() => navigate(`/jobs/${job.id}`)}
-                >
-                  {job.imageUrls?.length > 0 && (
-                    <div className="relative w-full h-48 mb-4 rounded-xl overflow-hidden">
-                      <img
-                        src={job.imageUrls[job.currentImageIndex || 0]}
-                        alt={job.title}
-                        className="w-full h-full object-cover rounded-xl"
-                      />
+                {/* First Column */}
+                <div className="flex flex-col gap-6">
+                  {leftJobs.length === 0 && !loading && (
+                    <div className="text-center text-gray-500 mt-12">
+                      No jobs found.
                     </div>
                   )}
-                  <div className="mb-3">
-                    <h2 className="pb-5 font-semibold text-gray-800">
-                      {job.title}
-                    </h2>
-                  </div>
-                  <div className="space-y-2 text-gray-700">
-                    <p className="flex items-center gap-2">
-                      <MapPin size={16} className="text-green-700" /> {job.location}
-                    </p>
-                    <p className="flex items-center gap-2">
-                      <DollarSign size={16} className="text-yellow-600" /> {job.salaryRange}
-                    </p>
-                    <p className="flex items-center gap-2">
-                      <Calendar size={16} className="text-blue-600" /> {formatDate(job.applicationDeadline)}
-                    </p>
-                  </div>
-                  <div className="mt-4 flex justify-between items-center border-t pt-3 border-emerald-200">
-                    <motion.button
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        window.open(job.reglink || "", "_blank");
+                  {leftJobs.map((job, idx) => (
+                    <motion.div
+                      key={job.id}
+                      layout
+                      initial={{ opacity: 0, y: 40 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -20 }}
+                      transition={{
+                        delay: idx * 0.05,
+                        type: "spring",
+                        stiffness: 100,
                       }}
-                      className="flex items-center gap-2 text-green-700 font-semibold hover:text-teal-700 transition"
-                    >
-                      <Send size={18} /> Apply Now
-                    </motion.button>
-                    <motion.div className="flex items-center gap-2 text-gray-500 hover:text-emerald-600 transition">
-                      <MessageCircle size={18} /> Comment
-                    </motion.div>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-            {/* Second Column: Jobs (odd indexes) */}
-            <div className="flex flex-col gap-6">
-              {centerJobs.map((job, idx) => (
-                <motion.div
-                  key={job.id}
-                  layout
-                  initial={{ opacity: 0, y: 40 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  transition={{
-                    delay: idx * 0.05,
-                    type: "spring",
-                    stiffness: 100,
-                  }}
-                  whileHover={{
-                    scale: 1.03,
-                    boxShadow: "0 25px 40px rgba(52,211,153,0.25)",
-                  }}
-                  className="relative rounded-2xl overflow-hidden p-5 flex flex-col justify-between bg-white shadow-md border border-green-100 cursor-pointer hover:bg-gradient-to-r hover:from-emerald-100"
-                  onClick={() => navigate(`/jobs/${job.id}`)}
-                >
-                  {job.imageUrls?.length > 0 && (
-                    <div className="relative w-full h-48 mb-4 rounded-xl overflow-hidden">
-                      <img
-                        src={job.imageUrls[job.currentImageIndex || 0]}
-                        alt={job.title}
-                        className="w-full h-full object-cover rounded-xl"
-                      />
-                    </div>
-                  )}
-                  <div className="mb-3">
-                    <h2 className="pb-5 font-semibold text-gray-800">
-                      {job.title}
-                    </h2>
-                  </div>
-                  <div className="space-y-2 text-gray-700">
-                    <p className="flex items-center gap-2">
-                      <MapPin size={16} className="text-green-700" /> {job.location}
-                    </p>
-                    <p className="flex items-center gap-2">
-                      <DollarSign size={16} className="text-yellow-600" /> {job.salaryRange}
-                    </p>
-                    <p className="flex items-center gap-2">
-                      <Calendar size={16} className="text-blue-600" /> {formatDate(job.applicationDeadline)}
-                    </p>
-                  </div>
-                  <div className="mt-4 flex justify-between items-center border-t pt-3 border-emerald-200">
-                    <motion.button
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        window.open(job.reglink || "", "_blank");
+                      whileHover={{
+                        scale: 1.03,
+                        boxShadow: "0 25px 40px rgba(52,211,153,0.25)",
                       }}
-                      className="flex items-center gap-2 text-green-700 font-semibold hover:text-teal-700 transition"
+                      className="relative rounded-2xl overflow-hidden p-5 flex flex-col justify-between bg-white shadow-md border border-green-100 cursor-pointer hover:bg-gradient-to-r hover:from-emerald-100"
+                      onClick={() => navigate(`/jobs/${job.id}`)}
                     >
-                      <Send size={18} /> Apply Now
-                    </motion.button>
-                    <motion.div className="flex items-center gap-2 text-gray-500 hover:text-emerald-600 transition">
-                      <MessageCircle size={18} /> Comment
+                      {job.imageUrls?.length > 0 && (
+                        <div className="relative w-full h-48 mb-4 rounded-xl overflow-hidden">
+                          <img
+                            src={job.imageUrls[job.currentImageIndex || 0]}
+                            alt={job.title}
+                            className="w-full h-full object-cover rounded-xl"
+                          />
+                        </div>
+                      )}
+                      <div className="mb-3">
+                        <h2 className="pb-5 font-semibold text-gray-800">
+                          {job.title}
+                        </h2>
+                      </div>
+                      <div className="space-y-2 text-gray-700">
+                        <p className="flex items-center gap-2">
+                          <MapPin size={16} className="text-green-700" />{" "}
+                          {job.location}
+                        </p>
+                        <p className="flex items-center gap-2">
+                          <DollarSign size={16} className="text-yellow-600" />{" "}
+                          {job.salaryRange}
+                        </p>
+                        <p className="flex items-center gap-2">
+                          <Calendar size={16} className="text-blue-600" />{" "}
+                          {formatDate(job.applicationDeadline)}
+                        </p>
+                      </div>
+                      <div className="mt-4 flex justify-between items-center border-t pt-3 border-emerald-200">
+                        <motion.button
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.95 }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            window.open(job.reglink || "", "_blank");
+                          }}
+                          className="flex items-center gap-2 text-green-700 font-semibold hover:text-teal-700 transition"
+                        >
+                          <Send size={18} /> Apply Now
+                        </motion.button>
+                        <motion.div className="flex items-center gap-2 text-gray-500 hover:text-emerald-600 transition">
+                          <MessageCircle size={18} /> Comment
+                        </motion.div>
+                      </div>
                     </motion.div>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-            {/* Third Column: Sponsored Ads (Large Ads with mobile close button) */}
-            <div className="flex flex-col gap-6">
-              {largeAds.length > 0 && largeAdIndexes.map((idx, i) => {
-                if (i === 0 && largeAd1Closed) return null;
-                if (i === 1 && largeAd2Closed) return null;
-                if (!largeAds[idx]) return null;
+                  ))}
+                </div>
 
-                return (
-                  <motion.div
-                    key={"large-ad-wrapper-" + i}
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                    className="relative rounded-2xl shadow-md border border-green-100 overflow-hidden"
-                    style={{ height: "250px", minHeight: "250px" }}
-                  >
-                    {/* Close button for mobile only */}
-                    <motion.button
-                      className="absolute -top-0 -right-0 z-20 lg:hidden bg-white rounded-full p-1.5 shadow-lg border-2 border-gray-200 hover:bg-gray-100 transition-all duration-200"
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => {
-                        if (i === 0) setLargeAd1Closed(true);
-                        if (i === 1) setLargeAd2Closed(true);
+                {/* Second Column */}
+                <div className="flex flex-col gap-6">
+                  {centerJobs.map((job, idx) => (
+                    <motion.div
+                      key={job.id}
+                      layout
+                      initial={{ opacity: 0, y: 40 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -20 }}
+                      transition={{
+                        delay: idx * 0.05,
+                        type: "spring",
+                        stiffness: 100,
                       }}
+                      whileHover={{
+                        scale: 1.03,
+                        boxShadow: "0 25px 40px rgba(52,211,153,0.25)",
+                      }}
+                      className="relative rounded-2xl overflow-hidden p-5 flex flex-col justify-between bg-white shadow-md border border-green-100 cursor-pointer hover:bg-gradient-to-r hover:from-emerald-100"
+                      onClick={() => navigate(`/jobs/${job.id}`)}
                     >
-                      <X className="w-4 h-4 text-gray-700" />
-                    </motion.button>
-                    
-                    <LargeAd
-                      ad={largeAds[idx]}
-                      className="w-full h-full"
-                    />
-                  </motion.div>
-                );
-              })}
-            </div>
-          </div>
-           </>
-      )}
+                      {job.imageUrls?.length > 0 && (
+                        <div className="relative w-full h-48 mb-4 rounded-xl overflow-hidden">
+                          <img
+                            src={job.imageUrls[job.currentImageIndex || 0]}
+                            alt={job.title}
+                            className="w-full h-full object-cover rounded-xl"
+                          />
+                        </div>
+                      )}
+                      <div className="mb-3">
+                        <h2 className="pb-5 font-semibold text-gray-800">
+                          {job.title}
+                        </h2>
+                      </div>
+                      <div className="space-y-2 text-gray-700">
+                        <p className="flex items-center gap-2">
+                          <MapPin size={16} className="text-green-700" />{" "}
+                          {job.location}
+                        </p>
+                        <p className="flex items-center gap-2">
+                          <DollarSign size={16} className="text-yellow-600" />{" "}
+                          {job.salaryRange}
+                        </p>
+                        <p className="flex items-center gap-2">
+                          <Calendar size={16} className="text-blue-600" />{" "}
+                          {formatDate(job.applicationDeadline)}
+                        </p>
+                      </div>
+                      <div className="mt-4 flex justify-between items-center border-t pt-3 border-emerald-200">
+                        <motion.button
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.95 }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            window.open(job.reglink || "", "_blank");
+                          }}
+                          className="flex items-center gap-2 text-green-700 font-semibold hover:text-teal-700 transition"
+                        >
+                          <Send size={18} /> Apply Now
+                        </motion.button>
+                        <motion.div className="flex items-center gap-2 text-gray-500 hover:text-emerald-600 transition">
+                          <MessageCircle size={18} /> Comment
+                        </motion.div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+
+                {/* Third Column: Large Ads */}
+                <div className="flex flex-col gap-6">
+                  {largeAds.length > 0 &&
+                    largeAdIndexes.map((idx, i) => {
+                      if (i === 0 && largeAd1Closed) return null;
+                      if (i === 1 && largeAd2Closed) return null;
+                      if (!largeAds[idx]) return null;
+
+                      return (
+                        <motion.div
+                          key={"large-ad-wrapper-" + i}
+                          initial={{ opacity: 0, scale: 0.95 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.95 }}
+                          className="relative rounded-2xl shadow-md border border-green-100 overflow-hidden"
+                          style={{ height: "250px", minHeight: "250px" }}
+                        >
+                          {/* Close button for mobile only */}
+                          <motion.button
+                            className="absolute -top-0 -right-0 z-20 lg:hidden bg-white rounded-full p-1.5 shadow-lg border-2 border-gray-200 hover:bg-gray-100 transition-all duration-200"
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => {
+                              if (i === 0) setLargeAd1Closed(true);
+                              if (i === 1) setLargeAd2Closed(true);
+                            }}
+                          >
+                            <X className="w-4 h-4 text-gray-700" />
+                          </motion.button>
+
+                          <LargeAd ad={largeAds[idx]} className="w-full h-full" />
+                        </motion.div>
+                      );
+                    })}
+                </div>
+              </div>
+            </>
+          )}
         </main>
       </div>
     </>
