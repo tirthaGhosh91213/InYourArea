@@ -1,15 +1,15 @@
+// src/utils/enableNotifications.js
 import OneSignal from "react-onesignal";
 import { syncPlayerIdToBackend } from "./onesignalSync";
 
 export async function promptAndSyncNotifications() {
   try {
-    // Show OneSignal permission prompt
     await OneSignal.Slidedown.promptPush();
 
-    // After user responds, wait a bit and fetch playerId
     setTimeout(async () => {
       try {
-        const subscriptionId = await OneSignal.User.PushSubscription.id();
+        const sub = OneSignal.User.PushSubscription;
+        const subscriptionId = sub && sub.id; // ✅ property, not function
         const accessToken = localStorage.getItem("accessToken");
 
         if (subscriptionId && accessToken) {
@@ -21,7 +21,7 @@ export async function promptAndSyncNotifications() {
           });
         }
       } catch (e) {
-        console.error("Error getting playerId after prompt:", e);
+        console.error("Jobs notif prompt: error getting playerId", e);
       }
     }, 1000);
   } catch (e) {
