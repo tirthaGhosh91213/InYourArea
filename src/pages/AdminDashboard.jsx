@@ -13,9 +13,13 @@ import {
   Image as ImageIcon,
   X,
   Check,
-  PlusCircle,
-  Trash2,
   Home,
+  MapPin,
+  Briefcase,
+  DollarSign,
+  Link as LinkIcon,
+  Clock,
+  Building,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
@@ -26,7 +30,7 @@ const TABS = [
   { key: "events", label: "Events" },
   { key: "jobs", label: "Jobs" },
   { key: "community", label: "Community" },
-  { key: "properties", label: "Property" }, // Property tab
+  { key: "properties", label: "Property" },
 ];
 
 export default function AdminDashboard() {
@@ -125,7 +129,6 @@ export default function AdminDashboard() {
     navigate("/login");
   };
 
-  // View details for property: fetch by id
   const viewDetails = async (item) => {
     if (activeTab === "properties") {
       setLoadingDetails(true);
@@ -152,7 +155,27 @@ export default function AdminDashboard() {
     setFullImage(null);
   };
 
-  // Keyboard events
+  const getInitials = (firstName, lastName) => {
+    const first = firstName?.charAt(0)?.toUpperCase() || "";
+    const last = lastName?.charAt(0)?.toUpperCase() || "";
+    return first + last;
+  };
+
+  const getAvatarColor = (name) => {
+    const colors = [
+      "bg-blue-600",
+      "bg-green-600",
+      "bg-purple-600",
+      "bg-pink-600",
+      "bg-indigo-600",
+      "bg-red-600",
+      "bg-yellow-600",
+      "bg-teal-600",
+    ];
+    const index = (name?.charCodeAt(0) || 0) % colors.length;
+    return colors[index];
+  };
+
   useEffect(() => {
     const handleKeyDown = (event) => {
       if (event.key === "Escape") {
@@ -193,8 +216,7 @@ export default function AdminDashboard() {
             whileTap={{ scale: 0.95 }}
             className="flex items-center bg-blue-200 hover:bg-blue-300 text-blue-800 px-4 py-2 rounded-lg shadow-sm font-medium transition-all duration-200"
           >
-            <ImageIcon size={18} className="mr-2" />{" "}
-            {/* Change to your preferred icon */}
+            <ImageIcon size={18} className="mr-2" />
             ADs
           </motion.button>
 
@@ -216,6 +238,7 @@ export default function AdminDashboard() {
           </motion.button>
         </div>
       </header>
+
       {/* Tabs */}
       <div className="flex justify-center gap-3 sm:gap-6 bg-white py-3 border-b border-gray-200">
         {TABS.map((tab) => (
@@ -233,13 +256,13 @@ export default function AdminDashboard() {
           </motion.button>
         ))}
       </div>
+
       {/* Content */}
       <main className="flex-1 overflow-y-auto px-4 sm:px-8 py-6">
         {loading ? (
-  <div className="flex justify-center items-center h-64">
-    <Loader />
-  </div>
-
+          <div className="flex justify-center items-center h-64">
+            <Loader />
+          </div>
         ) : items.length === 0 ? (
           <div className="text-center py-16 text-gray-500 text-lg">
             No pending {activeTab} posts 🎉
@@ -264,11 +287,10 @@ export default function AdminDashboard() {
                     onClick={() => viewDetails(item)}
                     className="cursor-pointer flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2"
                   >
-                    <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-green-800 mb-1">
+                    <div className="flex-1 min-w-0 w-full">
+                      <h3 className="text-lg font-semibold text-green-800 mb-1 break-words">
                         {item.title}
                       </h3>
-                      {/* PROPERTY CARD SUMMARY */}
                       {activeTab === "properties" ? (
                         <div className="text-sm text-gray-600 flex flex-wrap gap-3">
                           <span className="flex items-center">
@@ -277,7 +299,7 @@ export default function AdminDashboard() {
                             {item.price}
                           </span>
                           <span>Status: {item.propertyStatus}</span>
-                          <span>
+                          <span className="break-all">
                             Location: {item.city}, {item.state}
                           </span>
                         </div>
@@ -288,19 +310,19 @@ export default function AdminDashboard() {
                               <Calendar size={14} className="mr-1" />
                               {new Date(item.createdAt).toLocaleDateString()}
                             </span>
-                            {/* Jobs/Events extra info */}
                           </p>
-                          {item.description && (
-                            <p className="text-sm text-gray-700 mt-2 line-clamp-2">
-                              {item.description.length > 100
-                                ? `${item.description.substring(0, 100)}...`
-                                : item.description}
+                          {(item.description || item.content) && (
+                            <p className="text-sm text-gray-700 mt-2 line-clamp-2 break-words overflow-hidden">
+                              {(item.description || item.content).length > 100
+                                ? `${(item.description || item.content).substring(0, 100)}...`
+                                : item.description || item.content}
                             </p>
                           )}
                         </>
                       )}
                     </div>
                   </div>
+
                   {/* Action Buttons */}
                   <div className="flex items-center justify-between pt-3 border-t border-gray-200">
                     <div className="flex gap-3">
@@ -349,7 +371,7 @@ export default function AdminDashboard() {
         )}
       </main>
 
-      {/* Details Modal: includes properties */}
+      {/* Details Modal */}
       <AnimatePresence>
         {selectedItem && (
           <motion.div
@@ -368,10 +390,10 @@ export default function AdminDashboard() {
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-white rounded-2xl shadow-xl max-w-2xl w-full p-6 overflow-y-auto max-h-[90vh]"
+              className="bg-white rounded-2xl shadow-xl max-w-3xl w-full p-6 overflow-y-auto max-h-[90vh]"
             >
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-semibold text-green-700">
+              <div className="flex justify-between items-start mb-4 gap-4">
+                <h2 className="text-xl font-semibold text-green-700 break-words flex-1 min-w-0">
                   {selectedItem.title}
                 </h2>
                 <button
@@ -379,103 +401,519 @@ export default function AdminDashboard() {
                     setSelectedItem(null);
                     setPropertyDetails(null);
                   }}
-                  className="text-gray-500 hover:text-red-500 transition-colors duration-200 p-1"
+                  className="text-gray-500 hover:text-red-500 transition-colors duration-200 p-1 flex-shrink-0"
                   aria-label="Close modal"
                 >
                   <X size={24} />
                 </button>
               </div>
 
-              {!loadingDetails &&
-                activeTab === "properties" &&
-                propertyDetails && (
-                  <div>
-                    <div className="flex flex-col md:flex-row gap-6 mb-6">
-                      <div className="min-w-[220px] max-w-[300px] rounded-xl overflow-hidden">
-                        {propertyDetails.imageUrls &&
-                        propertyDetails.imageUrls.length > 0 ? (
-                          <img
-                            src={propertyDetails.imageUrls[0]}
-                            alt="Property"
-                            className="w-full h-auto rounded-xl"
-                            style={{ maxHeight: 180 }}
-                          />
-                        ) : (
-                          <div className="w-full h-40 bg-gray-100 rounded-xl flex items-center justify-center text-gray-400">
-                            <ImageIcon size={42} />
+              {loadingDetails && activeTab === "properties" ? (
+                <div className="flex items-center justify-center h-32">
+                  <Loader />
+                </div>
+              ) : (
+                <>
+                  {/* JOBS TAB DETAILS */}
+                  {activeTab === "jobs" && (
+                    <div className="space-y-4">
+                      {/* Images Section */}
+                      {selectedItem.imageUrls &&
+                        selectedItem.imageUrls.length > 0 && (
+                          <div className="mb-4">
+                            <h3 className="text-sm font-semibold text-gray-700 mb-2">
+                              Images
+                            </h3>
+                            <div className="flex flex-wrap gap-2">
+                              {selectedItem.imageUrls.map((img, i) => (
+                                <img
+                                  key={i}
+                                  src={img}
+                                  alt={`Job ${i + 1}`}
+                                  className="w-24 h-24 object-cover rounded-lg border cursor-pointer hover:opacity-80 transition-opacity"
+                                  onClick={() => setFullImage(img)}
+                                  loading="lazy"
+                                />
+                              ))}
+                            </div>
                           </div>
                         )}
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="flex items-start gap-2 min-w-0">
+                          <Briefcase
+                            size={18}
+                            className="text-green-600 mt-1 flex-shrink-0"
+                          />
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs text-gray-500">Company</p>
+                            <p className="font-semibold text-gray-800 break-words">
+                              {selectedItem.company || "N/A"}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-start gap-2 min-w-0">
+                          <MapPin size={18} className="text-green-600 mt-1 flex-shrink-0" />
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs text-gray-500">Location</p>
+                            <p className="font-semibold text-gray-800 break-words">
+                              {selectedItem.location || "N/A"}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-start gap-2 min-w-0">
+                          <DollarSign
+                            size={18}
+                            className="text-green-600 mt-1 flex-shrink-0"
+                          />
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs text-gray-500">
+                              Salary Range
+                            </p>
+                            <p className="font-semibold text-gray-800 break-words">
+                              {selectedItem.salaryRange || "N/A"}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-start gap-2 min-w-0">
+                          <Clock size={18} className="text-green-600 mt-1 flex-shrink-0" />
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs text-gray-500">
+                              Application Deadline
+                            </p>
+                            <p className="font-semibold text-gray-800 break-words">
+                              {selectedItem.applicationDeadline
+                                ? new Date(
+                                    selectedItem.applicationDeadline
+                                  ).toLocaleDateString()
+                                : "N/A"}
+                            </p>
+                          </div>
+                        </div>
                       </div>
-                      <div className="flex-1 flex flex-col gap-2">
-                        <div className="font-bold text-lg">
-                          {propertyDetails.title}
+
+                      {selectedItem.reglink && (
+                        <div className="flex items-start gap-2 mt-4 min-w-0">
+                          <LinkIcon size={18} className="text-green-600 mt-1 flex-shrink-0" />
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs text-gray-500">
+                              Registration Link
+                            </p>
+                            <a
+                              href={selectedItem.reglink}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 hover:underline break-all overflow-wrap-anywhere"
+                            >
+                              {selectedItem.reglink}
+                            </a>
+                          </div>
                         </div>
-                        <div className="text-blue-600 font-bold text-base">
-                          ₹{" "}
-                          {(+propertyDetails.price / 100000).toLocaleString(
-                            "en-IN"
-                          )}{" "}
-                          Lakhs
+                      )}
+
+                      <div className="mt-4 pt-4 border-t">
+                        <p className="text-xs text-gray-500 mb-1">
+                          Description
+                        </p>
+                        <p className="text-gray-700 break-words whitespace-pre-wrap overflow-wrap-anywhere">
+                          {selectedItem.description || "N/A"}
+                        </p>
+                      </div>
+
+                      {selectedItem.author && (
+                        <div className="mt-4 pt-4 border-t">
+                          <p className="text-xs text-gray-500 mb-2">
+                            Posted By
+                          </p>
+                          <div className="flex items-center gap-3">
+                            <div
+                              className={`w-10 h-10 rounded-full flex-shrink-0 ${getAvatarColor(
+                                selectedItem.author.firstName
+                              )} flex items-center justify-center text-white font-semibold text-sm`}
+                            >
+                              {getInitials(
+                                selectedItem.author.firstName,
+                                selectedItem.author.lastName
+                              )}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="font-semibold text-gray-800 break-words">
+                                {selectedItem.author.firstName}{" "}
+                                {selectedItem.author.lastName}
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                {selectedItem.author.role}
+                              </p>
+                            </div>
+                          </div>
                         </div>
-                        <div className="text-gray-700 text-sm mb-1">
-                          {propertyDetails.description}
-                        </div>
-                        <div className="flex flex-wrap gap-2 text-[13px] text-gray-800">
-                          <span>
-                            <Square size={15} className="inline" />{" "}
-                            {propertyDetails.totalArea} sq.ft
-                          </span>
-                          <span>
-                            <Home size={15} className="inline" />{" "}
-                            {propertyDetails.propertyType}
-                          </span>
-                          <span>Status: {propertyDetails.propertyStatus}</span>
-                          <span>District: {propertyDetails.district}</span>
-                          <span>Address: {propertyDetails.address}</span>
-                          <span>City: {propertyDetails.city}</span>
-                          <span>State: {propertyDetails.state}</span>
-                          <span>
-                            Contact: {propertyDetails.contactName} (
-                            {propertyDetails.contactEmail})
-                          </span>
-                        </div>
-                        <div className="flex flex-wrap gap-1 mt-2">
-                          {(propertyDetails.imageUrls || []).map((img, i) => (
-                            <img
-                              key={i}
-                              src={img}
-                              alt={`img${i}`}
-                              className="w-14 h-14 object-cover rounded-lg border cursor-pointer"
-                              onClick={() => setFullImage(img)}
-                            />
-                          ))}
-                        </div>
+                      )}
+
+                      <div className="mt-4 pt-4 border-t">
+                        <p className="text-xs text-gray-500">Created At</p>
+                        <p className="text-gray-700">
+                          {new Date(selectedItem.createdAt).toLocaleString()}
+                        </p>
                       </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
-              {loadingDetails && activeTab === "properties" && (
-  <div className="flex items-center justify-center h-32">
-    <Loader />
-  </div>
-)}
+                  {/* EVENTS TAB DETAILS */}
+                  {activeTab === "events" && (
+                    <div className="space-y-4">
+                      {/* Images Section */}
+                      {selectedItem.imageUrls &&
+                        selectedItem.imageUrls.length > 0 && (
+                          <div className="mb-4">
+                            <h3 className="text-sm font-semibold text-gray-700 mb-2">
+                              Images
+                            </h3>
+                            <div className="flex flex-wrap gap-2">
+                              {selectedItem.imageUrls.map((img, i) => (
+                                <img
+                                  key={i}
+                                  src={img}
+                                  alt={`Event ${i + 1}`}
+                                  className="w-24 h-24 object-cover rounded-lg border cursor-pointer hover:opacity-80 transition-opacity"
+                                  onClick={() => setFullImage(img)}
+                                  loading="lazy"
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        )}
 
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="flex items-start gap-2 min-w-0">
+                          <Calendar size={18} className="text-green-600 mt-1 flex-shrink-0" />
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs text-gray-500">Event Date</p>
+                            <p className="font-semibold text-gray-800 break-words">
+                              {selectedItem.eventDate
+                                ? new Date(
+                                    selectedItem.eventDate
+                                  ).toLocaleString()
+                                : "N/A"}
+                            </p>
+                          </div>
+                        </div>
 
-              {/* For non-property tabs */}
-              {activeTab !== "properties" && (
-                <div className="space-y-3">
-                  <p className="text-gray-700">
-                    <span className="font-semibold">Description:</span>{" "}
-                    {selectedItem.description || "N/A"}
-                  </p>
-                  {/* ...more details based on tab */}
-                  <p className="text-gray-700">
-                    <span className="font-semibold">Created:</span>{" "}
-                    {new Date(selectedItem.createdAt).toLocaleString()}
-                  </p>
-                </div>
+                        <div className="flex items-start gap-2 min-w-0">
+                          <MapPin size={18} className="text-green-600 mt-1 flex-shrink-0" />
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs text-gray-500">Location</p>
+                            <p className="font-semibold text-gray-800 break-words">
+                              {selectedItem.location || "N/A"}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {selectedItem.reglink && (
+                        <div className="flex items-start gap-2 mt-4 min-w-0">
+                          <LinkIcon size={18} className="text-green-600 mt-1 flex-shrink-0" />
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs text-gray-500">
+                              Registration Link
+                            </p>
+                            <a
+                              href={selectedItem.reglink}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 hover:underline break-all overflow-wrap-anywhere"
+                            >
+                              {selectedItem.reglink}
+                            </a>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="mt-4 pt-4 border-t">
+                        <p className="text-xs text-gray-500 mb-1">
+                          Description
+                        </p>
+                        <p className="text-gray-700 break-words whitespace-pre-wrap overflow-wrap-anywhere">
+                          {selectedItem.description || "N/A"}
+                        </p>
+                      </div>
+
+                      {selectedItem.author && (
+                        <div className="mt-4 pt-4 border-t">
+                          <p className="text-xs text-gray-500 mb-2">
+                            Posted By
+                          </p>
+                          <div className="flex items-center gap-3">
+                            <div
+                              className={`w-10 h-10 rounded-full flex-shrink-0 ${getAvatarColor(
+                                selectedItem.author.firstName
+                              )} flex items-center justify-center text-white font-semibold text-sm`}
+                            >
+                              {getInitials(
+                                selectedItem.author.firstName,
+                                selectedItem.author.lastName
+                              )}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="font-semibold text-gray-800 break-words">
+                                {selectedItem.author.firstName}{" "}
+                                {selectedItem.author.lastName}
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                {selectedItem.author.role}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="mt-4 pt-4 border-t">
+                        <p className="text-xs text-gray-500">Created At</p>
+                        <p className="text-gray-700">
+                          {new Date(selectedItem.createdAt).toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* COMMUNITY TAB DETAILS */}
+                  {activeTab === "community" && (
+                    <div className="space-y-4">
+                      {/* Images Section */}
+                      {selectedItem.imageUrls &&
+                        selectedItem.imageUrls.length > 0 && (
+                          <div className="mb-4">
+                            <h3 className="text-sm font-semibold text-gray-700 mb-2">
+                              Images
+                            </h3>
+                            <div className="flex flex-wrap gap-2">
+                              {selectedItem.imageUrls.map((img, i) => (
+                                <img
+                                  key={i}
+                                  src={img}
+                                  alt={`Community ${i + 1}`}
+                                  className="w-24 h-24 object-cover rounded-lg border cursor-pointer hover:opacity-80 transition-opacity"
+                                  onClick={() => setFullImage(img)}
+                                  loading="lazy"
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                      <div className="flex items-start gap-2 min-w-0">
+                        <MapPin size={18} className="text-green-600 mt-1 flex-shrink-0" />
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs text-gray-500">Location</p>
+                          <p className="font-semibold text-gray-800 break-words">
+                            {selectedItem.location || "N/A"}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="mt-4 pt-4 border-t">
+                        <p className="text-xs text-gray-500 mb-1">Content</p>
+                        <p className="text-gray-700 break-words whitespace-pre-wrap overflow-wrap-anywhere">
+                          {selectedItem.content || "N/A"}
+                        </p>
+                      </div>
+
+                      {selectedItem.author && (
+                        <div className="mt-4 pt-4 border-t">
+                          <p className="text-xs text-gray-500 mb-2">
+                            Posted By
+                          </p>
+                          <div className="flex items-center gap-3">
+                            <div
+                              className={`w-10 h-10 rounded-full flex-shrink-0 ${getAvatarColor(
+                                selectedItem.author.firstName
+                              )} flex items-center justify-center text-white font-semibold text-sm`}
+                            >
+                              {getInitials(
+                                selectedItem.author.firstName,
+                                selectedItem.author.lastName
+                              )}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="font-semibold text-gray-800 break-words">
+                                {selectedItem.author.firstName}{" "}
+                                {selectedItem.author.lastName}
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                {selectedItem.author.role}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="mt-4 pt-4 border-t">
+                        <p className="text-xs text-gray-500">Created At</p>
+                        <p className="text-gray-700">
+                          {new Date(selectedItem.createdAt).toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* PROPERTY TAB DETAILS */}
+                  {activeTab === "properties" && propertyDetails && (
+                    <div className="space-y-4">
+                      {/* Images Section */}
+                      {propertyDetails.imageUrls &&
+                        propertyDetails.imageUrls.length > 0 && (
+                          <div className="mb-4">
+                            <h3 className="text-sm font-semibold text-gray-700 mb-2">
+                              Property Images
+                            </h3>
+                            <div className="flex flex-wrap gap-2">
+                              {propertyDetails.imageUrls.map((img, i) => (
+                                <img
+                                  key={i}
+                                  src={img}
+                                  alt={`Property ${i + 1}`}
+                                  className="w-24 h-24 object-cover rounded-lg border cursor-pointer hover:opacity-80 transition-opacity"
+                                  onClick={() => setFullImage(img)}
+                                  loading="lazy"
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="flex items-start gap-2 min-w-0">
+                          <Home size={18} className="text-green-600 mt-1 flex-shrink-0" />
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs text-gray-500">
+                              Property Type
+                            </p>
+                            <p className="font-semibold text-gray-800 break-words">
+                              {propertyDetails.propertyType || "N/A"}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-start gap-2 min-w-0">
+                          <Building size={18} className="text-green-600 mt-1 flex-shrink-0" />
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs text-gray-500">
+                              Property Status
+                            </p>
+                            <p className="font-semibold text-gray-800 break-words">
+                              {propertyDetails.propertyStatus || "N/A"}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-start gap-2 min-w-0">
+                          <DollarSign
+                            size={18}
+                            className="text-green-600 mt-1 flex-shrink-0"
+                          />
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs text-gray-500">Price</p>
+                            <p className="font-semibold text-gray-800 break-words">
+                              ₹{" "}
+                              {propertyDetails.price
+                                ? (+propertyDetails.price / 100000).toLocaleString(
+                                    "en-IN"
+                                  )
+                                : "N/A"}{" "}
+                              Lakhs
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-start gap-2 min-w-0">
+                          <Home size={18} className="text-green-600 mt-1 flex-shrink-0" />
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs text-gray-500">Total Area</p>
+                            <p className="font-semibold text-gray-800 break-words">
+                              {propertyDetails.totalArea || "N/A"} sq.ft
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-start gap-2 min-w-0">
+                          <MapPin size={18} className="text-green-600 mt-1 flex-shrink-0" />
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs text-gray-500">District</p>
+                            <p className="font-semibold text-gray-800 break-words">
+                              {propertyDetails.district || "N/A"}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-start gap-2 min-w-0">
+                          <MapPin size={18} className="text-green-600 mt-1 flex-shrink-0" />
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs text-gray-500">City</p>
+                            <p className="font-semibold text-gray-800 break-words">
+                              {propertyDetails.city || "N/A"}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-start gap-2 min-w-0">
+                          <MapPin size={18} className="text-green-600 mt-1 flex-shrink-0" />
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs text-gray-500">State</p>
+                            <p className="font-semibold text-gray-800 break-words">
+                              {propertyDetails.state || "N/A"}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-start gap-2 min-w-0 md:col-span-2">
+                          <MapPin size={18} className="text-green-600 mt-1 flex-shrink-0" />
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs text-gray-500">Address</p>
+                            <p className="font-semibold text-gray-800 break-words">
+                              {propertyDetails.address || "N/A"}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="mt-4 pt-4 border-t">
+                        <p className="text-xs text-gray-500 mb-1">
+                          Description
+                        </p>
+                        <p className="text-gray-700 break-words whitespace-pre-wrap overflow-wrap-anywhere">
+                          {propertyDetails.description || "N/A"}
+                        </p>
+                      </div>
+
+                      <div className="mt-4 pt-4 border-t">
+                        <p className="text-xs text-gray-500 mb-2">
+                          Contact Information
+                        </p>
+                        <div className="space-y-1">
+                          <p className="text-gray-700 break-words">
+                            <span className="font-semibold">Name:</span>{" "}
+                            {propertyDetails.contactName || "N/A"}
+                          </p>
+                          <p className="text-gray-700 break-all">
+                            <span className="font-semibold">Email:</span>{" "}
+                            {propertyDetails.contactEmail || "N/A"}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="mt-4 pt-4 border-t">
+                        <p className="text-xs text-gray-500">Created At</p>
+                        <p className="text-gray-700">
+                          {new Date(propertyDetails.createdAt).toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
+
               {/* Modal Action Buttons */}
               <div className="flex justify-center gap-4 mt-6 pt-6 border-t border-gray-200">
                 <motion.button
