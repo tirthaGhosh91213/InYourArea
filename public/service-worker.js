@@ -1,4 +1,4 @@
-const CACHE_NAME = 'jharkhand-bihar-updates-v1';
+const CACHE_NAME = 'jharkhand-bihar-updates-v2'; // ✅ Changed version to force update
 
 // Install - cache important files
 self.addEventListener('install', (event) => {
@@ -12,20 +12,40 @@ self.addEventListener('install', (event) => {
         '/icon-192x192.png',
         '/icon-512x512.png',
         '/logo.png'
-      ]);
-    })
-  );
-  self.skipWaiting();
-});
-
-// Fetch - serve from cache when offline
-self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    caches.match(event.request).then((response) => {
-      return response || fetch(event.request).catch(() => {
-        return caches.match('/index.html');
+      ]).catch((err) => {
+        console.log('Cache addAll error:', err);
       });
     })
+  );
+  self.skipWaiting(); // Force activate immediately
+});
+
+// Fetch - Network first, then cache (better for dynamic content)
+self.addEventListener('fetch', (event) => {
+  // Skip non-GET requests
+  if (event.request.method !== 'GET') return;
+  
+  // Skip chrome-extension and other non-http requests
+  if (!event.request.url.startsWith('http')) return;
+
+  event.respondWith(
+    fetch(event.request)
+      .then((response) => {
+        // Clone the response before caching
+        const responseToCache = response.clone();
+        
+        caches.open(CACHE_NAME).then((cache) => {
+          cache.put(event.request, responseToCache);
+        });
+        
+        return response;
+      })
+      .catch(() => {
+        // If network fails, try cache
+        return caches.match(event.request).then((response) => {
+          return response || caches.match('/index.html');
+        });
+      })
   );
 });
 
@@ -37,11 +57,12 @@ self.addEventListener('activate', (event) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
           if (cacheName !== CACHE_NAME) {
-            return caches.delete(cacheName);
+            console.log('🗑️ Deleting old cache:', cacheName);
+            return caches.delete(cacheName); // Delete old caches
           }
         })
       );
     })
   );
-  return self.clients.claim();
+  return self.clients.claim(); // Take control immediately
 });
