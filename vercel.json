@@ -1,36 +1,32 @@
 {
-  "rewrites": [
-    {
-      "source": "/(.*)",
-      "destination": "/index.html"
-    }
-  ],
   "headers": [
     {
       "source": "/OneSignalSDKWorker.js",
       "headers": [
-        {
-          "key": "Content-Type",
-          "value": "application/javascript; charset=utf-8"
-        },
-        {
-          "key": "Service-Worker-Allowed",
-          "value": "/"
-        }
+        { "key": "Content-Type", "value": "application/javascript" },
+        { "key": "Service-Worker-Allowed", "value": "/" }
       ]
     },
     {
       "source": "/OneSignalSDKWorkerUpdater.js",
       "headers": [
-        {
-          "key": "Content-Type",
-          "value": "application/javascript; charset=utf-8"
-        },
-        {
-          "key": "Service-Worker-Allowed",
-          "value": "/"
-        }
+        { "key": "Content-Type", "value": "application/javascript" },
+        { "key": "Service-Worker-Allowed", "value": "/" }
       ]
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/OneSignalSDKWorker.js",
+      "destination": "/OneSignalSDKWorker.js"
+    },
+    {
+      "source": "/OneSignalSDKWorkerUpdater.js",
+      "destination": "/OneSignalSDKWorkerUpdater.js"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ],
   "installCommand": "npm install --legacy-peer-deps"
