@@ -1,6 +1,5 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import { useOneSignal } from "./hooks/useOneSignal"; // ✅ Import OneSignal hook
 import HeroPage from "./components/heroPage";
 import Footer from "./components/Footer";
 import LocalNews from "./pages/LocalNews"; 
@@ -53,8 +52,6 @@ function Home() {
 
 // ✅ App component
 export default function App() {
-  useOneSignal(); // ✅ Initialize OneSignal push notifications
-
   return (
     <Router>
       {/* Routes */}
