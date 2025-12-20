@@ -1,15 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Building2,
-  MapPin,
-  Search as SearchIcon,
-  DollarSign,
-  Calendar,
-  MessageCircle,
-  Send,
-  UserCircle,
-  X,
+  Building2, MapPin, Search as SearchIcon, DollarSign,
+  Calendar, MessageCircle, Send, UserCircle, X,
 } from "lucide-react";
 import Sidebar from "../components/SideBar";
 import RightSidebar from "../components/RightSidebar";
@@ -19,8 +12,7 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import Loader from "../components/Loader";
-import OneSignal from "react-onesignal";
-import { syncPlayerIdToBackend } from "../utils/onesignalSync";
+import { promptAndSyncNotifications } from "../utils/enableNotifications";
 
 // Helper: Get next index in circular manner
 function getNextIndex(current, total) {
@@ -63,48 +55,6 @@ export default function Jobs() {
   const [largeAd2Closed, setLargeAd2Closed] = useState(false);
   const timerRef = useRef();
 
-  // 🔔 Ask for notifications once after login and sync playerId
-  useEffect(() => {
-    const accessToken = localStorage.getItem("accessToken");
-    if (!accessToken) return;
-
-    const alreadyAsked = localStorage.getItem("notifPromptShown");
-    if (alreadyAsked === "true") return;
-
-    localStorage.setItem("notifPromptShown", "true");
-
-    const askAndSync = async () => {
-      try {
-        // Show OneSignal prompt
-        await OneSignal.Slidedown.promptPush();
-
-        // After user responds, wait a bit and fetch playerId
-        setTimeout(async () => {
-          try {
-            // react-onesignal wrapper
-            const subscriptionId = await OneSignal.User.PushSubscription.id();
-            const token = localStorage.getItem("accessToken");
-
-            if (subscriptionId && token) {
-              await syncPlayerIdToBackend(subscriptionId, token);
-            } else {
-              console.warn("Jobs notif prompt: missing subscriptionId or token", {
-                subscriptionId,
-                token,
-              });
-            }
-          } catch (e) {
-            console.error("Jobs notif prompt: error getting playerId", e);
-          }
-        }, 1000);
-      } catch (e) {
-        console.error("Jobs notif prompt: error during prompt", e);
-      }
-    };
-
-    askAndSync();
-  }, []);
-
   // --- Fetch JOBS, ADS, LARGE ADS ---
   const fetchJobs = async () => {
     try {
@@ -130,12 +80,7 @@ export default function Jobs() {
     )
       .then((res) => res.json())
       .then((data) => {
-        if (
-          data &&
-          data.data &&
-          Array.isArray(data.data) &&
-          data.data.length > 0
-        ) {
+        if (data && data.data && Array.isArray(data.data) && data.data.length > 0) {
           const orderedAds = [...data.data];
           setAds(orderedAds);
 
@@ -171,7 +116,9 @@ export default function Jobs() {
       })
       .catch((err) => console.error("Error fetching jobs small ads:", err));
 
-    fetch("https://api.jharkhandbiharupdates.com/api/v1/banner-ads/active/large")
+    fetch(
+      "https://api.jharkhandbiharupdates.com/api/v1/banner-ads/active/large"
+    )
       .then((r) => r.json())
       .then((data) => {
         if (data && Array.isArray(data.data)) {
@@ -209,6 +156,18 @@ export default function Jobs() {
       .catch((err) => {
         console.error("Error fetching jobs large ads:", err);
       });
+  }, []);
+
+  // 🔔 Auto prompt notifications once after login
+  useEffect(() => {
+    const accessToken = localStorage.getItem("accessToken");
+    if (!accessToken) return;
+
+    const alreadyAsked = localStorage.getItem("notifPromptShown");
+    if (!alreadyAsked) {
+      localStorage.setItem("notifPromptShown", "true");
+      promptAndSyncNotifications();
+    }
   }, []);
 
   useEffect(() => {
@@ -287,7 +246,7 @@ export default function Jobs() {
         <RightSidebar refreshJobs={fetchJobs} />
       </div>
 
-      {/* Small Ads */}
+      {/* Small Ads - Close button for both desktop & mobile */}
       <AnimatePresence>
         {topRightAd && !topRightClosed && (
           <SmallAdd
@@ -315,7 +274,7 @@ export default function Jobs() {
         </div>
         {/* Main Content */}
         <main className="flex-1 flex flex-col items-center px-2 pt-6">
-          {/* Top Heading + Search */}
+          {/* Top Green Heading + Search */}
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -341,7 +300,7 @@ export default function Jobs() {
             </div>
           </motion.div>
 
-          {/* Loader or content */}
+          {/* Show loader while loading */}
           {loading ? (
             <div className="flex justify-center items-center py-20">
               <Loader />
@@ -371,7 +330,8 @@ export default function Jobs() {
                       }}
                       whileHover={{
                         scale: 1.03,
-                        boxShadow: "0 25px 40px rgba(52,211,153,0.25)",
+                        boxShadow:
+                          "0 25px 40px rgba(52,211,153,0.25)",
                       }}
                       className="relative rounded-2xl overflow-hidden p-5 flex flex-col justify-between bg-white shadow-md border border-green-100 cursor-pointer hover:bg-gradient-to-r hover:from-emerald-100"
                       onClick={() => navigate(`/jobs/${job.id}`)}
@@ -379,7 +339,9 @@ export default function Jobs() {
                       {job.imageUrls?.length > 0 && (
                         <div className="relative w-full h-48 mb-4 rounded-xl overflow-hidden">
                           <img
-                            src={job.imageUrls[job.currentImageIndex || 0]}
+                            src={
+                              job.imageUrls[job.currentImageIndex || 0]
+                            }
                             alt={job.title}
                             className="w-full h-full object-cover rounded-xl"
                           />
@@ -392,15 +354,24 @@ export default function Jobs() {
                       </div>
                       <div className="space-y-2 text-gray-700">
                         <p className="flex items-center gap-2">
-                          <MapPin size={16} className="text-green-700" />{" "}
+                          <MapPin
+                            size={16}
+                            className="text-green-700"
+                          />{" "}
                           {job.location}
                         </p>
                         <p className="flex items-center gap-2">
-                          <DollarSign size={16} className="text-yellow-600" />{" "}
+                          <DollarSign
+                            size={16}
+                            className="text-yellow-600"
+                          />{" "}
                           {job.salaryRange}
                         </p>
                         <p className="flex items-center gap-2">
-                          <Calendar size={16} className="text-blue-600" />{" "}
+                          <Calendar
+                            size={16}
+                            className="text-blue-600"
+                          />{" "}
                           {formatDate(job.applicationDeadline)}
                         </p>
                       </div>
@@ -440,7 +411,8 @@ export default function Jobs() {
                       }}
                       whileHover={{
                         scale: 1.03,
-                        boxShadow: "0 25px 40px rgba(52,211,153,0.25)",
+                        boxShadow:
+                          "0 25px 40px rgba(52,211,153,0.25)",
                       }}
                       className="relative rounded-2xl overflow-hidden p-5 flex flex-col justify-between bg-white shadow-md border border-green-100 cursor-pointer hover:bg-gradient-to-r hover:from-emerald-100"
                       onClick={() => navigate(`/jobs/${job.id}`)}
@@ -448,7 +420,9 @@ export default function Jobs() {
                       {job.imageUrls?.length > 0 && (
                         <div className="relative w-full h-48 mb-4 rounded-xl overflow-hidden">
                           <img
-                            src={job.imageUrls[job.currentImageIndex || 0]}
+                            src={
+                              job.imageUrls[job.currentImageIndex || 0]
+                            }
                             alt={job.title}
                             className="w-full h-full object-cover rounded-xl"
                           />
@@ -461,15 +435,24 @@ export default function Jobs() {
                       </div>
                       <div className="space-y-2 text-gray-700">
                         <p className="flex items-center gap-2">
-                          <MapPin size={16} className="text-green-700" />{" "}
+                          <MapPin
+                            size={16}
+                            className="text-green-700"
+                          />{" "}
                           {job.location}
                         </p>
                         <p className="flex items-center gap-2">
-                          <DollarSign size={16} className="text-yellow-600" />{" "}
+                          <DollarSign
+                            size={16}
+                            className="text-yellow-600"
+                          />{" "}
                           {job.salaryRange}
                         </p>
                         <p className="flex items-center gap-2">
-                          <Calendar size={16} className="text-blue-600" />{" "}
+                          <Calendar
+                            size={16}
+                            className="text-blue-600"
+                          />{" "}
                           {formatDate(job.applicationDeadline)}
                         </p>
                       </div>
@@ -510,7 +493,6 @@ export default function Jobs() {
                           className="relative rounded-2xl shadow-md border border-green-100 overflow-hidden"
                           style={{ height: "250px", minHeight: "250px" }}
                         >
-                          {/* Close button for mobile only */}
                           <motion.button
                             className="absolute -top-0 -right-0 z-20 lg:hidden bg-white rounded-full p-1.5 shadow-lg border-2 border-gray-200 hover:bg-gray-100 transition-all duration-200"
                             whileHover={{ scale: 1.1 }}
