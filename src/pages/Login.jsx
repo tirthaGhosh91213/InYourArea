@@ -144,7 +144,7 @@ const handleSignin = async (e) => {
           const subscriptionId = await window.OneSignal?.User?.PushSubscription?.id;
           
           if (subscriptionId) {
-            await fetch('https://api.jharkhandbiharupdates.com/api/v1/users/onesignal-id', {
+            await fetch('https://api.jharkhandbiharupdates.com/api/v1/user/onesignal-id', {
               method: 'PUT',
               headers: {
                 'Content-Type': 'application/json',
