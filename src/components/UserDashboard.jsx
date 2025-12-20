@@ -278,7 +278,7 @@ export default function UserDashboard() {
     } else if (type === "community") {
       navigate(`/community/${id}`);
     } else if (type === "localNews") {
-      navigate(`/news/${id}`);
+      navigate(`/localnews/details/${id}`);
     }
   };
 
