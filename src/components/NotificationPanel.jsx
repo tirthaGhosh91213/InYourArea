@@ -245,8 +245,9 @@ export default function NotificationPanel({
           exit={{ opacity: 0, y: -10 }}
           transition={{ duration: 0.2 }}
           className="
-            absolute right-2 sm:right-4 md:right-0 mt-3 
-            w-80 sm:w-80 md:w-96 
+            fixed left-1/2 -translate-x-1/2 top-16
+            sm:absolute sm:left-auto sm:translate-x-0 sm:right-4 sm:top-auto md:right-0 sm:mt-3 
+            w-[90vw] max-w-[320px] sm:w-80 md:w-96 
             bg-white shadow-2xl rounded-lg 
             border border-gray-200 z-50 overflow-hidden
             text-sm sm:text-base md:text-base
