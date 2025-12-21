@@ -16,49 +16,62 @@ export default function NotificationPanel({
   );
   const previousNotificationsRef = useRef([]);
   const pollingIntervalRef = useRef(null);
+  const isFirstFetchRef = useRef(true);
   const navigate = useNavigate();
 
   // Request notification permission on mount
   useEffect(() => {
     const checkAndRequestPermission = async () => {
       if (typeof Notification === "undefined") {
-        console.warn("Browser notifications not supported");
+        console.warn("❌ Browser notifications not supported");
         return;
       }
 
+      console.log("🔔 Current permission:", Notification.permission);
+      setNotificationPermission(Notification.permission);
+
       if (Notification.permission === "default") {
+        console.log("🔔 Requesting permission...");
         const permission = await Notification.requestPermission();
+        console.log("🔔 Permission result:", permission);
         setNotificationPermission(permission);
-      } else {
-        setNotificationPermission(Notification.permission);
       }
     };
     checkAndRequestPermission();
   }, []);
 
   const showBrowserNotification = (title, body, notifId) => {
-    if (typeof Notification === "undefined") return;
-    if (Notification.permission !== "granted") return;
+    console.log("🔔 Attempting to show notification:", { title, body, notifId });
+    
+    if (typeof Notification === "undefined") {
+      console.warn("❌ Notification API not available");
+      return;
+    }
+    
+    if (Notification.permission !== "granted") {
+      console.warn("❌ Permission not granted:", Notification.permission);
+      return;
+    }
 
     try {
       const notification = new Notification(title, {
         body: body,
         icon: "/logo.png",
         badge: "/logo.png",
-        tag: `notification-${notifId}`, // Prevent duplicates
+        tag: `notification-${notifId}`,
         requireInteraction: false,
         silent: false,
       });
 
-      // Click handler
       notification.onclick = () => {
+        console.log("🔔 Notification clicked");
         window.focus();
         notification.close();
       };
 
-      console.log("✅ Browser notification shown:", title);
+      console.log("✅ Browser notification created successfully");
     } catch (e) {
-      console.error("❌ Error showing browser notification:", e);
+      console.error("❌ Error creating notification:", e);
     }
   };
 
@@ -67,6 +80,7 @@ export default function NotificationPanel({
       if (!silent) setLoading(true);
       const token = localStorage.getItem("accessToken");
       if (!token) {
+        console.warn("❌ No access token, redirecting to login");
         navigate("/login");
         return;
       }
@@ -79,25 +93,44 @@ export default function NotificationPanel({
       );
 
       const data = res.data.data || [];
+      console.log("🔔 Fetched notifications:", data.length, "items");
 
-      // ✅ Detect NEW notifications by comparing with previous
-      if (previousNotificationsRef.current.length > 0) {
-        const newNotifications = data.filter(
-          (newNotif) =>
-            !previousNotificationsRef.current.some(
-              (oldNotif) => oldNotif.id === newNotif.id
-            )
-        );
+      // Skip notification showing on first fetch (initial load)
+      if (isFirstFetchRef.current) {
+        console.log("🔔 First fetch - skipping notification display");
+        previousNotificationsRef.current = data;
+        isFirstFetchRef.current = false;
+        setNotifications(data);
+        if (onUnreadChange) onUnreadChange(data.length > 0);
+        if (!silent) setLoading(false);
+        return;
+      }
 
-        // ✅ Show browser notification for each NEW notification
-        if (newNotifications.length > 0 && Notification.permission === "granted") {
+      // Detect NEW notifications
+      const previousIds = previousNotificationsRef.current.map(n => n.id);
+      const newNotifications = data.filter(
+        (newNotif) => !previousIds.includes(newNotif.id)
+      );
+
+      console.log("🔔 Previous count:", previousNotificationsRef.current.length);
+      console.log("🔔 Current count:", data.length);
+      console.log("🔔 New notifications found:", newNotifications.length);
+
+      // Show browser notification for each NEW notification
+      if (newNotifications.length > 0) {
+        console.log("🔔 Processing", newNotifications.length, "new notifications");
+        
+        if (Notification.permission === "granted") {
           newNotifications.forEach((notif) => {
+            console.log("🔔 Showing notification for:", notif.message);
             showBrowserNotification(
               "New Notification 🔔",
               notif.message || "You have a new notification",
               notif.id
             );
           });
+        } else {
+          console.warn("❌ Cannot show notifications - permission:", Notification.permission);
         }
       }
 
@@ -105,25 +138,31 @@ export default function NotificationPanel({
       setNotifications(data);
       if (onUnreadChange) onUnreadChange(data.length > 0);
     } catch (err) {
-      console.error("Error fetching notifications:", err);
+      console.error("❌ Error fetching notifications:", err);
     } finally {
       if (!silent) setLoading(false);
     }
   };
 
-  // Poll for new notifications every 30 seconds
+  // Start polling when panel opens
   useEffect(() => {
+    console.log("🔔 NotificationPanel open state:", notifOpen);
+    
     if (notifOpen) {
+      console.log("🔔 Starting notification polling");
       fetchNotifications();
 
-      // Start polling
       pollingIntervalRef.current = setInterval(() => {
-        fetchNotifications(true); // Silent fetch
+        console.log("🔔 Polling for notifications...");
+        fetchNotifications(true);
       }, 30000); // 30 seconds
+    } else {
+      isFirstFetchRef.current = true; // Reset for next open
     }
 
     return () => {
       if (pollingIntervalRef.current) {
+        console.log("🔔 Stopping notification polling");
         clearInterval(pollingIntervalRef.current);
       }
     };
@@ -182,17 +221,27 @@ export default function NotificationPanel({
       return;
     }
 
+    console.log("🔔 Requesting notification permission...");
     const permission = await Notification.requestPermission();
+    console.log("🔔 Permission granted:", permission);
     setNotificationPermission(permission);
 
     if (permission === "granted") {
-      // Show test notification
       showBrowserNotification(
         "Notifications Enabled! 🎉",
         "You will now receive push notifications",
         "test"
       );
     }
+  };
+
+  const handleTestNotification = () => {
+    console.log("🔔 Manual test notification triggered");
+    showBrowserNotification(
+      "Test Notification",
+      "This is a test notification from the panel",
+      "manual-test-" + Date.now()
+    );
   };
 
   return (
@@ -216,13 +265,22 @@ export default function NotificationPanel({
             <h4 className="font-semibold text-base sm:text-lg tracking-wide">
               Notifications
             </h4>
-            <button
-              onClick={handleClearAll}
-              className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm hover:opacity-80 focus:outline-none"
-              title="Clear All Notifications"
-            >
-              <Trash2 size={16} className="sm:w-[18px] sm:h-[18px]" /> Clear
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={handleTestNotification}
+                className="text-xs bg-green-800 hover:bg-green-900 px-2 py-1 rounded"
+                title="Test notification"
+              >
+                Test
+              </button>
+              <button
+                onClick={handleClearAll}
+                className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm hover:opacity-80 focus:outline-none"
+                title="Clear All Notifications"
+              >
+                <Trash2 size={16} className="sm:w-[18px] sm:h-[18px]" /> Clear
+              </button>
+            </div>
           </div>
 
           {/* Permission Banner */}
@@ -271,7 +329,6 @@ export default function NotificationPanel({
                     {new Date(n.createdAt).toLocaleString()}
                   </p>
 
-                  {/* Delete button */}
                   <button
                     className="absolute top-2 sm:top-3 right-2 sm:right-3 text-gray-400 hover:text-red-500 focus:outline-none"
                     onClick={() => handleDeleteNotification(n.id)}
