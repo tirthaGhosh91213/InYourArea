@@ -1,9 +1,8 @@
 import React, { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Loader2, Trash2, Bell, BellOff } from "lucide-react";
+import { Loader2, Trash2, BellOff } from "lucide-react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { notificationService } from "../utils/notificationService";
 
 export default function NotificationPanel({
   notifOpen,
@@ -13,7 +12,7 @@ export default function NotificationPanel({
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(false);
   const [notificationPermission, setNotificationPermission] = useState(
-    Notification.permission
+    typeof Notification !== "undefined" ? Notification.permission : "denied"
   );
   const previousNotificationsRef = useRef([]);
   const pollingIntervalRef = useRef(null);
@@ -21,12 +20,47 @@ export default function NotificationPanel({
 
   // Request notification permission on mount
   useEffect(() => {
-    const checkPermission = async () => {
-      const permission = await notificationService.requestPermission();
-      setNotificationPermission(permission);
+    const checkAndRequestPermission = async () => {
+      if (typeof Notification === "undefined") {
+        console.warn("Browser notifications not supported");
+        return;
+      }
+
+      if (Notification.permission === "default") {
+        const permission = await Notification.requestPermission();
+        setNotificationPermission(permission);
+      } else {
+        setNotificationPermission(Notification.permission);
+      }
     };
-    checkPermission();
+    checkAndRequestPermission();
   }, []);
+
+  const showBrowserNotification = (title, body, notifId) => {
+    if (typeof Notification === "undefined") return;
+    if (Notification.permission !== "granted") return;
+
+    try {
+      const notification = new Notification(title, {
+        body: body,
+        icon: "/logo.png",
+        badge: "/logo.png",
+        tag: `notification-${notifId}`, // Prevent duplicates
+        requireInteraction: false,
+        silent: false,
+      });
+
+      // Click handler
+      notification.onclick = () => {
+        window.focus();
+        notification.close();
+      };
+
+      console.log("✅ Browser notification shown:", title);
+    } catch (e) {
+      console.error("❌ Error showing browser notification:", e);
+    }
+  };
 
   const fetchNotifications = async (silent = false) => {
     try {
@@ -45,8 +79,8 @@ export default function NotificationPanel({
       );
 
       const data = res.data.data || [];
-      
-      // Check for new notifications
+
+      // ✅ Detect NEW notifications by comparing with previous
       if (previousNotificationsRef.current.length > 0) {
         const newNotifications = data.filter(
           (newNotif) =>
@@ -55,17 +89,13 @@ export default function NotificationPanel({
             )
         );
 
-        // Show browser notification for each new notification
-        if (newNotifications.length > 0 && notificationService.hasPermission()) {
+        // ✅ Show browser notification for each NEW notification
+        if (newNotifications.length > 0 && Notification.permission === "granted") {
           newNotifications.forEach((notif) => {
-            notificationService.showNotification(
-              "New Notification",
-              {
-                body: notif.message || "You have a new notification",
-                icon: "/logo.png",
-                tag: `notification-${notif.id}`, // Prevent duplicate notifications
-                data: { id: notif.id, createdAt: notif.createdAt },
-              }
+            showBrowserNotification(
+              "New Notification 🔔",
+              notif.message || "You have a new notification",
+              notif.id
             );
           });
         }
@@ -85,7 +115,7 @@ export default function NotificationPanel({
   useEffect(() => {
     if (notifOpen) {
       fetchNotifications();
-      
+
       // Start polling
       pollingIntervalRef.current = setInterval(() => {
         fetchNotifications(true); // Silent fetch
@@ -147,17 +177,20 @@ export default function NotificationPanel({
   };
 
   const handleRequestPermission = async () => {
-    const permission = await notificationService.requestPermission();
+    if (typeof Notification === "undefined") {
+      alert("Your browser doesn't support notifications");
+      return;
+    }
+
+    const permission = await Notification.requestPermission();
     setNotificationPermission(permission);
-    
-    if (permission === 'granted') {
+
+    if (permission === "granted") {
       // Show test notification
-      notificationService.showNotification(
+      showBrowserNotification(
         "Notifications Enabled! 🎉",
-        {
-          body: "You will now receive push notifications",
-          icon: "/logo.png",
-        }
+        "You will now receive push notifications",
+        "test"
       );
     }
   };
@@ -193,10 +226,13 @@ export default function NotificationPanel({
           </div>
 
           {/* Permission Banner */}
-          {notificationPermission !== 'granted' && (
+          {notificationPermission !== "granted" && (
             <div className="bg-yellow-50 border-b border-yellow-200 px-4 sm:px-6 py-3">
               <div className="flex items-start gap-3">
-                <BellOff size={20} className="text-yellow-600 mt-0.5 flex-shrink-0" />
+                <BellOff
+                  size={20}
+                  className="text-yellow-600 mt-0.5 flex-shrink-0"
+                />
                 <div className="flex-1">
                   <p className="text-xs sm:text-sm text-yellow-800 font-medium">
                     Enable notifications to stay updated
