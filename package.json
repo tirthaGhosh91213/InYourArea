@@ -25,6 +25,7 @@
     "react-onesignal": "^3.4.0",
     "react-responsive-masonry": "^2.7.1",
     "react-router-dom": "^7.9.3",
+    "react-snowfall": "^2.4.0",
     "react-toastify": "^11.0.5",
     "styled-components": "^6.1.19",
     "sweetalert2": "^11.26.3",
