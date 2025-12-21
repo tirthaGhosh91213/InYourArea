@@ -4,7 +4,9 @@ import { Loader2, Trash2, BellOff } from "lucide-react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
+
 const LAST_NOTIFICATION_ID_KEY = "lastSeenNotificationId";
+
 
 export default function NotificationPanel({
   notifOpen,
@@ -19,6 +21,7 @@ export default function NotificationPanel({
   const pollingIntervalRef = useRef(null);
   const navigate = useNavigate();
 
+
   // Request notification permission on mount
   useEffect(() => {
     const checkAndRequestPermission = async () => {
@@ -27,11 +30,13 @@ export default function NotificationPanel({
         return;
       }
 
+
       console.log("🔔 Current permission:", Notification.permission);
       setNotificationPermission(Notification.permission);
     };
     checkAndRequestPermission();
   }, []);
+
 
   const showBrowserNotification = (title, body, notifId) => {
     console.log("🔔 Attempting to show notification:", { title, body, notifId });
@@ -46,6 +51,7 @@ export default function NotificationPanel({
       return;
     }
 
+
     try {
       const notification = new Notification(title, {
         body: body,
@@ -56,17 +62,20 @@ export default function NotificationPanel({
         silent: false,
       });
 
+
       notification.onclick = () => {
         console.log("🔔 Notification clicked");
         window.focus();
         notification.close();
       };
 
+
       console.log("✅ Browser notification created successfully");
     } catch (e) {
       console.error("❌ Error creating notification:", e);
     }
   };
+
 
   const fetchNotifications = async (silent = false) => {
     try {
@@ -77,6 +86,7 @@ export default function NotificationPanel({
         return;
       }
 
+
       const res = await axios.get(
         "https://api.jharkhandbiharupdates.com/api/v1/notifications/recent?limit=50",
         {
@@ -84,13 +94,16 @@ export default function NotificationPanel({
         }
       );
 
+
       const data = res.data.data || [];
       console.log("🔔 Fetched notifications:", data.length, "items");
+
 
       // ✅ Get last seen notification ID from localStorage
       const lastSeenIdStr = localStorage.getItem(LAST_NOTIFICATION_ID_KEY);
       const lastSeenId = lastSeenIdStr ? parseInt(lastSeenIdStr, 10) : null;
       console.log("🔔 Last seen notification ID:", lastSeenId);
+
 
       // ✅ Find NEW notifications (ID greater than last seen)
       const newNotifications = data.filter((notif) => {
@@ -98,7 +111,9 @@ export default function NotificationPanel({
         return notif.id > lastSeenId;
       });
 
+
       console.log("🔔 New notifications found:", newNotifications.length);
+
 
       // ✅ Show OS notification for each NEW notification
       if (newNotifications.length > 0 && Notification.permission === "granted") {
@@ -113,12 +128,14 @@ export default function NotificationPanel({
         });
       }
 
+
       // ✅ Update last seen ID in localStorage (highest ID)
       if (data.length > 0) {
         const highestId = Math.max(...data.map(n => n.id));
         localStorage.setItem(LAST_NOTIFICATION_ID_KEY, String(highestId));
         console.log("🔔 Updated last seen ID to:", highestId);
       }
+
 
       setNotifications(data);
       if (onUnreadChange) onUnreadChange(data.length > 0);
@@ -129,6 +146,7 @@ export default function NotificationPanel({
     }
   };
 
+
   // ✅ Start polling on mount
   useEffect(() => {
     console.log("🔔 NotificationPanel mounted - starting background polling");
@@ -136,11 +154,13 @@ export default function NotificationPanel({
     // Initial fetch
     fetchNotifications(true);
 
+
     // Poll every 30 seconds
     pollingIntervalRef.current = setInterval(() => {
       console.log("🔔 Background polling...");
       fetchNotifications(true);
     }, 30000);
+
 
     return () => {
       if (pollingIntervalRef.current) {
@@ -150,6 +170,7 @@ export default function NotificationPanel({
     };
   }, []);
 
+
   // Refresh display when panel opens
   useEffect(() => {
     if (notifOpen) {
@@ -157,6 +178,7 @@ export default function NotificationPanel({
       fetchNotifications();
     }
   }, [notifOpen]);
+
 
   const handleClearAll = async () => {
     try {
@@ -166,12 +188,14 @@ export default function NotificationPanel({
         return;
       }
 
+
       await axios.delete(
         "https://api.jharkhandbiharupdates.com/api/v1/notifications/clear-all",
         {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
+
 
       setNotifications([]);
       // Reset last seen ID when clearing
@@ -182,6 +206,7 @@ export default function NotificationPanel({
     }
   };
 
+
   const handleDeleteNotification = async (id) => {
     try {
       const token = localStorage.getItem("accessToken");
@@ -190,12 +215,14 @@ export default function NotificationPanel({
         return;
       }
 
+
       await axios.delete(
         `https://api.jharkhandbiharupdates.com/api/v1/notifications/${id}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
+
 
       const updated = notifications.filter((n) => n.id !== id);
       setNotifications(updated);
@@ -205,16 +232,19 @@ export default function NotificationPanel({
     }
   };
 
+
   const handleRequestPermission = async () => {
     if (typeof Notification === "undefined") {
       alert("Your browser doesn't support notifications");
       return;
     }
 
+
     console.log("🔔 Requesting notification permission...");
     const permission = await Notification.requestPermission();
     console.log("🔔 Permission granted:", permission);
     setNotificationPermission(permission);
+
 
     if (permission === "granted") {
       showBrowserNotification(
@@ -225,14 +255,6 @@ export default function NotificationPanel({
     }
   };
 
-  const handleTestNotification = () => {
-    console.log("🔔 Manual test notification triggered");
-    showBrowserNotification(
-      "Test Notification",
-      "This is a test notification from the panel",
-      "manual-test-" + Date.now()
-    );
-  };
 
   return (
     <AnimatePresence>
@@ -255,23 +277,15 @@ export default function NotificationPanel({
             <h4 className="font-semibold text-base sm:text-lg tracking-wide">
               Notifications
             </h4>
-            <div className="flex gap-2">
-              <button
-                onClick={handleTestNotification}
-                className="text-xs bg-green-800 hover:bg-green-900 px-2 py-1 rounded"
-                title="Test notification"
-              >
-                Test
-              </button>
-              <button
-                onClick={handleClearAll}
-                className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm hover:opacity-80 focus:outline-none"
-                title="Clear All Notifications"
-              >
-                <Trash2 size={16} className="sm:w-[18px] sm:h-[18px]" /> Clear
-              </button>
-            </div>
+            <button
+              onClick={handleClearAll}
+              className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm hover:opacity-80 focus:outline-none"
+              title="Clear All Notifications"
+            >
+              <Trash2 size={16} className="sm:w-[18px] sm:h-[18px]" /> Clear
+            </button>
           </div>
+
 
           {/* Permission Banner */}
           {notificationPermission !== "granted" && (
@@ -296,6 +310,7 @@ export default function NotificationPanel({
             </div>
           )}
 
+
           {/* Notification List */}
           <div className="max-h-[21rem] overflow-y-auto divide-y divide-gray-200">
             {loading ? (
@@ -318,6 +333,7 @@ export default function NotificationPanel({
                   <p className="text-[10px] sm:text-xs text-gray-400 mt-1 select-none">
                     {new Date(n.createdAt).toLocaleString()}
                   </p>
+
 
                   <button
                     className="absolute top-2 sm:top-3 right-2 sm:right-3 text-gray-400 hover:text-red-500 focus:outline-none"
