@@ -4,6 +4,8 @@ import { Loader2, Trash2, BellOff } from "lucide-react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
+const LAST_NOTIFICATION_ID_KEY = "lastSeenNotificationId";
+
 export default function NotificationPanel({
   notifOpen,
   onClose,
@@ -14,9 +16,7 @@ export default function NotificationPanel({
   const [notificationPermission, setNotificationPermission] = useState(
     typeof Notification !== "undefined" ? Notification.permission : "denied"
   );
-  const previousNotificationsRef = useRef([]);
   const pollingIntervalRef = useRef(null);
-  const isFirstFetchRef = useRef(true);
   const navigate = useNavigate();
 
   // Request notification permission on mount
@@ -87,46 +87,39 @@ export default function NotificationPanel({
       const data = res.data.data || [];
       console.log("🔔 Fetched notifications:", data.length, "items");
 
-      // Skip notification showing on first fetch (initial load)
-      if (isFirstFetchRef.current) {
-        console.log("🔔 First fetch - initializing");
-        previousNotificationsRef.current = data;
-        isFirstFetchRef.current = false;
-        setNotifications(data);
-        if (onUnreadChange) onUnreadChange(data.length > 0);
-        if (!silent) setLoading(false);
-        return;
-      }
+      // ✅ Get last seen notification ID from localStorage
+      const lastSeenIdStr = localStorage.getItem(LAST_NOTIFICATION_ID_KEY);
+      const lastSeenId = lastSeenIdStr ? parseInt(lastSeenIdStr, 10) : null;
+      console.log("🔔 Last seen notification ID:", lastSeenId);
 
-      // Detect NEW notifications
-      const previousIds = previousNotificationsRef.current.map(n => n.id);
-      const newNotifications = data.filter(
-        (newNotif) => !previousIds.includes(newNotif.id)
-      );
+      // ✅ Find NEW notifications (ID greater than last seen)
+      const newNotifications = data.filter((notif) => {
+        if (lastSeenId === null) return false; // First time, don't push
+        return notif.id > lastSeenId;
+      });
 
-      console.log("🔔 Previous count:", previousNotificationsRef.current.length);
-      console.log("🔔 Current count:", data.length);
       console.log("🔔 New notifications found:", newNotifications.length);
 
-      // Show browser notification for each NEW notification
-      if (newNotifications.length > 0) {
-        console.log("🔔 Processing", newNotifications.length, "new notifications");
-        
-        if (Notification.permission === "granted") {
-          newNotifications.forEach((notif) => {
-            console.log("🔔 Showing OS notification for:", notif.message);
-            showBrowserNotification(
-              "New Notification 🔔",
-              notif.message || "You have a new notification",
-              notif.id
-            );
-          });
-        } else {
-          console.warn("❌ Cannot show notifications - permission:", Notification.permission);
-        }
+      // ✅ Show OS notification for each NEW notification
+      if (newNotifications.length > 0 && Notification.permission === "granted") {
+        console.log("🔔 Showing OS notifications for new items");
+        newNotifications.forEach((notif) => {
+          console.log("🔔 Pushing:", notif.message);
+          showBrowserNotification(
+            "New Notification 🔔",
+            notif.message || "You have a new notification",
+            notif.id
+          );
+        });
       }
 
-      previousNotificationsRef.current = data;
+      // ✅ Update last seen ID in localStorage (highest ID)
+      if (data.length > 0) {
+        const highestId = Math.max(...data.map(n => n.id));
+        localStorage.setItem(LAST_NOTIFICATION_ID_KEY, String(highestId));
+        console.log("🔔 Updated last seen ID to:", highestId);
+      }
+
       setNotifications(data);
       if (onUnreadChange) onUnreadChange(data.length > 0);
     } catch (err) {
@@ -136,18 +129,18 @@ export default function NotificationPanel({
     }
   };
 
-  // ✅ FIX: Start polling on component mount (not just when panel opens)
+  // ✅ Start polling on mount
   useEffect(() => {
     console.log("🔔 NotificationPanel mounted - starting background polling");
     
     // Initial fetch
     fetchNotifications(true);
 
-    // Poll every 30 seconds regardless of panel state
+    // Poll every 30 seconds
     pollingIntervalRef.current = setInterval(() => {
-      console.log("🔔 Background polling for notifications...");
+      console.log("🔔 Background polling...");
       fetchNotifications(true);
-    }, 30000); // 30 seconds
+    }, 30000);
 
     return () => {
       if (pollingIntervalRef.current) {
@@ -155,9 +148,9 @@ export default function NotificationPanel({
         clearInterval(pollingIntervalRef.current);
       }
     };
-  }, []); // Empty deps = runs once on mount
+  }, []);
 
-  // ✅ Refresh display when panel opens
+  // Refresh display when panel opens
   useEffect(() => {
     if (notifOpen) {
       console.log("🔔 Panel opened - refreshing display");
@@ -181,7 +174,8 @@ export default function NotificationPanel({
       );
 
       setNotifications([]);
-      previousNotificationsRef.current = [];
+      // Reset last seen ID when clearing
+      localStorage.removeItem(LAST_NOTIFICATION_ID_KEY);
       if (onUnreadChange) onUnreadChange(false);
     } catch (err) {
       console.error("Error clearing notifications:", err);
@@ -205,7 +199,6 @@ export default function NotificationPanel({
 
       const updated = notifications.filter((n) => n.id !== id);
       setNotifications(updated);
-      previousNotificationsRef.current = updated;
       if (onUnreadChange) onUnreadChange(updated.length > 0);
     } catch (err) {
       console.error(`Error deleting notification ${id}:`, err);
