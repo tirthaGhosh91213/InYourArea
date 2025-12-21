@@ -282,7 +282,7 @@ export default function EmailService() {
 
                 {/* Terms Text */}
                 <p className="text-xs text-gray-600 mt-6 leading-relaxed">
-                  By signing up, you agree to the Terms of Service and How we use your data. InYourArea and Reach plc will use your sign-up to email content, improve understanding of you and serve you via other consented channels. These may include adverts from us and 3rd parties based on our understanding. <span 
+                  By signing up, you agree to the Terms of Service and How we use your data. Jharkhand Bihar Updates will use your sign-up to email content, improve understanding of you . These may include adverts from us and 3rd parties based on our understanding. <span 
                     className="font-bold cursor-pointer hover:text-red-500 transition-colors underline"
                     onClick={() => setShowUnsubscribeModal(true)}
                   >
@@ -321,7 +321,7 @@ export default function EmailService() {
             <div>
               <h2 className="text-3xl font-bold text-gray-900 mb-4">News Updates</h2>
               <p className="text-gray-700 leading-relaxed">
-                Every morning and evening, you'll get the latest local news headlines delivered straight to your inbox. This means you'll never miss a beat when it comes to knowing exactly what's happening where you live, day and night.
+                Everytime, you'll get the latest local news delivered straight to your inbox. This means you'll never miss a beat when it comes to knowing exactly what's happening where you live, day and night.
               </p>
             </div>
           </div>
@@ -355,7 +355,7 @@ export default function EmailService() {
             <div>
               <h2 className="text-3xl font-bold text-gray-900 mb-4">Discover other news nearby</h2>
               <p className="text-gray-700 leading-relaxed">
-                If knowing what's happening on your doorstep isn't enough, your twice daily newsletter will even show you the latest news from nearby postcodes as well. This gives you an even greater idea of what's happening in and around your area.
+                If knowing what's happening on your doorstep isn't enough, your twice daily newsletter will even show you the latest news from nearby districts as well. This gives you an even greater idea of what's happening in and around your area.
               </p>
             </div>
           </div>
@@ -412,11 +412,11 @@ export default function EmailService() {
                 {/* Info Box */}
                 <div className="mt-8 bg-white p-6 rounded-lg shadow-sm space-y-4 text-sm text-gray-700">
                   <p>
-                    • Please remember that you can unsubscribe from our daily newsletter at any time. Simply click the unsubscribe link at the very bottom of the email. Maybe once a day is too much for you? If that's the case, you can always choose to receive it just on a sunday morning. If you're a registered user with InYourArea you can take control of your newsletter settings within your account.
+                    • Please remember that you can unsubscribe from our daily newsletter at any time. Simply click the unsubscribe link at the very bottom of the email.
                   </p>
                   
                   <p>
-                    • If there is any information you think we should included in our daily newsletters that we currently don't, then we would love to hear about it. You can email us at <a href="mailto:info@inyourarea.co.uk" className="text-green-400 hover:underline font-semibold">info@inyourarea.co.uk</a> with your suggestions.
+                    • If there is any information you think we should included in our daily newsletters that we currently don't, then we would love to hear about it. You can email us at <a href="mailto:support@jharkhandbiharupdates.com" className="text-green-400 hover:underline font-semibold">support@jharkhandbiharupdates.com</a> with your suggestions.
                   </p>
                 </div>
               </div>
