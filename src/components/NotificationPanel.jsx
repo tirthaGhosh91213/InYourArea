@@ -29,13 +29,6 @@ export default function NotificationPanel({
 
       console.log("🔔 Current permission:", Notification.permission);
       setNotificationPermission(Notification.permission);
-
-      if (Notification.permission === "default") {
-        console.log("🔔 Requesting permission...");
-        const permission = await Notification.requestPermission();
-        console.log("🔔 Permission result:", permission);
-        setNotificationPermission(permission);
-      }
     };
     checkAndRequestPermission();
   }, []);
@@ -80,8 +73,7 @@ export default function NotificationPanel({
       if (!silent) setLoading(true);
       const token = localStorage.getItem("accessToken");
       if (!token) {
-        console.warn("❌ No access token, redirecting to login");
-        navigate("/login");
+        console.warn("❌ No access token");
         return;
       }
 
@@ -97,7 +89,7 @@ export default function NotificationPanel({
 
       // Skip notification showing on first fetch (initial load)
       if (isFirstFetchRef.current) {
-        console.log("🔔 First fetch - skipping notification display");
+        console.log("🔔 First fetch - initializing");
         previousNotificationsRef.current = data;
         isFirstFetchRef.current = false;
         setNotifications(data);
@@ -122,7 +114,7 @@ export default function NotificationPanel({
         
         if (Notification.permission === "granted") {
           newNotifications.forEach((notif) => {
-            console.log("🔔 Showing notification for:", notif.message);
+            console.log("🔔 Showing OS notification for:", notif.message);
             showBrowserNotification(
               "New Notification 🔔",
               notif.message || "You have a new notification",
@@ -144,28 +136,33 @@ export default function NotificationPanel({
     }
   };
 
-  // Start polling when panel opens
+  // ✅ FIX: Start polling on component mount (not just when panel opens)
   useEffect(() => {
-    console.log("🔔 NotificationPanel open state:", notifOpen);
+    console.log("🔔 NotificationPanel mounted - starting background polling");
     
-    if (notifOpen) {
-      console.log("🔔 Starting notification polling");
-      fetchNotifications();
+    // Initial fetch
+    fetchNotifications(true);
 
-      pollingIntervalRef.current = setInterval(() => {
-        console.log("🔔 Polling for notifications...");
-        fetchNotifications(true);
-      }, 30000); // 30 seconds
-    } else {
-      isFirstFetchRef.current = true; // Reset for next open
-    }
+    // Poll every 30 seconds regardless of panel state
+    pollingIntervalRef.current = setInterval(() => {
+      console.log("🔔 Background polling for notifications...");
+      fetchNotifications(true);
+    }, 30000); // 30 seconds
 
     return () => {
       if (pollingIntervalRef.current) {
-        console.log("🔔 Stopping notification polling");
+        console.log("🔔 Stopping background polling");
         clearInterval(pollingIntervalRef.current);
       }
     };
+  }, []); // Empty deps = runs once on mount
+
+  // ✅ Refresh display when panel opens
+  useEffect(() => {
+    if (notifOpen) {
+      console.log("🔔 Panel opened - refreshing display");
+      fetchNotifications();
+    }
   }, [notifOpen]);
 
   const handleClearAll = async () => {
