@@ -236,7 +236,7 @@ export default function InYourArea() {
         <div className="relative w-screen h-full left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] bg-white py-0">
           <img
             src={heroImage}
-            alt="InYourArea preview"
+            alt="Heroimage preview"
             className="block mx-auto w-full max-h-[500px] object-contain"
             loading="eager"
             decoding="async"

@@ -48,22 +48,25 @@ const features = [
 function FeatureCard({ icon, title, text, img, flip, onClick }) {
   return (
     <motion.section
-      initial={{ opacity: 0, y: 50 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.8 }}
-      transition={{ duration: 0.8, ease: "easeOut" }}
-      className={`flex flex-col md:flex-row ${
-        flip ? "md:flex-row-reverse" : ""
-      } items-center gap-8 md:gap-16 bg-white rounded-3xl p-6 md:p-12 shadow-lg cursor-pointer`}
-      style={{
-        boxShadow: ACCENT.shadow,
-        border: `1.5px solid ${ACCENT.border}`,
-        marginTop: "0.5rem",
-        marginBottom: "2.6rem",
-        background: ACCENT.gradient,
-      }}
-      onClick={onClick}
-    >
+  initial={{ opacity: 0, y: 50 }}
+  whileInView={{ opacity: 1, y: 0 }}
+  viewport={{ once: true, amount: 0.8 }}
+  transition={{ duration: 0.8, ease: "easeOut" }}
+  className={`flex flex-col md:flex-row ${
+    flip ? "md:flex-row-reverse" : ""
+  } items-center gap-8 md:gap-16 rounded-3xl p-6 md:p-12 cursor-pointer
+  bg-transparent shadow-none`}   // no bg, no shadow
+  style={{
+    // remove these two completely
+    // boxShadow: ACCENT.shadow,
+    // background: ACCENT.gradient,
+    // optionally also remove border if you want zero card feel:
+    // border: `1.5px solid ${ACCENT.border}`,
+    marginTop: "0.5rem",
+    marginBottom: "2.6rem",
+  }}
+  onClick={onClick}
+>
       <motion.div
         className="w-full md:w-2/5 flex justify-center items-center"
         initial={{ scale: 0.97, opacity: 0.75 }}
