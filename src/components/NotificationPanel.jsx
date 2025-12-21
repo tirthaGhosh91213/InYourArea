@@ -5,9 +5,7 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import OneSignal from "react-onesignal";
 
-
 const LAST_NOTIFICATION_ID_KEY = "lastSeenNotificationId";
-
 
 export default function NotificationPanel({
   notifOpen,
@@ -16,12 +14,11 @@ export default function NotificationPanel({
 }) {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [isSubscribed, setIsSubscribed] = useState(false); // ✅ Changed to track subscription
+  const [isSubscribed, setIsSubscribed] = useState(false);
   const pollingIntervalRef = useRef(null);
   const navigate = useNavigate();
 
-
-  // ✅ Check subscription status on mount and when panel opens
+  // Check OneSignal subscription status
   const checkSubscriptionStatus = async () => {
     try {
       const isPushEnabled = await OneSignal.User.PushSubscription.optedIn;
@@ -34,37 +31,33 @@ export default function NotificationPanel({
     }
   };
 
-
+  // On mount: check subscription + set listener
   useEffect(() => {
     checkSubscriptionStatus();
-    
-    // ✅ Listen for subscription changes
+
     if (window.OneSignal && window.OneSignal.User) {
-      window.OneSignal.User.PushSubscription.addEventListener('change', (event) => {
-        console.log('🔔 Subscription changed:', event);
-        setIsSubscribed(event.current.optedIn);
-      });
+      try {
+        window.OneSignal.User.PushSubscription.addEventListener(
+          "change",
+          (event) => {
+            console.log("🔔 Subscription changed:", event);
+            setIsSubscribed(event.current.optedIn);
+          }
+        );
+      } catch (e) {
+        console.warn("Unable to attach PushSubscription change listener:", e);
+      }
     }
   }, []);
 
-
-  // ✅ Re-check when panel opens
-  useEffect(() => {
-    if (notifOpen) {
-      checkSubscriptionStatus();
-      fetchNotifications();
-    }
-  }, [notifOpen]);
-
-
   const showBrowserNotification = (title, body, notifId) => {
     console.log("🔔 Attempting to show notification:", { title, body, notifId });
-    
+
     if (typeof Notification === "undefined") {
       console.warn("❌ Notification API not available");
       return;
     }
-    
+
     if (Notification.permission !== "granted") {
       console.warn("❌ Permission not granted:", Notification.permission);
       return;
@@ -72,7 +65,7 @@ export default function NotificationPanel({
 
     try {
       const notification = new Notification(title, {
-        body: body,
+        body,
         icon: "/logo.png",
         badge: "/logo.png",
         tag: `notification-${notifId}`,
@@ -91,7 +84,6 @@ export default function NotificationPanel({
       console.error("❌ Error creating notification:", e);
     }
   };
-
 
   const fetchNotifications = async (silent = false) => {
     try {
@@ -136,7 +128,7 @@ export default function NotificationPanel({
       }
 
       if (data.length > 0) {
-        const highestId = Math.max(...data.map(n => n.id));
+        const highestId = Math.max(...data.map((n) => n.id));
         localStorage.setItem(LAST_NOTIFICATION_ID_KEY, String(highestId));
         console.log("🔔 Updated last seen ID to:", highestId);
       }
@@ -150,10 +142,10 @@ export default function NotificationPanel({
     }
   };
 
-
+  // Start polling on mount
   useEffect(() => {
     console.log("🔔 NotificationPanel mounted - starting background polling");
-    
+
     fetchNotifications(true);
 
     pollingIntervalRef.current = setInterval(() => {
@@ -169,6 +161,14 @@ export default function NotificationPanel({
     };
   }, []);
 
+  // Refresh display when panel opens
+  useEffect(() => {
+    if (notifOpen) {
+      console.log("🔔 Panel opened - refreshing display");
+      checkSubscriptionStatus();
+      fetchNotifications();
+    }
+  }, [notifOpen]);
 
   const handleClearAll = async () => {
     try {
@@ -193,7 +193,6 @@ export default function NotificationPanel({
     }
   };
 
-
   const handleDeleteNotification = async (id) => {
     try {
       const token = localStorage.getItem("accessToken");
@@ -217,26 +216,25 @@ export default function NotificationPanel({
     }
   };
 
-
+  // Use OneSignal slidedown, forced, when user clicks Enable
   const handleRequestPermission = async () => {
     try {
-      console.log("🔔 Showing OneSignal subscription prompt...");
-      
-      await OneSignal.Slidedown.promptPush();
-      
-      // ✅ Wait and re-check subscription status
+      console.log("🔔 Showing OneSignal subscription prompt (forced)...");
+      await OneSignal.Slidedown.promptPush({ force: true });
+
+      // Re-check subscription after user interacts
       setTimeout(async () => {
         const subscribed = await checkSubscriptionStatus();
         if (subscribed) {
           console.log("✅ User subscribed successfully!");
+        } else {
+          console.log("ℹ️ User did not subscribe");
         }
-      }, 2000); // Increased timeout for better reliability
-      
+      }, 2000);
     } catch (error) {
       console.error("❌ Error showing OneSignal prompt:", error);
     }
   };
-
 
   return (
     <AnimatePresence>
@@ -268,7 +266,7 @@ export default function NotificationPanel({
             </button>
           </div>
 
-          {/* ✅ Permission Banner - Only shows when NOT subscribed */}
+          {/* Permission Banner – only when NOT subscribed */}
           {!isSubscribed && (
             <div className="bg-yellow-50 border-b border-yellow-200 px-4 sm:px-6 py-3">
               <div className="flex items-start gap-3">
