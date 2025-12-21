@@ -298,7 +298,7 @@ export default function EmailService() {
                 
                 {/* Phone Image */}
                 <img 
-                  src="https://res.cloudinary.com/dkgwi1xvx/image/upload/v1761422166/Phone4_fjw23t.png" 
+                  src="phone.png" 
                   alt="Phone mockup" 
                   className="relative w-full max-w-sm h-auto object-contain z-10"
                 />
@@ -385,7 +385,7 @@ export default function EmailService() {
               {/* Left - Phone Image */}
               <div className="flex justify-center">
                 <img 
-                  src="https://res.cloudinary.com/dkgwi1xvx/image/upload/v1761422166/Phone4_fjw23t.png" 
+                  src="phone.png" 
                   alt="Newsletter preview on phone" 
                   className="w-full max-w-sm h-auto object-contain"
                 />
