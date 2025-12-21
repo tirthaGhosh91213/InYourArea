@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Loader2, Trash2, BellOff } from "lucide-react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import OneSignal from "react-onesignal";
 
 
 const LAST_NOTIFICATION_ID_KEY = "lastSeenNotificationId";
@@ -15,27 +16,45 @@ export default function NotificationPanel({
 }) {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [notificationPermission, setNotificationPermission] = useState(
-    typeof Notification !== "undefined" ? Notification.permission : "denied"
-  );
+  const [isSubscribed, setIsSubscribed] = useState(false); // ✅ Changed to track subscription
   const pollingIntervalRef = useRef(null);
   const navigate = useNavigate();
 
 
-  // Request notification permission on mount
+  // ✅ Check subscription status on mount and when panel opens
+  const checkSubscriptionStatus = async () => {
+    try {
+      const isPushEnabled = await OneSignal.User.PushSubscription.optedIn;
+      console.log("🔔 OneSignal subscription status:", isPushEnabled);
+      setIsSubscribed(isPushEnabled);
+      return isPushEnabled;
+    } catch (e) {
+      console.warn("OneSignal not ready yet:", e);
+      return false;
+    }
+  };
+
+
   useEffect(() => {
-    const checkAndRequestPermission = async () => {
-      if (typeof Notification === "undefined") {
-        console.warn("❌ Browser notifications not supported");
-        return;
-      }
-
-
-      console.log("🔔 Current permission:", Notification.permission);
-      setNotificationPermission(Notification.permission);
-    };
-    checkAndRequestPermission();
+    checkSubscriptionStatus();
+    
+    // ✅ Listen for subscription changes
+    if (window.OneSignal && window.OneSignal.User) {
+      window.OneSignal.User.PushSubscription.addEventListener('change', (event) => {
+        console.log('🔔 Subscription changed:', event);
+        setIsSubscribed(event.current.optedIn);
+      });
+    }
   }, []);
+
+
+  // ✅ Re-check when panel opens
+  useEffect(() => {
+    if (notifOpen) {
+      checkSubscriptionStatus();
+      fetchNotifications();
+    }
+  }, [notifOpen]);
 
 
   const showBrowserNotification = (title, body, notifId) => {
@@ -51,7 +70,6 @@ export default function NotificationPanel({
       return;
     }
 
-
     try {
       const notification = new Notification(title, {
         body: body,
@@ -62,13 +80,11 @@ export default function NotificationPanel({
         silent: false,
       });
 
-
       notification.onclick = () => {
         console.log("🔔 Notification clicked");
         window.focus();
         notification.close();
       };
-
 
       console.log("✅ Browser notification created successfully");
     } catch (e) {
@@ -86,7 +102,6 @@ export default function NotificationPanel({
         return;
       }
 
-
       const res = await axios.get(
         "https://api.jharkhandbiharupdates.com/api/v1/notifications/recent?limit=50",
         {
@@ -94,28 +109,20 @@ export default function NotificationPanel({
         }
       );
 
-
       const data = res.data.data || [];
       console.log("🔔 Fetched notifications:", data.length, "items");
 
-
-      // ✅ Get last seen notification ID from localStorage
       const lastSeenIdStr = localStorage.getItem(LAST_NOTIFICATION_ID_KEY);
       const lastSeenId = lastSeenIdStr ? parseInt(lastSeenIdStr, 10) : null;
       console.log("🔔 Last seen notification ID:", lastSeenId);
 
-
-      // ✅ Find NEW notifications (ID greater than last seen)
       const newNotifications = data.filter((notif) => {
-        if (lastSeenId === null) return false; // First time, don't push
+        if (lastSeenId === null) return false;
         return notif.id > lastSeenId;
       });
 
-
       console.log("🔔 New notifications found:", newNotifications.length);
 
-
-      // ✅ Show OS notification for each NEW notification
       if (newNotifications.length > 0 && Notification.permission === "granted") {
         console.log("🔔 Showing OS notifications for new items");
         newNotifications.forEach((notif) => {
@@ -128,14 +135,11 @@ export default function NotificationPanel({
         });
       }
 
-
-      // ✅ Update last seen ID in localStorage (highest ID)
       if (data.length > 0) {
         const highestId = Math.max(...data.map(n => n.id));
         localStorage.setItem(LAST_NOTIFICATION_ID_KEY, String(highestId));
         console.log("🔔 Updated last seen ID to:", highestId);
       }
-
 
       setNotifications(data);
       if (onUnreadChange) onUnreadChange(data.length > 0);
@@ -147,20 +151,15 @@ export default function NotificationPanel({
   };
 
 
-  // ✅ Start polling on mount
   useEffect(() => {
     console.log("🔔 NotificationPanel mounted - starting background polling");
     
-    // Initial fetch
     fetchNotifications(true);
 
-
-    // Poll every 30 seconds
     pollingIntervalRef.current = setInterval(() => {
       console.log("🔔 Background polling...");
       fetchNotifications(true);
     }, 30000);
-
 
     return () => {
       if (pollingIntervalRef.current) {
@@ -171,15 +170,6 @@ export default function NotificationPanel({
   }, []);
 
 
-  // Refresh display when panel opens
-  useEffect(() => {
-    if (notifOpen) {
-      console.log("🔔 Panel opened - refreshing display");
-      fetchNotifications();
-    }
-  }, [notifOpen]);
-
-
   const handleClearAll = async () => {
     try {
       const token = localStorage.getItem("accessToken");
@@ -188,7 +178,6 @@ export default function NotificationPanel({
         return;
       }
 
-
       await axios.delete(
         "https://api.jharkhandbiharupdates.com/api/v1/notifications/clear-all",
         {
@@ -196,9 +185,7 @@ export default function NotificationPanel({
         }
       );
 
-
       setNotifications([]);
-      // Reset last seen ID when clearing
       localStorage.removeItem(LAST_NOTIFICATION_ID_KEY);
       if (onUnreadChange) onUnreadChange(false);
     } catch (err) {
@@ -215,14 +202,12 @@ export default function NotificationPanel({
         return;
       }
 
-
       await axios.delete(
         `https://api.jharkhandbiharupdates.com/api/v1/notifications/${id}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-
 
       const updated = notifications.filter((n) => n.id !== id);
       setNotifications(updated);
@@ -234,24 +219,21 @@ export default function NotificationPanel({
 
 
   const handleRequestPermission = async () => {
-    if (typeof Notification === "undefined") {
-      alert("Your browser doesn't support notifications");
-      return;
-    }
-
-
-    console.log("🔔 Requesting notification permission...");
-    const permission = await Notification.requestPermission();
-    console.log("🔔 Permission granted:", permission);
-    setNotificationPermission(permission);
-
-
-    if (permission === "granted") {
-      showBrowserNotification(
-        "Notifications Enabled! 🎉",
-        "You will now receive push notifications",
-        "test"
-      );
+    try {
+      console.log("🔔 Showing OneSignal subscription prompt...");
+      
+      await OneSignal.Slidedown.promptPush();
+      
+      // ✅ Wait and re-check subscription status
+      setTimeout(async () => {
+        const subscribed = await checkSubscriptionStatus();
+        if (subscribed) {
+          console.log("✅ User subscribed successfully!");
+        }
+      }, 2000); // Increased timeout for better reliability
+      
+    } catch (error) {
+      console.error("❌ Error showing OneSignal prompt:", error);
     }
   };
 
@@ -286,9 +268,8 @@ export default function NotificationPanel({
             </button>
           </div>
 
-
-          {/* Permission Banner */}
-          {notificationPermission !== "granted" && (
+          {/* ✅ Permission Banner - Only shows when NOT subscribed */}
+          {!isSubscribed && (
             <div className="bg-yellow-50 border-b border-yellow-200 px-4 sm:px-6 py-3">
               <div className="flex items-start gap-3">
                 <BellOff
@@ -309,7 +290,6 @@ export default function NotificationPanel({
               </div>
             </div>
           )}
-
 
           {/* Notification List */}
           <div className="max-h-[21rem] overflow-y-auto divide-y divide-gray-200">
@@ -333,7 +313,6 @@ export default function NotificationPanel({
                   <p className="text-[10px] sm:text-xs text-gray-400 mt-1 select-none">
                     {new Date(n.createdAt).toLocaleString()}
                   </p>
-
 
                   <button
                     className="absolute top-2 sm:top-3 right-2 sm:right-3 text-gray-400 hover:text-red-500 focus:outline-none"
