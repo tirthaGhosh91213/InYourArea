@@ -27,6 +27,9 @@ import CreatePropertyPost from "./pages/CreatePropertyPost";
 import AdminAddPost from "./pages/AdminAddPost";
 import AdminAddSection from "./pages/AdminAddSection";
 
+// ✅ Snowfall import
+import Snowfall from "react-snowfall"; // [web:17][web:8]
+
 // ✅ Home component
 function Home() {
   const [postcode, setPostcode] = React.useState("");
@@ -54,6 +57,19 @@ function Home() {
 export default function App() {
   return (
     <Router>
+      {/* Snow overlay */}
+      <Snowfall
+        style={{
+          position: "fixed",
+          width: "100vw",
+          height: "100vh",
+          top: 0,
+          left: 0,
+          pointerEvents: "none",
+          zIndex: 500,
+        }}
+      />
+
       {/* Routes */}
       <Routes>
         <Route path="/" element={<Home />} />
@@ -71,10 +87,7 @@ export default function App() {
         <Route path="/create/localnews" element={<CreateLocalNewsPost />} />
         <Route path="/create/community" element={<CreateCommunityPost />} />
         <Route path="/admin/:type/:id" element={<AdminItemDetail />} />
-        <Route
-          path="/community/:id"
-          element={<CommunityDetails />}
-        />
+        <Route path="/community/:id" element={<CommunityDetails />} />
         <Route path="/jobs/:id" element={<JobDetails />} />
         <Route path="/events/:id" element={<EventDetails />} />
         <Route path="/localnews/details/:id" element={<LocalNewsDetails />} />
