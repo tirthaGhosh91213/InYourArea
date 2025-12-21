@@ -742,7 +742,7 @@ export default function LocalNewsDetails() {
                   transition={{ staggerChildren: 0.15 }}
                 >
                   {comments.length > 0 ? (
-                    comments.map((c, index) => (
+  [...comments].reverse().map((c, index) => (
                       <motion.div
                         key={c.id}
                         initial={{ opacity: 0, y: 30 }}
