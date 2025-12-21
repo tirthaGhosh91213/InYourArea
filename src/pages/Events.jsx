@@ -1,8 +1,14 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Calendar, MapPin, Clock, PlusCircle, Search as SearchIcon,
-  MessageCircle, Link as LinkIcon, X,
+  Calendar,
+  MapPin,
+  Clock,
+  PlusCircle,
+  Search as SearchIcon,
+  MessageCircle,
+  Link as LinkIcon,
+  X,
 } from "lucide-react";
 import Sidebar from "../components/SideBar";
 import RightSidebar from "../components/RightSidebar";
@@ -10,7 +16,7 @@ import SmallAdd from "../components/SmallAdd";
 import LargeAd from "../components/LargeAd";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import Loader from '../components/Loader';
+import Loader from "../components/Loader";
 
 // Helper: Get next index in circular manner
 function getNextIndex(current, total) {
@@ -32,7 +38,7 @@ const SLOT_KEYS = {
   TOP_RIGHT: "EVENTS_AD_INDEX_TOP_RIGHT",
   BOTTOM_RIGHT: "EVENTS_AD_INDEX_BOTTOM_RIGHT",
   LARGE_AD_1: "EVENTS_LARGE_AD_INDEX_1",
-  LARGE_AD_2: "EVENTS_LARGE_AD_INDEX_2"
+  LARGE_AD_2: "EVENTS_LARGE_AD_INDEX_2",
 };
 
 export default function Events() {
@@ -58,7 +64,9 @@ export default function Events() {
   const fetchEvents = async () => {
     try {
       setLoading(true);
-      const res = await axios.get("https://api.jharkhandbiharupdates.com/api/v1/events");
+      const res = await axios.get(
+        "https://api.jharkhandbiharupdates.com/api/v1/events"
+      );
       setEvents(res.data.data || []);
     } catch (err) {
       console.error("Error fetching events:", err);
@@ -79,20 +87,26 @@ export default function Events() {
           setAds(orderedAds);
 
           const total = orderedAds.length;
-          let savedTop = parseInt(localStorage.getItem(SLOT_KEYS.TOP_RIGHT) ?? "0", 10);
-          let savedBottom = parseInt(localStorage.getItem(SLOT_KEYS.BOTTOM_RIGHT) ?? "1", 10);
+          let savedTop = parseInt(
+            localStorage.getItem(SLOT_KEYS.TOP_RIGHT) ?? "0",
+            10
+          );
+          let savedBottom = parseInt(
+            localStorage.getItem(SLOT_KEYS.BOTTOM_RIGHT) ?? "1",
+            10
+          );
 
           if (total === 1) {
-            // Single ad: show only once, no rotation
             setTopRightIndex(0);
             setBottomRightIndex(-1);
             localStorage.setItem(SLOT_KEYS.TOP_RIGHT, "0");
             localStorage.removeItem(SLOT_KEYS.BOTTOM_RIGHT);
           } else {
-            // Multiple ads: normal rotation logic
             if (isNaN(savedTop) || savedTop < 0 || savedTop >= total) savedTop = 0;
-            if (isNaN(savedBottom) || savedBottom < 0 || savedBottom >= total) savedBottom = total > 1 ? 1 : 0;
-            if (savedTop === savedBottom && total > 1) savedBottom = getNextIndex(savedTop, total);
+            if (isNaN(savedBottom) || savedBottom < 0 || savedBottom >= total)
+              savedBottom = total > 1 ? 1 : 0;
+            if (savedTop === savedBottom && total > 1)
+              savedBottom = getNextIndex(savedTop, total);
 
             setTopRightIndex(savedTop);
             setBottomRightIndex(savedBottom);
@@ -109,20 +123,27 @@ export default function Events() {
           const shuffled = shuffle(data.data);
           setLargeAds(shuffled);
 
-          let largeAdIdx1 = parseInt(localStorage.getItem(SLOT_KEYS.LARGE_AD_1) ?? "0", 10);
-          let largeAdIdx2 = parseInt(localStorage.getItem(SLOT_KEYS.LARGE_AD_2) ?? "1", 10);
+          let largeAdIdx1 = parseInt(
+            localStorage.getItem(SLOT_KEYS.LARGE_AD_1) ?? "0",
+            10
+          );
+          let largeAdIdx2 = parseInt(
+            localStorage.getItem(SLOT_KEYS.LARGE_AD_2) ?? "1",
+            10
+          );
           const total = shuffled.length;
 
           if (total === 1) {
-            // Single large ad: show only one
             setLargeAdIndexes([0]);
             localStorage.setItem(SLOT_KEYS.LARGE_AD_1, "0");
             localStorage.removeItem(SLOT_KEYS.LARGE_AD_2);
           } else {
-            // Multiple large ads: normal rotation
-            if (isNaN(largeAdIdx1) || largeAdIdx1 < 0 || largeAdIdx1 >= total) largeAdIdx1 = 0;
-            if (isNaN(largeAdIdx2) || largeAdIdx2 < 0 || largeAdIdx2 >= total) largeAdIdx2 = total > 1 ? 1 : 0;
-            if (largeAdIdx1 === largeAdIdx2 && total > 1) largeAdIdx2 = getNextIndex(largeAdIdx1, total);
+            if (isNaN(largeAdIdx1) || largeAdIdx1 < 0 || largeAdIdx1 >= total)
+              largeAdIdx1 = 0;
+            if (isNaN(largeAdIdx2) || largeAdIdx2 < 0 || largeAdIdx2 >= total)
+              largeAdIdx2 = total > 1 ? 1 : 0;
+            if (largeAdIdx1 === largeAdIdx2 && total > 1)
+              largeAdIdx2 = getNextIndex(largeAdIdx1, total);
 
             setLargeAdIndexes([largeAdIdx1, largeAdIdx2]);
           }
@@ -155,7 +176,8 @@ export default function Events() {
         const total = largeAds.length;
         let nextIdx1 = getNextIndex(idx1, total);
         let nextIdx2 = getNextIndex(idx2, total);
-        if (nextIdx1 === nextIdx2 && total > 1) nextIdx2 = getNextIndex(nextIdx1, total);
+        if (nextIdx1 === nextIdx2 && total > 1)
+          nextIdx2 = getNextIndex(nextIdx1, total);
 
         localStorage.setItem(SLOT_KEYS.LARGE_AD_1, String(nextIdx1));
         localStorage.setItem(SLOT_KEYS.LARGE_AD_2, String(nextIdx2));
@@ -168,19 +190,20 @@ export default function Events() {
     };
   }, [largeAds]);
 
-  // Filter events
+  // Filter events – keep backend order intact
   const filteredEvents = events.filter((e) => {
     const title = (e.title || "").toLowerCase();
     const location = (e.location || "").toLowerCase();
     const q = search.toLowerCase();
     const matchesSearch = title.includes(q) || location.includes(q);
-    const matchesFilter = filterCity === "All"
-      ? true
-      : (e.location || "").toLowerCase().includes(filterCity.toLowerCase());
+    const matchesFilter =
+      filterCity === "All"
+        ? true
+        : location.includes(filterCity.toLowerCase());
     return matchesSearch && matchesFilter;
   });
 
-  // Split events evenly between two columns
+  // Desktop: split into two event columns
   const leftEvents = [];
   const centerEvents = [];
   filteredEvents.forEach((event, idx) => {
@@ -188,9 +211,59 @@ export default function Events() {
     else centerEvents.push(event);
   });
 
-  // Handle single ad case
-  const topRightAd = ads.length === 1 ? ads[0] : (ads.length ? ads[topRightIndex % ads.length] : null);
-  const bottomRightAd = ads.length > 1 && !topRightClosed && bottomRightIndex >= 0 ? ads[bottomRightIndex % ads.length] : null;
+  // Small ads
+  const topRightAd =
+    ads.length === 1 ? ads[0] : ads.length ? ads[topRightIndex % ads.length] : null;
+  const bottomRightAd =
+    ads.length > 1 && !topRightClosed && bottomRightIndex >= 0
+      ? ads[bottomRightIndex % ads.length]
+      : null;
+
+  // Helper: build mobile sequence post–post–ad
+  const buildMobileItems = () => {
+    const items = [];
+    if (!filteredEvents.length) return items;
+    let adPtr = 0;
+
+    if (filteredEvents.length === 1) {
+      // Ad1, post, Ad2 (if exists)
+      if (largeAds.length > 0)
+        items.push({ type: "ad", adIndex: largeAdIndexes[0] ?? 0 });
+      items.push({ type: "event", event: filteredEvents[0] });
+      if (largeAds.length > 1)
+        items.push({ type: "ad", adIndex: largeAdIndexes[1] ?? 0 });
+      return items;
+    }
+
+    if (filteredEvents.length === 2) {
+      // post, Ad1, post, Ad2
+      items.push({ type: "event", event: filteredEvents[0] });
+      if (largeAds.length > 0)
+        items.push({ type: "ad", adIndex: largeAdIndexes[0] ?? 0 });
+      items.push({ type: "event", event: filteredEvents[1] });
+      if (largeAds.length > 1)
+        items.push({ type: "ad", adIndex: largeAdIndexes[1] ?? 0 });
+      return items;
+    }
+
+    // 3+
+    for (let i = 0; i < filteredEvents.length; i++) {
+      items.push({ type: "event", event: filteredEvents[i] });
+      const isEndOfPair = (i + 1) % 2 === 0;
+      const isNotLast = i !== filteredEvents.length - 1;
+      if (isEndOfPair && isNotLast && largeAds.length > 0) {
+        const useIdx =
+          largeAds.length === 1
+            ? largeAdIndexes[0] ?? 0
+            : largeAdIndexes[adPtr % largeAdIndexes.length] ?? 0;
+        items.push({ type: "ad", adIndex: useIdx });
+        adPtr++;
+      }
+    }
+    return items;
+  };
+
+  const mobileItems = buildMobileItems();
 
   return (
     <>
@@ -225,6 +298,7 @@ export default function Events() {
         <div className="hidden lg:block w-64 bg-white shadow-md border-r border-gray-200">
           <Sidebar activePage="events" />
         </div>
+
         {/* Main Content */}
         <main className="flex-1 flex flex-col items-center px-2 pt-6">
           {/* Top Blue Heading + Search */}
@@ -232,7 +306,7 @@ export default function Events() {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ type: "spring", stiffness: 80 }}
-            className="bg-emerald-700 top-0 z-20 text-white rounded-xl p-6 mb-6 shadow-lg w-full max-w-7xl"
+            className="bg-emerald-700 top-0 z-20 text-white rounded-xl p-6 mb-6 shadow-lg w-full max-w-5xl md:max-w-7xl"
           >
             <h2 className="text-2xl font-semibold text-center mb-4">
               Upcoming Events
@@ -261,235 +335,352 @@ export default function Events() {
                 <PlusCircle size={18} /> Add Event
               </motion.button>
             </div>
-            {/* Filter Buttons */}
+          </motion.div>
 
-</motion.div>
-
-{/* Show loader while loading */}
-{loading ? (
-  <div className="flex justify-center items-center py-20">
-    <Loader />
-  </div>
-) : (
-  <>
-    {/* Main 3-column grid */}
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-5xl">
-
-            {/* First Column: Events (even indexes) */}
-            <div className="flex flex-col gap-6">
-              {leftEvents.length === 0 && !loading && (
-                <div className="text-center text-gray-500 mt-12 col-span-full">No events found.</div>
-              )}
-              {leftEvents.map((event, idx) => (
-                <motion.div
-                  key={event.id}
-                  layout
-                  initial={{ opacity: 0, y: 40 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  transition={{
-                    delay: idx * 0.05,
-                    type: "spring",
-                    stiffness: 100,
-                  }}
-                  whileHover={{
-                    scale: 1.03,
-                    boxShadow: "0 25px 40px rgba(59,130,246,0.25)",
-                  }}
-                  className="relative rounded-2xl overflow-hidden p-5 flex flex-col justify-between bg-gray-200 shadow-md border border-blue-100 cursor-pointer hover:bg-gradient-to-r hover:from-blue-100"
-                  onClick={() => navigate(`/events/${event.id}`)}
-                >
-                  {Array.isArray(event.imageUrls) && event.imageUrls.length > 0 ? (
-                    <div className="relative w-full h-48 mb-4 rounded-xl overflow-hidden">
-                      <img
-                        src={event.imageUrls[0]}
-                        alt={event.title}
-                        className="w-full h-full object-cover rounded-xl"
-                      />
-                    </div>
-                  ) : (
-                    <div className="w-full h-48 bg-gray-100 flex items-center justify-center rounded-xl mb-4 text-gray-400">
-                      No image
-                    </div>
-                  )}
-                  <div className="mb-3">
-                    <h2 className="pb-5 font-semibold text-gray-800 text-lg">
-                      {event.title}
-                    </h2>
-                  </div>
-                  <div className="space-y-2 text-gray-700 mb-3">
-                    <p className="flex items-center gap-2">
-                      <MapPin size={16} className="text-blue-700" /> {event.location}
-                    </p>
-                    <p className="flex items-center gap-2">
-                      <Calendar size={16} className="text-blue-600" />
-                      {event.eventDate
-                        ? new Date(event.eventDate).toLocaleDateString()
-                        : "-"}
-                    </p>
-                    <p className="flex items-center gap-2">
-                      <Clock size={16} className="text-indigo-600" />
-                      {event.eventDate
-                        ? new Date(event.eventDate).toLocaleTimeString([], {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })
-                        : "-"}
-                    </p>
-                  </div>
-                  <div className="mt-4 flex justify-between items-center border-t pt-3 border-blue-200">
-                    <motion.button
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (event.reglink) {
-                          window.open(event.reglink, "_blank");
-                        }
+          {/* Show loader while loading */}
+          {loading ? (
+            <div className="flex justify-center items-center py-20">
+              <Loader />
+            </div>
+          ) : (
+            <>
+              {/* MOBILE: events + ads interleaved, aligned with header width */}
+              <div className="flex flex-col gap-6 w-full max-w-5xl md:hidden">
+                {mobileItems.map((item, idx) =>
+                  item.type === "event" ? (
+                    <motion.div
+                      key={`m-event-${item.event.id}-${idx}`}
+                      layout
+                      initial={{ opacity: 0, y: 40 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -20 }}
+                      transition={{
+                        delay: idx * 0.03,
+                        type: "spring",
+                        stiffness: 100,
                       }}
-                      className="flex items-center gap-2 text-blue-700 font-semibold hover:text-blue-900 transition"
+                      whileHover={{
+                        scale: 1.03,
+                        boxShadow: "0 25px 40px rgba(59,130,246,0.25)",
+                      }}
+                      className="relative rounded-2xl overflow-hidden p-5 flex flex-col justify-between bg-gray-200 shadow-md border border-blue-100 cursor-pointer hover:bg-gradient-to-r hover:from-blue-100"
+                      onClick={() => navigate(`/events/${item.event.id}`)}
                     >
-                      <LinkIcon size={18} /> Register
-                    </motion.button>
-                    <motion.div className="flex items-center gap-2 text-gray-500 hover:text-blue-600 transition">
-                      <MessageCircle size={18} /> Comment
+                      {Array.isArray(item.event.imageUrls) &&
+                      item.event.imageUrls.length > 0 ? (
+                        <div className="relative w-full h-48 mb-4 rounded-xl overflow-hidden">
+                          <img
+                            src={item.event.imageUrls[0]}
+                            alt={item.event.title}
+                            className="w-full h-full object-cover rounded-xl"
+                          />
+                        </div>
+                      ) : (
+                        <div className="w-full h-48 bg-gray-100 flex items-center justify-center rounded-xl mb-4 text-gray-400">
+                          No image
+                        </div>
+                      )}
+                      <div className="mb-3">
+                        <h2 className="pb-5 font-semibold text-gray-800 text-lg">
+                          {item.event.title}
+                        </h2>
+                      </div>
+                      <div className="space-y-2 text-gray-700 mb-3">
+                        <p className="flex items-center gap-2">
+                          <MapPin size={16} className="text-blue-700" />{" "}
+                          {item.event.location}
+                        </p>
+                        <p className="flex items-center gap-2">
+                          <Calendar size={16} className="text-blue-600" />
+                          {item.event.eventDate
+                            ? new Date(
+                                item.event.eventDate
+                              ).toLocaleDateString()
+                            : "-"}
+                        </p>
+                        <p className="flex items-center gap-2">
+                          <Clock size={16} className="text-indigo-600" />
+                          {item.event.eventDate
+                            ? new Date(item.event.eventDate).toLocaleTimeString(
+                                [],
+                                {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                }
+                              )
+                            : "-"}
+                        </p>
+                      </div>
+                      <div className="mt-4 flex justify-between items-center border-t pt-3 border-blue-200">
+                        <motion.button
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.95 }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (item.event.reglink) {
+                              window.open(item.event.reglink, "_blank");
+                            }
+                          }}
+                          className="flex items-center gap-2 text-blue-700 font-semibold hover:text-blue-900 transition"
+                        >
+                          <LinkIcon size={18} /> Register
+                        </motion.button>
+                        <motion.div className="flex items-center gap-2 text-gray-500 hover:text-blue-600 transition">
+                          <MessageCircle size={18} /> Comment
+                        </motion.div>
+                      </div>
+                      {item.event.author && (
+                        <p className="text-xs text-gray-400 mt-2">
+                          Posted by: {item.event.author.firstName}{" "}
+                          {item.event.author.lastName}
+                        </p>
+                      )}
                     </motion.div>
-                  </div>
-                  {event.author && (
-                    <p className="text-xs text-gray-400 mt-2">
-                      Posted by: {event.author.firstName} {event.author.lastName}
-                    </p>
-                  )}
-                </motion.div>
-              ))}
-            </div>
-
-            {/* Second Column: Events (odd indexes) */}
-            <div className="flex flex-col gap-6">
-              {centerEvents.map((event, idx) => (
-                <motion.div
-                  key={event.id}
-                  layout
-                  initial={{ opacity: 0, y: 40 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  transition={{
-                    delay: idx * 0.05,
-                    type: "spring",
-                    stiffness: 100,
-                  }}
-                  whileHover={{
-                    scale: 1.03,
-                    boxShadow: "0 25px 40px rgba(59,130,246,0.25)",
-                  }}
-                  className="relative rounded-2xl overflow-hidden p-5 flex flex-col justify-between bg-gray-200 shadow-md border border-blue-100 cursor-pointer hover:bg-gradient-to-r hover:from-blue-100"
-                  onClick={() => navigate(`/events/${event.id}`)}
-                >
-                  {Array.isArray(event.imageUrls) && event.imageUrls.length > 0 ? (
-                    <div className="relative w-full h-48 mb-4 rounded-xl overflow-hidden">
-                      <img
-                        src={event.imageUrls[0]}
-                        alt={event.title}
-                        className="w-full h-full object-cover rounded-xl"
+                  ) : largeAds[item.adIndex] ? (
+                    <motion.div
+                      key={`m-ad-${idx}`}
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
+                      className="rounded-2xl shadow-md border border-blue-100 overflow-hidden h-52"
+                    >
+                      <LargeAd
+                        ad={largeAds[item.adIndex]}
+                        className="w-full h-full"
                       />
-                    </div>
-                  ) : (
-                    <div className="w-full h-48 bg-gray-100 flex items-center justify-center rounded-xl mb-4 text-gray-400">
-                      No image
-                    </div>
-                  )}
-                  <div className="mb-3">
-                    <h2 className="pb-5 font-semibold text-gray-800 text-lg">
-                      {event.title}
-                    </h2>
-                  </div>
-                  <div className="space-y-2 text-gray-700 mb-3">
-                    <p className="flex items-center gap-2">
-                      <MapPin size={16} className="text-blue-700" /> {event.location}
-                    </p>
-                    <p className="flex items-center gap-2">
-                      <Calendar size={16} className="text-blue-600" />
-                      {event.eventDate
-                        ? new Date(event.eventDate).toLocaleDateString()
-                        : "-"}
-                    </p>
-                    <p className="flex items-center gap-2">
-                      <Clock size={16} className="text-indigo-600" />
-                      {event.eventDate
-                        ? new Date(event.eventDate).toLocaleTimeString([], {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })
-                        : "-"}
-                    </p>
-                  </div>
-                  <div className="mt-4 flex justify-between items-center border-t pt-3 border-blue-200">
-                    <motion.button
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (event.reglink) {
-                          window.open(event.reglink, "_blank");
-                        }
-                      }}
-                      className="flex items-center gap-2 text-blue-700 font-semibold hover:text-blue-900 transition"
-                    >
-                      <LinkIcon size={18} /> Register
-                    </motion.button>
-                    <motion.div className="flex items-center gap-2 text-gray-500 hover:text-blue-600 transition">
-                      <MessageCircle size={18} /> Comment
                     </motion.div>
-                  </div>
-                  {event.author && (
-                    <p className="text-xs text-gray-400 mt-2">
-                      Posted by: {event.author.firstName} {event.author.lastName}
-                    </p>
+                  ) : null
+                )}
+              </div>
+
+              {/* DESKTOP/TABLET: events grid + sticky ads, aligned with header */}
+              <div className="hidden md:grid md:grid-cols-3 gap-8 w-full max-w-7xl">
+                {/* First Column: Events (even indexes) */}
+                <div className="flex flex-col gap-6">
+                  {leftEvents.length === 0 && !loading && (
+                    <div className="text-center text-gray-500 mt-12 col-span-full">
+                      No events found.
+                    </div>
                   )}
-                </motion.div>
-              ))}
-            </div>
-
-            {/* Third Column: Sponsored Ads (Large Ads with mobile close button) */}
-            <div className="flex flex-col gap-6">
-              {largeAds.length > 0 && largeAdIndexes.map((idx, i) => {
-                if (i === 0 && largeAd1Closed) return null;
-                if (i === 1 && largeAd2Closed) return null;
-                if (!largeAds[idx]) return null;
-
-                return (
-                  <motion.div
-                    key={"large-ad-wrapper-" + i}
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                    className="relative rounded-2xl shadow-md border border-blue-100 overflow-hidden"
-                    style={{ height: "250px", minHeight: "250px" }}
-                  >
-                    {/* Close button for mobile only */}
-                    <motion.button
-                      className="absolute -top-0 -right-0 z-20 lg:hidden bg-white rounded-full p-1.5 shadow-lg border-2 border-gray-200 hover:bg-gray-100 transition-all duration-200"
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => {
-                        if (i === 0) setLargeAd1Closed(true);
-                        if (i === 1) setLargeAd2Closed(true);
+                  {leftEvents.map((event, idx) => (
+                    <motion.div
+                      key={event.id}
+                      layout
+                      initial={{ opacity: 0, y: 40 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -20 }}
+                      transition={{
+                        delay: idx * 0.05,
+                        type: "spring",
+                        stiffness: 100,
                       }}
+                      whileHover={{
+                        scale: 1.03,
+                        boxShadow: "0 25px 40px rgba(59,130,246,0.25)",
+                      }}
+                      className="relative rounded-2xl overflow-hidden p-5 flex flex-col justify-between bg-gray-200 shadow-md border border-blue-100 cursor-pointer hover:bg-gradient-to-r hover:from-blue-100"
+                      onClick={() => navigate(`/events/${event.id}`)}
                     >
-                      <X className="w-4 h-4 text-gray-700" />
-                    </motion.button>
-                    
-                    <LargeAd
-                      ad={largeAds[idx]}
-                      className="w-full h-full"
-                    />
-                  </motion.div>
-                );
-              })}
-            </div>
-          </div>
-           </>
-      )}
+                      {Array.isArray(event.imageUrls) &&
+                      event.imageUrls.length > 0 ? (
+                        <div className="relative w-full h-48 mb-4 rounded-xl overflow-hidden">
+                          <img
+                            src={event.imageUrls[0]}
+                            alt={event.title}
+                            className="w-full h-full object-cover rounded-xl"
+                          />
+                        </div>
+                      ) : (
+                        <div className="w-full h-48 bg-gray-100 flex items-center justify-center rounded-xl mb-4 text-gray-400">
+                          No image
+                        </div>
+                      )}
+                      <div className="mb-3">
+                        <h2 className="pb-5 font-semibold text-gray-800 text-lg">
+                          {event.title}
+                        </h2>
+                      </div>
+                      <div className="space-y-2 text-gray-700 mb-3">
+                        <p className="flex items-center gap-2">
+                          <MapPin size={16} className="text-blue-700" />{" "}
+                          {event.location}
+                        </p>
+                        <p className="flex items-center gap-2">
+                          <Calendar size={16} className="text-blue-600" />
+                          {event.eventDate
+                            ? new Date(event.eventDate).toLocaleDateString()
+                            : "-"}
+                        </p>
+                        <p className="flex items-center gap-2">
+                          <Clock size={16} className="text-indigo-600" />
+                          {event.eventDate
+                            ? new Date(event.eventDate).toLocaleTimeString([], {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })
+                            : "-"}
+                        </p>
+                      </div>
+                      <div className="mt-4 flex justify-between items-center border-t pt-3 border-blue-200">
+                        <motion.button
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.95 }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (event.reglink) {
+                              window.open(event.reglink, "_blank");
+                            }
+                          }}
+                          className="flex items-center gap-2 text-blue-700 font-semibold hover:text-blue-900 transition"
+                        >
+                          <LinkIcon size={18} /> Register
+                        </motion.button>
+                        <motion.div className="flex items-center gap-2 text-gray-500 hover:text-blue-600 transition">
+                          <MessageCircle size={18} /> Comment
+                        </motion.div>
+                      </div>
+                      {event.author && (
+                        <p className="text-xs text-gray-400 mt-2">
+                          Posted by: {event.author.firstName}{" "}
+                          {event.author.lastName}
+                        </p>
+                      )}
+                    </motion.div>
+                  ))}
+                </div>
+
+                {/* Second Column: Events (odd indexes) */}
+                <div className="flex flex-col gap-6">
+                  {centerEvents.map((event, idx) => (
+                    <motion.div
+                      key={event.id}
+                      layout
+                      initial={{ opacity: 0, y: 40 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -20 }}
+                      transition={{
+                        delay: idx * 0.05,
+                        type: "spring",
+                        stiffness: 100,
+                      }}
+                      whileHover={{
+                        scale: 1.03,
+                        boxShadow: "0 25px 40px rgba(59,130,246,0.25)",
+                      }}
+                      className="relative rounded-2xl overflow-hidden p-5 flex flex-col justify-between bg-gray-200 shadow-md border border-blue-100 cursor-pointer hover:bg-gradient-to-r hover:from-blue-100"
+                      onClick={() => navigate(`/events/${event.id}`)}
+                    >
+                      {Array.isArray(event.imageUrls) &&
+                      event.imageUrls.length > 0 ? (
+                        <div className="relative w-full h-48 mb-4 rounded-xl overflow-hidden">
+                          <img
+                            src={event.imageUrls[0]}
+                            alt={event.title}
+                            className="w-full h-full object-cover rounded-xl"
+                          />
+                        </div>
+                      ) : (
+                        <div className="w-full h-48 bg-gray-100 flex items-center justify-center rounded-xl mb-4 text-gray-400">
+                          No image
+                        </div>
+                      )}
+                      <div className="mb-3">
+                        <h2 className="pb-5 font-semibold text-gray-800 text-lg">
+                          {event.title}
+                        </h2>
+                      </div>
+                      <div className="space-y-2 text-gray-700 mb-3">
+                        <p className="flex items-center gap-2">
+                          <MapPin size={16} className="text-blue-700" />{" "}
+                          {event.location}
+                        </p>
+                        <p className="flex items-center gap-2">
+                          <Calendar size={16} className="text-blue-600" />
+                          {event.eventDate
+                            ? new Date(event.eventDate).toLocaleDateString()
+                            : "-"}
+                        </p>
+                        <p className="flex items-center gap-2">
+                          <Clock size={16} className="text-indigo-600" />
+                          {event.eventDate
+                            ? new Date(event.eventDate).toLocaleTimeString([], {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })
+                            : "-"}
+                        </p>
+                      </div>
+                      <div className="mt-4 flex justify-between items-center border-t pt-3 border-blue-200">
+                        <motion.button
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.95 }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (event.reglink) {
+                              window.open(event.reglink, "_blank");
+                            }
+                          }}
+                          className="flex items-center gap-2 text-blue-700 font-semibold hover:text-blue-900 transition"
+                        >
+                          <LinkIcon size={18} /> Register
+                        </motion.button>
+                        <motion.div className="flex items-center gap-2 text-gray-500 hover:text-blue-600 transition">
+                          <MessageCircle size={18} /> Comment
+                        </motion.div>
+                      </div>
+                      {event.author && (
+                        <p className="text-xs text-gray-400 mt-2">
+                          Posted by: {event.author.firstName}{" "}
+                          {event.author.lastName}
+                        </p>
+                      )}
+                    </motion.div>
+                  ))}
+                </div>
+
+                {/* Third Column: Sponsored Ads (sticky, wider, aligned) */}
+                <div className="flex">
+                  <div className="sticky top-28 w-full flex flex-col gap-6 max-h-[80vh]">
+                    {largeAds.length > 0 &&
+                      largeAdIndexes.map((idx, i) => {
+                        if (i === 0 && largeAd1Closed) return null;
+                        if (i === 1 && largeAd2Closed) return null;
+                        if (!largeAds[idx]) return null;
+
+                        return (
+                          <motion.div
+                            key={"large-ad-wrapper-" + i}
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            className="relative rounded-2xl shadow-md border border-blue-100 overflow-hidden"
+                            style={{ height: "260px", minHeight: "260px" }}
+                          >
+                            {/* Close button for mobile only (desktop sticky but button hidden via lg) */}
+                            <motion.button
+                              className="absolute -top-0 -right-0 z-20 lg:hidden bg-white rounded-full p-1.5 shadow-lg border-2 border-gray-200 hover:bg-gray-100 transition-all duration-200"
+                              whileHover={{ scale: 1.1 }}
+                              whileTap={{ scale: 0.95 }}
+                              onClick={() => {
+                                if (i === 0) setLargeAd1Closed(true);
+                                if (i === 1) setLargeAd2Closed(true);
+                              }}
+                            >
+                              <X className="w-4 h-4 text-gray-700" />
+                            </motion.button>
+
+                            <LargeAd
+                              ad={largeAds[idx]}
+                              className="w-full h-full"
+                            />
+                          </motion.div>
+                        );
+                      })}
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
         </main>
       </div>
     </>
