@@ -373,7 +373,7 @@ export default function Jobs() {
         </div>
 
         {/* Main Content */}
-        <main className="flex-1 flex flex-col items-center px-2 pt-6">
+        <main className="flex-1 flex flex-col items-center px-2 pt-6 pb-10">
           {/* Top Green Heading + Search */}
           <motion.div
             initial={{ opacity: 0, y: -20 }}
@@ -406,7 +406,7 @@ export default function Jobs() {
           ) : (
             <>
               {/* Mobile: jobs + ads interleaved, aligned with header width */}
-              <div className="flex flex-col gap-6 w-full max-w-5xl md:hidden">
+              <div className="flex flex-col gap-6 w-full max-w-5xl md:hidden pb-6">
                 {mobileItems.map((item, idx) =>
                   item.type === "job" ? (
                     <JobCard key={`m-job-${item.job.id}-${idx}`} job={item.job} />
@@ -428,7 +428,7 @@ export default function Jobs() {
               </div>
 
               {/* Desktop / tablet: two job columns + sticky ad column, aligned with header */}
-              <div className="hidden md:grid md:grid-cols-3 gap-8 w-full max-w-7xl">
+              <div className="hidden md:grid md:grid-cols-3 gap-8 w-full max-w-7xl pb-10">
                 {/* First Column */}
                 <div className="flex flex-col gap-6">
                   {leftJobs.length === 0 && (
