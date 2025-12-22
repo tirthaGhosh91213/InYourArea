@@ -1,5 +1,5 @@
 // src/pages/Community.jsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MessageCircle, Search } from "lucide-react";
 import Sidebar from "../components/SideBar";
@@ -50,6 +50,9 @@ export default function Community() {
   const [showCommentInput, setShowCommentInput] = useState({});
   const [commentText, setCommentText] = useState({});
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
 
   // Small ads
   const [ads, setAds] = useState([]);
@@ -64,31 +67,119 @@ export default function Community() {
   const [largeAd1Closed, setLargeAd1Closed] = useState(false);
   const [largeAd2Closed, setLargeAd2Closed] = useState(false);
 
-  const fetchPosts = async () => {
+  // Ref for intersection observer
+  const observer = useRef();
+  const lastPostElementRef = useCallback(
+    (node) => {
+      if (loadingMore) return;
+      if (observer.current) observer.current.disconnect();
+      observer.current = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting && hasMore) {
+          setPage((prevPage) => prevPage + 1);
+        }
+      });
+      if (node) observer.current.observe(node);
+    },
+    [loadingMore, hasMore]
+  );
+
+  const fetchComments = async (postId) => {
     try {
-      setLoading(true);
       const res = await axios.get(
-        "https://api.jharkhandbiharupdates.com/api/v1/community",
+        `https://api.jharkhandbiharupdates.com/api/v1/comments/community-posts/${postId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (res.data.success) {
-        setPosts(res.data.data);
+        setCommentsMap((prev) => ({ ...prev, [postId]: res.data.data }));
 
-        const avatarMap = res.data.data.reduce((acc, post) => {
+        const newAvatars = res.data.data.reduce((acc, comment) => {
+          acc[comment.author.id] = comment.author.profileImageUrl || null;
+          return acc;
+        }, {});
+
+        setCommentAvatars((prev) => ({
+          ...prev,
+          ...newAvatars,
+        }));
+      }
+    } catch {
+      toast.error("Failed to fetch comments");
+    }
+  };
+
+  const fetchPosts = async (pageNum, isInitial = false) => {
+    try {
+      if (isInitial) {
+        setLoading(true);
+      } else {
+        setLoadingMore(true);
+      }
+
+      const res = await axios.get(
+        `https://api.jharkhandbiharupdates.com/api/v1/community`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (res.data.success) {
+        const allPosts = res.data.data;
+
+        // Calculate pagination on client side
+        const startIndex = (pageNum - 1) * 10;
+        const endIndex = startIndex + 10;
+        const paginatedPosts = allPosts.slice(startIndex, endIndex);
+
+        // Check if there are more posts
+        if (endIndex >= allPosts.length) {
+          setHasMore(false);
+        }
+
+        if (isInitial) {
+          setPosts(paginatedPosts);
+
+          // Randomly select 2-3 posts to show comments automatically
+          if (paginatedPosts.length > 0) {
+            const numberOfPostsToShow = Math.min(
+              Math.floor(Math.random() * 2) + 2,
+              paginatedPosts.length
+            );
+
+            const shuffledPosts = [...paginatedPosts].sort(
+              () => Math.random() - 0.5
+            );
+            const selectedPosts = shuffledPosts.slice(0, numberOfPostsToShow);
+
+            const autoShowComments = {};
+            selectedPosts.forEach((post) => {
+              autoShowComments[post.id] = true;
+              fetchComments(post.id);
+            });
+
+            setShowCommentInput(autoShowComments);
+          }
+        } else {
+          setPosts((prevPosts) => [...prevPosts, ...paginatedPosts]);
+        }
+
+        // Update avatars
+        const avatarMap = allPosts.reduce((acc, post) => {
           acc[post.author.id] = post.author.profileImageUrl || null;
           return acc;
         }, {});
-        setAuthorAvatars(avatarMap);
+        setAuthorAvatars((prev) => ({ ...prev, ...avatarMap }));
       }
     } catch {
       toast.error("Failed to fetch posts");
     } finally {
-      setLoading(false);
+      if (isInitial) {
+        setLoading(false);
+      } else {
+        setLoadingMore(false);
+      }
     }
   };
 
   useEffect(() => {
-    fetchPosts();
+    fetchPosts(1, true);
 
     // Small ads
     fetch(
@@ -152,6 +243,13 @@ export default function Community() {
       });
   }, []);
 
+  // Load more posts when page changes
+  useEffect(() => {
+    if (page > 1) {
+      fetchPosts(page, false);
+    }
+  }, [page]);
+
   // Rotate small ads index on next refresh after a close
   useEffect(() => {
     if (!ads.length) return;
@@ -167,30 +265,6 @@ export default function Community() {
       localStorage.setItem(SLOT_KEYS.BOTTOM_RIGHT, String(nextBottom));
     }
   }, [topRightClosed, bottomRightClosed, topRightIndex, bottomRightIndex, ads]);
-
-  const fetchComments = async (postId) => {
-    try {
-      const res = await axios.get(
-        `https://api.jharkhandbiharupdates.com/api/v1/comments/community-posts/${postId}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      if (res.data.success) {
-        setCommentsMap((prev) => ({ ...prev, [postId]: res.data.data }));
-
-        const newAvatars = res.data.data.reduce((acc, comment) => {
-          acc[comment.author.id] = comment.author.profileImageUrl || null;
-          return acc;
-        }, {});
-
-        setCommentAvatars((prev) => ({
-          ...prev,
-          ...newAvatars,
-        }));
-      }
-    } catch {
-      toast.error("Failed to fetch comments");
-    }
-  };
 
   const sendComment = async (postId) => {
     if (!commentText[postId]) return toast.error("Comment cannot be empty");
@@ -261,24 +335,24 @@ export default function Community() {
     if (filteredPosts.length === 1) {
       if (largeAds.length > 0)
         items.push({ type: "ad", adIndex: largeAdIndexes[0] ?? 0 });
-      items.push({ type: "post", post: filteredPosts[0] });
+      items.push({ type: "post", post: filteredPosts[0], postIndex: 0 });
       if (largeAds.length > 1)
         items.push({ type: "ad", adIndex: largeAdIndexes[1] ?? 0 });
       return items;
     }
 
     if (filteredPosts.length === 2) {
-      items.push({ type: "post", post: filteredPosts[0] });
+      items.push({ type: "post", post: filteredPosts[0], postIndex: 0 });
       if (largeAds.length > 0)
         items.push({ type: "ad", adIndex: largeAdIndexes[0] ?? 0 });
-      items.push({ type: "post", post: filteredPosts[1] });
+      items.push({ type: "post", post: filteredPosts[1], postIndex: 1 });
       if (largeAds.length > 1)
         items.push({ type: "ad", adIndex: largeAdIndexes[1] ?? 0 });
       return items;
     }
 
     for (let i = 0; i < filteredPosts.length; i++) {
-      items.push({ type: "post", post: filteredPosts[i] });
+      items.push({ type: "post", post: filteredPosts[i], postIndex: i });
       const isEndOfPair = (i + 1) % 2 === 0;
       const isNotLast = i !== filteredPosts.length - 1;
       if (isEndOfPair && isNotLast && largeAds.length > 0) {
@@ -296,154 +370,146 @@ export default function Community() {
   const mobileItems = buildMobileItems();
 
   const truncateText = (text, maxLength) => {
+    if (!text) return "";
     if (text.length <= maxLength) return text;
     return text.substring(0, maxLength) + "...";
   };
 
-  const CommunityCard = ({ post, idx }) => (
-    <motion.div
-      layout
-      initial={{ opacity: 0, y: 40 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      transition={{
-        delay: idx * 0.03,
-        type: "spring",
-        stiffness: 100,
-      }}
-      whileHover={{
-        scale: 1.01,
-        boxShadow: "0 16px 30px rgba(52, 211, 153, 0.16)",
-      }}
-      className="relative rounded-2xl bg-white shadow-md border border-emerald-50 cursor-pointer hover:bg-gradient-to-r hover:from-emerald-50 overflow-hidden"
-      onClick={() => handlePostClick(post.id)}
-    >
-      {/* Unified layout for all breakpoints: header → title → image → description → footer */}
-      <div className="flex flex-col w-full">
-        {/* Header: avatar, name, time */}
-        <div className="flex items-center justify-between px-3 sm:px-4 pt-3 sm:pt-4">
-          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-            <ProfileImage
-              src={authorAvatars[post.author.id]}
-              alt="author"
-              size="w-8 h-8 sm:w-9 sm:h-9"
-            />
-            <div className="flex flex-col min-w-0">
-              <span className="text-xs sm:text-sm font-semibold text-gray-800 truncate">
-                {post.author.firstName} {post.author.lastName}
-              </span>
-              <span className="text-[10px] sm:text-[11px] text-gray-500">
-                {formatDate(post.createdAt)}
-              </span>
-            </div>
-          </div>
-        </div>
+  const CommunityCard = ({ post, idx, isLast }) => {
+    const truncatedContentMobile = truncateText(post.content, 200);
+    const truncatedContentDesktop = truncateText(post.content, 300);
 
-        {/* Title - Mobile: truncate to 25 chars, Desktop: 2 lines */}
-        <div className="px-3 sm:px-4 pt-2 sm:pt-3">
-          <h3 className="text-sm sm:text-[15px] md:text-[16px] font-semibold text-gray-900 leading-snug">
-            <span className="block md:hidden">
-              {truncateText(post.title, 25)}
-            </span>
-            <span className="hidden md:block line-clamp-2">
-              {post.title}
-            </span>
-          </h3>
-        </div>
-
-        {/* Image - Increased heights: Mobile h-52, Tablet h-60, Desktop h-80 */}
-        {post.imageUrls && post.imageUrls.length > 0 ? (
-          <div className="mt-2 sm:mt-3 w-full h-52 sm:h-60 md:h-80 overflow-hidden">
-            <img
-              src={post.imageUrls[post.currentImageIndex || 0]}
-              alt={post.title}
-              className="w-full h-full object-cover"
-            />
-          </div>
-        ) : null}
-
-        {/* Description - Mobile: truncate to 30 chars, Desktop: 3 lines */}
-        <div className="px-3 sm:px-4 pt-2 sm:pt-3">
-          <p className="text-xs sm:text-sm text-gray-700 leading-snug">
-            <span className="block md:hidden">
-              {truncateText(post.content, 30)}
-            </span>
-            <span className="hidden md:block line-clamp-3">
-              {post.content}
-            </span>
-          </p>
-        </div>
-
-        {/* Footer: comment button */}
-        <div className="flex items-center justify-between px-3 sm:px-4 py-2 sm:py-3">
-          <div className="flex-1" />
-          <button
-            className="flex items-center gap-1 text-emerald-700 text-xs sm:text-sm font-semibold"
-            onClick={(e) => {
-              e.stopPropagation();
-              setShowCommentInput((prev) => ({
-                ...prev,
-                [post.id]: !prev[post.id],
-              }));
-              if (!commentsMap[post.id]) fetchComments(post.id);
-            }}
-          >
-            <MessageCircle size={14} className="sm:w-4 sm:h-4" /> Comment
-          </button>
-        </div>
-      </div>
-
-      {/* Comments (shared for both layouts) */}
-      {showCommentInput[post.id] && (
-        <div className="px-3 sm:px-4 pb-3 sm:pb-4">
-          <div className="mt-2 space-y-2">
-            {(commentsMap[post.id] || []).map((c) => (
-              <div
-                key={c.id}
-                className="flex gap-2 items-start text-gray-700 text-xs sm:text-sm"
-              >
+    return (
+      <div
+        ref={isLast ? lastPostElementRef : null}
+        className="relative w-full rounded-2xl bg-white shadow-md border border-emerald-50 cursor-pointer hover:bg-gradient-to-r hover:from-emerald-50 hover:shadow-lg transition-shadow overflow-hidden"
+        onClick={() => handlePostClick(post.id)}
+      >
+        <div className="flex flex-col w-full">
+          {/* Header: avatar, name, time */}
+          <div className="flex items-center justify-between px-3 sm:px-4 pt-3 sm:pt-4">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1 overflow-hidden">
+              <div className="flex-shrink-0">
                 <ProfileImage
-                  src={commentAvatars[c.author.id]}
-                  alt="profile"
-                  size="w-6 h-6 sm:w-7 sm:h-7"
-                  className="border border-gray-300 flex-shrink-0"
+                  src={authorAvatars[post.author.id]}
+                  alt="author"
+                  size="w-8 h-8 sm:w-9 sm:h-9"
                 />
-                <div className="flex flex-col min-w-0">
-                  <span className="font-semibold text-gray-800">
-                    {c.author.firstName} {c.author.lastName}
-                  </span>
-                  <span className="break-words">{c.content}</span>
-                </div>
               </div>
-            ))}
-            <div className="flex gap-2 mt-2">
-              <input
-                type="text"
-                placeholder="Write a comment..."
-                value={commentText[post.id] || ""}
-                onChange={(e) =>
-                  setCommentText((prev) => ({
-                    ...prev,
-                    [post.id]: e.target.value,
-                  }))
-                }
-                className="flex-1 px-3 py-1.5 sm:py-2 border rounded-full focus:outline-none focus:ring-2 focus:ring-emerald-400 text-xs sm:text-sm"
-              />
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  sendComment(post.id);
-                }}
-                className="bg-emerald-600 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-full hover:bg-emerald-700 transition text-xs sm:text-sm whitespace-nowrap"
-              >
-                Send
-              </button>
+              <div className="flex flex-col min-w-0 flex-1 overflow-hidden">
+                <span className="text-xs sm:text-sm font-semibold text-gray-800 truncate">
+                  {post.author.firstName} {post.author.lastName}
+                </span>
+                <span className="text-[10px] sm:text-[11px] text-gray-500 truncate">
+                  {formatDate(post.createdAt)}
+                </span>
+              </div>
             </div>
           </div>
+
+          {/* Title */}
+          <div className="px-3 sm:px-4 pt-2 sm:pt-3">
+            <h3 className="text-sm sm:text-base md:text-lg font-semibold text-gray-900 leading-snug break-words overflow-wrap-anywhere">
+              {post.title}
+            </h3>
+          </div>
+
+          {/* Image */}
+          {post.imageUrls && post.imageUrls.length > 0 ? (
+            <div className="mt-2 sm:mt-3 w-full h-52 sm:h-60 md:h-80 overflow-hidden">
+              <img
+                src={post.imageUrls[post.currentImageIndex || 0]}
+                alt={post.title}
+                className="w-full h-full object-cover"
+              />
+            </div>
+          ) : null}
+
+          {/* Description */}
+          <div className="px-3 sm:px-4 pt-2 sm:pt-3">
+            <p className="block md:hidden text-base sm:text-[17px] text-gray-700 leading-relaxed break-words overflow-wrap-anywhere">
+              {truncatedContentMobile}
+            </p>
+            <p className="hidden md:block text-lg text-gray-700 leading-relaxed break-words overflow-wrap-anywhere">
+              {truncatedContentDesktop}
+            </p>
+          </div>
+
+          {/* Footer: comment button */}
+          <div className="flex items-center justify-between px-3 sm:px-4 py-2 sm:py-3">
+            <div className="flex-1" />
+            <button
+              className="flex items-center gap-1 text-emerald-700 text-xs sm:text-sm font-semibold flex-shrink-0"
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowCommentInput((prev) => ({
+                  ...prev,
+                  [post.id]: !prev[post.id],
+                }));
+                if (!commentsMap[post.id]) fetchComments(post.id);
+              }}
+            >
+              <MessageCircle size={14} className="sm:w-4 sm:h-4" /> Comment
+            </button>
+          </div>
         </div>
-      )}
-    </motion.div>
-  );
+
+        {/* Comments - No animation */}
+        {showCommentInput[post.id] && (
+          <div className="px-3 sm:px-4 pb-3 sm:pb-4">
+            <div className="mt-2 space-y-2">
+              {(commentsMap[post.id] || []).map((c) => (
+                <div
+                  key={c.id}
+                  className="flex gap-2 items-start text-gray-700 text-xs sm:text-sm"
+                >
+                  <div className="flex-shrink-0">
+                    <ProfileImage
+                      src={commentAvatars[c.author.id]}
+                      alt="profile"
+                      size="w-6 h-6 sm:w-7 sm:h-7"
+                      className="border border-gray-300"
+                    />
+                  </div>
+                  <div className="flex flex-col min-w-0 flex-1 overflow-hidden">
+                    <span className="font-semibold text-gray-800 truncate">
+                      {c.author.firstName} {c.author.lastName}
+                    </span>
+                    <span className="break-words overflow-wrap-anywhere">
+                      {c.content}
+                    </span>
+                  </div>
+                </div>
+              ))}
+              <div className="flex gap-2 mt-2">
+                <input
+                  type="text"
+                  placeholder="Write a comment..."
+                  value={commentText[post.id] || ""}
+                  onChange={(e) =>
+                    setCommentText((prev) => ({
+                      ...prev,
+                      [post.id]: e.target.value,
+                    }))
+                  }
+                  className="flex-1 min-w-0 px-3 py-1.5 sm:py-2 border rounded-full focus:outline-none focus:ring-2 focus:ring-emerald-400 text-xs sm:text-sm"
+                />
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    sendComment(post.id);
+                  }}
+                  className="bg-emerald-600 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-full hover:bg-emerald-700 transition text-xs sm:text-sm whitespace-nowrap flex-shrink-0"
+                >
+                  Send
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return (
     <>
@@ -475,12 +541,12 @@ export default function Community() {
       {/* Layout */}
       <div className="flex min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 pt-16">
         {/* Left Sidebar */}
-        <div className="hidden lg:block w-64 bg-white shadow-md border-r border-gray-200">
+        <div className="hidden lg:block w-64 bg-white shadow-md border-r border-gray-200 flex-shrink-0">
           <Sidebar />
         </div>
 
         {/* Main Content */}
-        <main className="flex-1 flex flex-col items-center px-2 pt-4 sm:pt-6 pb-6">
+        <main className="flex-1 flex flex-col items-center px-2 pt-4 sm:pt-6 pb-6 min-w-0">
           {/* Header + search */}
           <motion.div
             initial={{ opacity: 0, y: -20 }}
@@ -494,7 +560,10 @@ export default function Community() {
             <div className="flex justify-center">
               <div className="relative w-full sm:w-96">
                 <div className="absolute inset-y-0 left-2 flex items-center justify-center pointer-events-none">
-                  <Search size={16} className="sm:w-[18px] sm:h-[18px] text-emerald-700" />
+                  <Search
+                    size={16}
+                    className="sm:w-[18px] sm:h-[18px] text-emerald-700"
+                  />
                 </div>
                 <input
                   type="text"
@@ -530,35 +599,66 @@ export default function Community() {
                       key={`m-post-${item.post.id}`}
                       post={item.post}
                       idx={idx}
+                      isLast={item.postIndex === filteredPosts.length - 1}
                     />
                   ) : largeAds[item.adIndex] ? (
-                    <motion.div
+                    <div
                       key={`m-ad-${idx}`}
-                      initial={{ opacity: 0, scale: 0.95 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.95 }}
-                      className="rounded-2xl shadow-md border border-emerald-100 overflow-hidden h-52 sm:h-60"
+                      className="w-full rounded-2xl shadow-md border border-emerald-100 overflow-hidden h-52 sm:h-60"
                     >
                       <LargeAd
                         ad={largeAds[item.adIndex]}
                         className="w-full h-full"
                       />
-                    </motion.div>
+                    </div>
                   ) : null
+                )}
+
+                {/* Loading indicator for infinite scroll */}
+                {loadingMore && (
+                  <div className="flex justify-center py-6">
+                    <Loader />
+                  </div>
+                )}
+
+                {/* End message */}
+                {!hasMore && filteredPosts.length > 0 && (
+                  <div className="text-center text-gray-500 py-6 text-sm">
+                    You've reached the end 🎉
+                  </div>
                 )}
               </div>
 
               {/* DESKTOP/TABLET: post list + sticky ads */}
               <div className="hidden md:grid md:grid-cols-3 gap-8 w-full max-w-7xl pb-10">
                 {/* Posts column */}
-                <div className="md:col-span-2 flex flex-col gap-4">
+                <div className="md:col-span-2 flex flex-col gap-4 min-w-0">
                   {filteredPosts.map((post, idx) => (
-                    <CommunityCard key={post.id} post={post} idx={idx} />
+                    <CommunityCard
+                      key={post.id}
+                      post={post}
+                      idx={idx}
+                      isLast={idx === filteredPosts.length - 1}
+                    />
                   ))}
+
+                  {/* Loading indicator for infinite scroll */}
+                  {loadingMore && (
+                    <div className="flex justify-center py-6">
+                      <Loader />
+                    </div>
+                  )}
+
+                  {/* End message */}
+                  {!hasMore && filteredPosts.length > 0 && (
+                    <div className="text-center text-gray-500 py-6">
+                      You've reached the end 🎉
+                    </div>
+                  )}
                 </div>
 
                 {/* Sticky ads column */}
-                <div className="flex">
+                <div className="flex flex-shrink-0">
                   <div className="sticky top-28 w-full flex flex-col gap-6 max-h-[80vh]">
                     {largeAds.length > 0 &&
                       largeAdIndexes.map((idx, i) => {
@@ -567,11 +667,8 @@ export default function Community() {
                         if (!largeAds[idx]) return null;
 
                         return (
-                          <motion.div
+                          <div
                             key={`large-ad-${i}`}
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.95 }}
                             className="relative rounded-2xl shadow-md border border-emerald-100 overflow-hidden"
                             style={{ height: "240px", minHeight: "240px" }}
                           >
@@ -579,7 +676,7 @@ export default function Community() {
                               ad={largeAds[idx]}
                               className="w-full h-full"
                             />
-                          </motion.div>
+                          </div>
                         );
                       })}
                   </div>
