@@ -23,9 +23,13 @@ import axios from "axios";
 
 const WEATHER_API_KEY = "08e6542c3ce14ae39f1174408252212";
 
-// localStorage key to track last time user denied geolocation
+// localStorage keys
 const GEO_DENIED_KEY = "JBU_LOCAL_GEO_DENIED_AT";
+const WEATHER_CACHE_KEY = "JBU_WEATHER_CACHE";
+
+// Time constants
 const GEO_RETRY_AFTER_MS = 24 * 60 * 60 * 1000; // 1 day
+const WEATHER_CACHE_TTL = 60 * 60 * 1000; // 1 hour
 
 const FALLBACK_CITIES = [
   "Ranchi, Jharkhand",
@@ -42,6 +46,38 @@ const FALLBACK_CITIES = [
 
 function getRandomFallbackCity() {
   return FALLBACK_CITIES[Math.floor(Math.random() * FALLBACK_CITIES.length)];
+}
+
+// Weather cache helpers with TTL
+function setWeatherCache(weatherData) {
+  try {
+    const cacheEntry = {
+      data: weatherData,
+      cachedAt: Date.now(),
+      expiresAt: Date.now() + WEATHER_CACHE_TTL,
+    };
+    localStorage.setItem(WEATHER_CACHE_KEY, JSON.stringify(cacheEntry));
+  } catch (e) {
+    console.error("Failed to cache weather:", e);
+  }
+}
+
+function getWeatherCache() {
+  try {
+    const stored = localStorage.getItem(WEATHER_CACHE_KEY);
+    if (!stored) return null;
+
+    const cacheEntry = JSON.parse(stored);
+    if (Date.now() > cacheEntry.expiresAt) {
+      localStorage.removeItem(WEATHER_CACHE_KEY);
+      return null;
+    }
+
+    return cacheEntry.data;
+  } catch (e) {
+    localStorage.removeItem(WEATHER_CACHE_KEY);
+    return null;
+  }
 }
 
 // Map weather condition to icon component and theme
@@ -83,7 +119,6 @@ function getWeatherStyle(conditionText, isDay) {
     };
   }
 
-  // Default
   return {
     icon: isDay ? Sun : Moon,
     gradient: isDay
@@ -122,9 +157,8 @@ export default function RightSidebar() {
   // Weather state
   const [weather, setWeather] = useState(null);
   const [weatherLoading, setWeatherLoading] = useState(true);
-  const [isUsingFallback, setIsUsingFallback] = useState(false);
 
-  const fetchWeather = async (query) => {
+  const fetchWeatherAndCache = async (query, type = "geo") => {
     try {
       setWeatherLoading(true);
       const res = await axios.get("https://api.weatherapi.com/v1/current.json", {
@@ -132,68 +166,88 @@ export default function RightSidebar() {
       });
       const loc = res.data.location;
       const cur = res.data.current;
-      setWeather({
+
+      const weatherData = {
+        type,
+        query,
         city: loc.name,
         tempC: cur.temp_c,
         conditionText: cur.condition?.text,
         isDay: cur.is_day === 1,
-      });
+      };
+
+      setWeather(weatherData);
+      setWeatherCache(weatherData);
     } catch (e) {
+      console.error("Weather fetch failed:", e);
       setWeather(null);
     } finally {
       setWeatherLoading(false);
     }
   };
 
-  // Decide whether to call geolocation or directly fallback, with 1‑day re-try
+  // Initialize weather on mount
   useEffect(() => {
-    const fallbackToStateCity = () => {
-      setIsUsingFallback(true);
-      fetchWeather(getRandomFallbackCity());
-    };
-
-    const shouldRetryGeo = () => {
-      try {
-        const stored = localStorage.getItem(GEO_DENIED_KEY);
-        if (!stored) return true; // never denied before -> try
-        const lastDenied = parseInt(stored, 10);
-        if (Number.isNaN(lastDenied)) return true;
-        return Date.now() - lastDenied > GEO_RETRY_AFTER_MS;
-      } catch {
-        return true;
+    const initWeather = async () => {
+      // Step 1: Check cache first
+      const cached = getWeatherCache();
+      if (cached) {
+        setWeather(cached);
+        setWeatherLoading(false);
+        return;
       }
+
+      // Step 2: No cache, check if we should retry geolocation
+      const shouldRetryGeo = () => {
+        try {
+          const stored = localStorage.getItem(GEO_DENIED_KEY);
+          if (!stored) return true;
+          const lastDenied = parseInt(stored, 10);
+          if (Number.isNaN(lastDenied)) return true;
+          return Date.now() - lastDenied > GEO_RETRY_AFTER_MS;
+        } catch {
+          return true;
+        }
+      };
+
+      // Step 3: Handle geolocation or fallback
+      const fallbackToStateCity = async () => {
+        const city = getRandomFallbackCity();
+        await fetchWeatherAndCache(city, "fallback");
+      };
+
+      if (!("geolocation" in navigator)) {
+        await fallbackToStateCity();
+        return;
+      }
+
+      if (!shouldRetryGeo()) {
+        await fallbackToStateCity();
+        return;
+      }
+
+      // Try geolocation
+      navigator.geolocation.getCurrentPosition(
+        async (pos) => {
+          try {
+            localStorage.removeItem(GEO_DENIED_KEY);
+          } catch {}
+          await fetchWeatherAndCache(
+            `${pos.coords.latitude},${pos.coords.longitude}`,
+            "geo"
+          );
+        },
+        async (error) => {
+          try {
+            localStorage.setItem(GEO_DENIED_KEY, String(Date.now()));
+          } catch {}
+          await fallbackToStateCity();
+        },
+        { enableHighAccuracy: false, timeout: 4000, maximumAge: 600000 }
+      );
     };
 
-    if (!("geolocation" in navigator)) {
-      fallbackToStateCity();
-      return;
-    }
-
-    if (!shouldRetryGeo()) {
-      // user denied less than 1 day ago -> do not ask again, just fallback
-      fallbackToStateCity();
-      return;
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        // success: clear any previous denied timestamp
-        try {
-          localStorage.removeItem(GEO_DENIED_KEY);
-        } catch {}
-        setIsUsingFallback(false);
-        fetchWeather(`${pos.coords.latitude},${pos.coords.longitude}`);
-      },
-      (error) => {
-        // on error/denied, store timestamp and fallback
-        try {
-          localStorage.setItem(GEO_DENIED_KEY, String(Date.now()));
-        } catch {}
-        fallbackToStateCity();
-      },
-      { enableHighAccuracy: false, timeout: 4000, maximumAge: 600000 }
-    );
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    initWeather();
   }, []);
 
   // Notifications
@@ -285,7 +339,7 @@ export default function RightSidebar() {
       return (
         <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 text-slate-600 text-xs shadow-sm">
           <div className="w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin" />
-          <span className="hidden sm:inline">Loading...</span>
+          <span className="hidden sm:inline">Detecting...</span>
         </div>
       );
     }
@@ -325,11 +379,6 @@ export default function RightSidebar() {
               {weather.city}
             </span>
           </div>
-          {isUsingFallback && (
-            <span className="ml-1 text-[9px] sm:text-[10px] uppercase tracking-wide opacity-70">
-              approx
-            </span>
-          )}
         </div>
       </motion.div>
     );
