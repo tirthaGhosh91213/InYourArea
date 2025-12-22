@@ -1,5 +1,5 @@
 // src/pages/Community.jsx
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MessageCircle, Search } from "lucide-react";
 import Sidebar from "../components/SideBar";
@@ -50,9 +50,6 @@ export default function Community() {
   const [showCommentInput, setShowCommentInput] = useState({});
   const [commentText, setCommentText] = useState({});
   const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
 
   // Small ads
   const [ads, setAds] = useState([]);
@@ -66,22 +63,6 @@ export default function Community() {
   const [largeAdIndexes, setLargeAdIndexes] = useState([0, 1]);
   const [largeAd1Closed, setLargeAd1Closed] = useState(false);
   const [largeAd2Closed, setLargeAd2Closed] = useState(false);
-
-  // Ref for intersection observer
-  const observer = useRef();
-  const lastPostElementRef = useCallback(
-    (node) => {
-      if (loadingMore) return;
-      if (observer.current) observer.current.disconnect();
-      observer.current = new IntersectionObserver((entries) => {
-        if (entries[0].isIntersecting && hasMore) {
-          setPage((prevPage) => prevPage + 1);
-        }
-      });
-      if (node) observer.current.observe(node);
-    },
-    [loadingMore, hasMore]
-  );
 
   const fetchComments = async (postId) => {
     try {
@@ -107,13 +88,9 @@ export default function Community() {
     }
   };
 
-  const fetchPosts = async (pageNum, isInitial = false) => {
+  const fetchPosts = async () => {
     try {
-      if (isInitial) {
-        setLoading(true);
-      } else {
-        setLoadingMore(true);
-      }
+      setLoading(true);
 
       const res = await axios.get(
         `https://api.jharkhandbiharupdates.com/api/v1/community`,
@@ -122,42 +99,29 @@ export default function Community() {
 
       if (res.data.success) {
         const allPosts = res.data.data;
+        console.log(`✅ Loaded ALL posts: ${allPosts.length} total`);
+        
+        setPosts(allPosts);
 
-        // Calculate pagination on client side
-        const startIndex = (pageNum - 1) * 10;
-        const endIndex = startIndex + 10;
-        const paginatedPosts = allPosts.slice(startIndex, endIndex);
+        // Randomly select 2-3 posts to show comments automatically
+        if (allPosts.length > 0) {
+          const numberOfPostsToShow = Math.min(
+            Math.floor(Math.random() * 2) + 2,
+            allPosts.length
+          );
 
-        // Check if there are more posts
-        if (endIndex >= allPosts.length) {
-          setHasMore(false);
-        }
+          const shuffledPosts = [...allPosts].sort(
+            () => Math.random() - 0.5
+          );
+          const selectedPosts = shuffledPosts.slice(0, numberOfPostsToShow);
 
-        if (isInitial) {
-          setPosts(paginatedPosts);
+          const autoShowComments = {};
+          selectedPosts.forEach((post) => {
+            autoShowComments[post.id] = true;
+            fetchComments(post.id);
+          });
 
-          // Randomly select 2-3 posts to show comments automatically
-          if (paginatedPosts.length > 0) {
-            const numberOfPostsToShow = Math.min(
-              Math.floor(Math.random() * 2) + 2,
-              paginatedPosts.length
-            );
-
-            const shuffledPosts = [...paginatedPosts].sort(
-              () => Math.random() - 0.5
-            );
-            const selectedPosts = shuffledPosts.slice(0, numberOfPostsToShow);
-
-            const autoShowComments = {};
-            selectedPosts.forEach((post) => {
-              autoShowComments[post.id] = true;
-              fetchComments(post.id);
-            });
-
-            setShowCommentInput(autoShowComments);
-          }
-        } else {
-          setPosts((prevPosts) => [...prevPosts, ...paginatedPosts]);
+          setShowCommentInput(autoShowComments);
         }
 
         // Update avatars
@@ -165,21 +129,18 @@ export default function Community() {
           acc[post.author.id] = post.author.profileImageUrl || null;
           return acc;
         }, {});
-        setAuthorAvatars((prev) => ({ ...prev, ...avatarMap }));
+        setAuthorAvatars(avatarMap);
       }
-    } catch {
+    } catch (error) {
+      console.error("❌ Error fetching posts:", error);
       toast.error("Failed to fetch posts");
     } finally {
-      if (isInitial) {
-        setLoading(false);
-      } else {
-        setLoadingMore(false);
-      }
+      setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchPosts(1, true);
+    fetchPosts();
 
     // Small ads
     fetch(
@@ -242,13 +203,6 @@ export default function Community() {
         console.error("Error fetching community large ads:", err);
       });
   }, []);
-
-  // Load more posts when page changes
-  useEffect(() => {
-    if (page > 1) {
-      fetchPosts(page, false);
-    }
-  }, [page]);
 
   // Rotate small ads index on next refresh after a close
   useEffect(() => {
@@ -335,24 +289,24 @@ export default function Community() {
     if (filteredPosts.length === 1) {
       if (largeAds.length > 0)
         items.push({ type: "ad", adIndex: largeAdIndexes[0] ?? 0 });
-      items.push({ type: "post", post: filteredPosts[0], postIndex: 0 });
+      items.push({ type: "post", post: filteredPosts[0] });
       if (largeAds.length > 1)
         items.push({ type: "ad", adIndex: largeAdIndexes[1] ?? 0 });
       return items;
     }
 
     if (filteredPosts.length === 2) {
-      items.push({ type: "post", post: filteredPosts[0], postIndex: 0 });
+      items.push({ type: "post", post: filteredPosts[0] });
       if (largeAds.length > 0)
         items.push({ type: "ad", adIndex: largeAdIndexes[0] ?? 0 });
-      items.push({ type: "post", post: filteredPosts[1], postIndex: 1 });
+      items.push({ type: "post", post: filteredPosts[1] });
       if (largeAds.length > 1)
         items.push({ type: "ad", adIndex: largeAdIndexes[1] ?? 0 });
       return items;
     }
 
     for (let i = 0; i < filteredPosts.length; i++) {
-      items.push({ type: "post", post: filteredPosts[i], postIndex: i });
+      items.push({ type: "post", post: filteredPosts[i] });
       const isEndOfPair = (i + 1) % 2 === 0;
       const isNotLast = i !== filteredPosts.length - 1;
       if (isEndOfPair && isNotLast && largeAds.length > 0) {
@@ -375,13 +329,12 @@ export default function Community() {
     return text.substring(0, maxLength) + "...";
   };
 
-  const CommunityCard = ({ post, idx, isLast }) => {
+  const CommunityCard = ({ post }) => {
     const truncatedContentMobile = truncateText(post.content, 200);
     const truncatedContentDesktop = truncateText(post.content, 300);
 
     return (
       <div
-        ref={isLast ? lastPostElementRef : null}
         className="relative w-full rounded-2xl bg-white shadow-md border border-emerald-50 cursor-pointer hover:bg-gradient-to-r hover:from-emerald-50 hover:shadow-lg transition-shadow overflow-hidden"
         onClick={() => handlePostClick(post.id)}
       >
@@ -598,8 +551,6 @@ export default function Community() {
                     <CommunityCard
                       key={`m-post-${item.post.id}`}
                       post={item.post}
-                      idx={idx}
-                      isLast={item.postIndex === filteredPosts.length - 1}
                     />
                   ) : largeAds[item.adIndex] ? (
                     <div
@@ -613,48 +564,18 @@ export default function Community() {
                     </div>
                   ) : null
                 )}
-
-                {/* Loading indicator for infinite scroll */}
-                {loadingMore && (
-                  <div className="flex justify-center py-6">
-                    <Loader />
-                  </div>
-                )}
-
-                {/* End message */}
-                {!hasMore && filteredPosts.length > 0 && (
-                  <div className="text-center text-gray-500 py-6 text-sm">
-                    You've reached the end 🎉
-                  </div>
-                )}
               </div>
 
               {/* DESKTOP/TABLET: post list + sticky ads */}
               <div className="hidden md:grid md:grid-cols-3 gap-8 w-full max-w-7xl pb-10">
                 {/* Posts column */}
                 <div className="md:col-span-2 flex flex-col gap-4 min-w-0">
-                  {filteredPosts.map((post, idx) => (
+                  {filteredPosts.map((post) => (
                     <CommunityCard
                       key={post.id}
                       post={post}
-                      idx={idx}
-                      isLast={idx === filteredPosts.length - 1}
                     />
                   ))}
-
-                  {/* Loading indicator for infinite scroll */}
-                  {loadingMore && (
-                    <div className="flex justify-center py-6">
-                      <Loader />
-                    </div>
-                  )}
-
-                  {/* End message */}
-                  {!hasMore && filteredPosts.length > 0 && (
-                    <div className="text-center text-gray-500 py-6">
-                      You've reached the end 🎉
-                    </div>
-                  )}
                 </div>
 
                 {/* Sticky ads column */}
