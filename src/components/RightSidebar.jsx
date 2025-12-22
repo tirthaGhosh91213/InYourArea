@@ -1,3 +1,4 @@
+// src/components/RightSidebar.jsx
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
@@ -10,10 +11,87 @@ import {
   X,
   LogOut,
   Settings,
+  Sun,
+  CloudRain,
+  Cloud,
+  Moon,
+  Zap,
 } from "lucide-react";
 import NotificationPanel from "./NotificationPanel";
 import Sidebar from "./SideBar";
 import axios from "axios";
+
+const WEATHER_API_KEY = "08e6542c3ce14ae39f1174408252212";
+
+// localStorage key to track last time user denied geolocation
+const GEO_DENIED_KEY = "JBU_LOCAL_GEO_DENIED_AT";
+const GEO_RETRY_AFTER_MS = 24 * 60 * 60 * 1000; // 1 day
+
+const FALLBACK_CITIES = [
+  "Ranchi, Jharkhand",
+  "Jamshedpur, Jharkhand",
+  "Dhanbad, Jharkhand",
+  "Bokaro, Jharkhand",
+  "Deoghar, Jharkhand",
+  "Patna, Bihar",
+  "Gaya, Bihar",
+  "Bhagalpur, Bihar",
+  "Muzaffarpur, Bihar",
+  "Darbhanga, Bihar",
+];
+
+function getRandomFallbackCity() {
+  return FALLBACK_CITIES[Math.floor(Math.random() * FALLBACK_CITIES.length)];
+}
+
+// Map weather condition to icon component and theme
+function getWeatherStyle(conditionText, isDay) {
+  const text = (conditionText || "").toLowerCase();
+
+  if (text.includes("thunder") || text.includes("storm")) {
+    return {
+      icon: Zap,
+      gradient: "from-slate-700 via-slate-600 to-indigo-600",
+      iconColor: "text-yellow-300",
+    };
+  }
+  if (text.includes("rain") || text.includes("drizzle") || text.includes("shower")) {
+    return {
+      icon: CloudRain,
+      gradient: isDay
+        ? "from-sky-600 via-sky-500 to-blue-500"
+        : "from-slate-800 via-slate-700 to-blue-900",
+      iconColor: isDay ? "text-blue-100" : "text-blue-300",
+    };
+  }
+  if (text.includes("cloud") || text.includes("overcast")) {
+    return {
+      icon: Cloud,
+      gradient: isDay
+        ? "from-slate-400 via-slate-300 to-gray-400"
+        : "from-slate-900 via-slate-800 to-slate-700",
+      iconColor: isDay ? "text-slate-100" : "text-slate-400",
+    };
+  }
+  if (text.includes("clear") || text.includes("sunny")) {
+    return {
+      icon: isDay ? Sun : Moon,
+      gradient: isDay
+        ? "from-amber-400 via-orange-400 to-yellow-500"
+        : "from-indigo-900 via-slate-800 to-slate-900",
+      iconColor: isDay ? "text-yellow-100" : "text-indigo-200",
+    };
+  }
+
+  // Default
+  return {
+    icon: isDay ? Sun : Moon,
+    gradient: isDay
+      ? "from-sky-500 via-sky-400 to-blue-500"
+      : "from-slate-900 via-slate-800 to-slate-700",
+    iconColor: isDay ? "text-sky-100" : "text-slate-400",
+  };
+}
 
 export default function RightSidebar() {
   const navigate = useNavigate();
@@ -34,7 +112,6 @@ export default function RightSidebar() {
   const isLoggedIn = Boolean(token);
   const isAdmin = role?.toLowerCase().includes("admin");
 
-  // Media query for desktop sizing
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024);
   useEffect(() => {
     const handleResize = () => setIsDesktop(window.innerWidth >= 1024);
@@ -42,6 +119,79 @@ export default function RightSidebar() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  // Weather state
+  const [weather, setWeather] = useState(null);
+  const [weatherLoading, setWeatherLoading] = useState(true);
+
+  const fetchWeather = async (query) => {
+    try {
+      setWeatherLoading(true);
+      const res = await axios.get("https://api.weatherapi.com/v1/current.json", {
+        params: { key: WEATHER_API_KEY, q: query, aqi: "no" },
+      });
+      const loc = res.data.location;
+      const cur = res.data.current;
+      setWeather({
+        city: loc.name,
+        tempC: cur.temp_c,
+        conditionText: cur.condition?.text,
+        isDay: cur.is_day === 1,
+      });
+    } catch (e) {
+      setWeather(null);
+    } finally {
+      setWeatherLoading(false);
+    }
+  };
+
+  // Decide whether to call geolocation or directly fallback, with 1‑day re-try
+  useEffect(() => {
+    const fallbackToStateCity = () => fetchWeather(getRandomFallbackCity());
+
+    const shouldRetryGeo = () => {
+      try {
+        const stored = localStorage.getItem(GEO_DENIED_KEY);
+        if (!stored) return true; // never denied before -> try
+        const lastDenied = parseInt(stored, 10);
+        if (Number.isNaN(lastDenied)) return true;
+        return Date.now() - lastDenied > GEO_RETRY_AFTER_MS;
+      } catch {
+        return true;
+      }
+    };
+
+    if (!("geolocation" in navigator)) {
+      fallbackToStateCity();
+      return;
+    }
+
+    if (!shouldRetryGeo()) {
+      // user denied less than 1 day ago -> do not ask again, just fallback
+      fallbackToStateCity();
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        // success: clear any previous denied timestamp
+        try {
+          localStorage.removeItem(GEO_DENIED_KEY);
+        } catch {}
+        fetchWeather(`${pos.coords.latitude},${pos.coords.longitude}`);
+      },
+      (error) => {
+        // on error/denied, store timestamp and fallback
+        try {
+          localStorage.setItem(GEO_DENIED_KEY, String(Date.now()));
+        } catch {}
+        fallbackToStateCity();
+      },
+      { enableHighAccuracy: false, timeout: 4000, maximumAge: 600000 }
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Notifications
   const fetchNotifications = async () => {
     setLoading(true);
     try {
@@ -124,45 +274,86 @@ export default function RightSidebar() {
     }
   }, [isLoggedIn]);
 
+  // Weather UI
+  const renderWeather = () => {
+    if (weatherLoading && !weather) {
+      return (
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 text-slate-600 text-xs shadow-sm">
+          <div className="w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin" />
+          <span className="hidden sm:inline">Loading...</span>
+        </div>
+      );
+    }
+
+    if (!weather) {
+      return (
+        <div className="flex items-center gap-2">
+          <MapPin className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" />
+          <span className="font-bold text-sm sm:text-base text-green-700">
+            Jharkhand & Bihar
+          </span>
+        </div>
+      );
+    }
+
+    const { icon: WeatherIcon, gradient, iconColor } = getWeatherStyle(
+      weather.conditionText,
+      weather.isDay
+    );
+
+    return (
+      <motion.div
+        className={`flex items-center gap-2 sm:gap-3 px-3 py-1.5 sm:py-2 rounded-full bg-gradient-to-r ${gradient} text-white shadow-md`}
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.3 }}
+      >
+        <WeatherIcon className={`w-4 h-4 sm:w-5 sm:h-5 ${iconColor}`} />
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          <span className="text-base sm:text-lg font-bold">
+            {Math.round(weather.tempC)}°
+          </span>
+          <div className="h-3 w-[1px] bg-white/30" />
+          <div className="flex items-center gap-1">
+            <MapPin className="w-3 h-3 opacity-80" />
+            <span className="text-xs sm:text-sm font-medium truncate max-w-[60px] sm:max-w-[80px]">
+              {weather.city}
+            </span>
+          </div>
+        </div>
+      </motion.div>
+    );
+  };
+
   return (
     <>
-      {/* ✅ Top Navbar */}
       <motion.div
         initial={{ y: -60, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md shadow-md flex justify-between items-center px-4 sm:px-6 py-3 gap-4"
+        className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-sm shadow-sm flex justify-between items-center px-3 sm:px-6 py-2.5 sm:py-3"
       >
-        {/* Left side */}
-        <div className="flex items-center gap-3">
-          {/* Left sidebar (menu icon on small screens) */}
+        <div className="flex items-center gap-2 sm:gap-3">
           <div className="sm:hidden">
             <motion.button
-              whileHover={{ scale: 1.1 }}
+              whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => {
                 if (!isLoggedIn) return navigate("/login");
                 setLeftSidebarOpen(true);
               }}
-              className="p-2 rounded-full hover:bg-green-100 transition"
+              className="p-1.5 rounded-lg hover:bg-gray-100 transition"
             >
-              <Menu className="w-6 h-6 text-gray-700" />
+              <Menu className="w-5 h-5 text-gray-700" />
             </motion.button>
           </div>
-
-          <div className="flex items-center gap-2">
-            <MapPin className="font-extrabold w-6 h-6 sm:w-9 sm:h-9 text-green-600" />
-            <span className="font-extrabold text-lg sm:text-xl text-green-700">
-              Jharkhand & Bihar
-            </span>
-          </div>
+          {renderWeather()}
         </div>
 
-        {/* Right side */}
-        <div className="flex items-center gap-2 sm:gap-4">
+        <div className="flex items-center gap-2 sm:gap-3">
           {isLoggedIn && (
             <div className="relative" ref={notifRef}>
               <motion.button
-                whileHover={{ scale: 1.1 }}
+                whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => {
                   setNotifOpen((prev) => !prev);
@@ -171,11 +362,11 @@ export default function RightSidebar() {
                     setHasNewNotif(false);
                   }
                 }}
-                className="relative p-2 rounded-full hover:bg-green-100 transition"
+                className="relative p-1.5 sm:p-2 rounded-lg hover:bg-gray-100 transition"
               >
                 <Bell className="w-5 h-5 text-gray-700" />
                 {hasNewNotif && unreadCount > 0 && (
-                  <span className="absolute top-1 right-1 h-2.5 w-2.5 bg-red-500 rounded-full animate-pulse"></span>
+                  <span className="absolute top-0.5 right-0.5 h-2 w-2 bg-red-500 rounded-full animate-pulse" />
                 )}
               </motion.button>
               <NotificationPanel
@@ -191,14 +382,14 @@ export default function RightSidebar() {
           {isLoggedIn ? (
             <div className="relative hidden sm:block" ref={dropdownRef}>
               <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
                 onClick={() => setDropdownOpen((prev) => !prev)}
-                className="flex items-center gap-2 px-4 py-2 bg-gray-200 text-gray-800 rounded-full hover:bg-gray-300 transition"
+                className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 text-gray-800 rounded-full hover:bg-gray-200 transition text-sm"
               >
-                <User size={18} />
-                My Account
-                <ChevronDown size={16} />
+                <User size={16} />
+                <span>Account</span>
+                <ChevronDown size={14} />
               </motion.button>
               <AnimatePresence>
                 {dropdownOpen && (
@@ -206,27 +397,26 @@ export default function RightSidebar() {
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.2 }}
-                    className="absolute right-0 mt-2 w-48 bg-white shadow-lg rounded-xl overflow-hidden z-50"
+                    className="absolute right-0 mt-2 w-40 bg-white shadow-lg rounded-lg overflow-hidden z-50"
                   >
                     {isAdmin ? (
                       <button
                         onClick={() => handleNavigation("/dashboard")}
-                        className="w-full text-left px-4 py-2 hover:bg-green-50 transition"
+                        className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition"
                       >
                         Dashboard
                       </button>
                     ) : (
                       <button
                         onClick={() => handleNavigation("/user-dashboard")}
-                        className="w-full text-left px-4 py-2 hover:bg-green-50 transition"
+                        className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition"
                       >
                         Profile
                       </button>
                     )}
                     <button
                       onClick={handleLogout}
-                      className="w-full text-left px-4 py-2 hover:bg-red-100 text-red-600 transition"
+                      className="w-full text-left px-4 py-2 text-sm hover:bg-red-50 text-red-600 transition"
                     >
                       Logout
                     </button>
@@ -236,32 +426,31 @@ export default function RightSidebar() {
             </div>
           ) : (
             <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               onClick={() => navigate("/login")}
-              className="hidden sm:block px-4 py-2 bg-green-600 text-white rounded-full hover:bg-green-700 transition"
+              className="hidden sm:block px-3 py-1.5 bg-green-600 text-white text-sm rounded-full hover:bg-green-700 transition"
             >
-              Register / Login
+              Login
             </motion.button>
           )}
 
-          {/* Mobile Account Icon */}
           <div className="sm:hidden">
             {isLoggedIn ? (
               <motion.button
-                whileHover={{ scale: 1.1 }}
+                whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setRightSidebarOpen(true)}
-                className="p-2 rounded-full hover:bg-green-100 transition"
+                className="p-1.5 rounded-lg hover:bg-gray-100 transition"
               >
-                <User className="w-6 h-6" />
+                <User className="w-5 h-5 text-gray-700" />
               </motion.button>
             ) : (
               <motion.button
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.95 }}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
                 onClick={() => navigate("/login")}
-                className="px-4 py-2 bg-green-600 text-white rounded-full hover:bg-green-700 transition"
+                className="px-3 py-1.5 bg-green-600 text-white text-xs rounded-full hover:bg-green-700 transition"
               >
                 Login
               </motion.button>
@@ -270,13 +459,11 @@ export default function RightSidebar() {
         </div>
       </motion.div>
 
-      {/* ALWAYS show sidebar on desktop, toggle on mobile */}
       <Sidebar
         sidebarOpen={isDesktop || leftSidebarOpen}
         onClose={() => setLeftSidebarOpen(false)}
       />
 
-      {/* Right Profile Sidebar */}
       <AnimatePresence>
         {rightSidebarOpen && isLoggedIn && (
           <>
@@ -284,67 +471,60 @@ export default function RightSidebar() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/50 z-[60] sm:hidden"
+              className="fixed inset-0 bg-black/40 z-[60] sm:hidden"
               onClick={() => setRightSidebarOpen(false)}
             />
             <motion.div
               initial={{ x: "100%" }}
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
-              transition={{ type: "spring", stiffness: 120, damping: 22 }}
-              className="fixed top-0 right-0 h-full w-80 max-w-[85vw] bg-white shadow-2xl z-[70] sm:hidden"
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              className="fixed top-0 right-0 h-full w-72 bg-white shadow-2xl z-[70] sm:hidden"
             >
-              <div className="flex items-center justify-between p-4 border-b border-gray-200">
-                <h2 className="text-lg font-semibold text-gray-800">
-                  My Account
-                </h2>
+              <div className="flex items-center justify-between p-4 border-b">
+                <h2 className="text-base font-semibold text-gray-800">Account</h2>
                 <motion.button
-                  whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => setRightSidebarOpen(false)}
-                  className="p-2 rounded-full hover:bg-gray-100 transition"
+                  className="p-1.5 rounded-lg hover:bg-gray-100"
                 >
                   <X className="w-5 h-5 text-gray-700" />
                 </motion.button>
               </div>
-              <div className="flex flex-col p-4 gap-3">
+              <div className="flex flex-col p-4 gap-2">
                 <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
-                  <User className="w-6 h-6 text-green-700" />
+                  <User className="w-5 h-5 text-green-700" />
                   <div>
-                    <p className="font-medium text-gray-800">
-                      {isAdmin ? "Admin User" : "Regular User"}
+                    <p className="text-sm font-medium text-gray-800">
+                      {isAdmin ? "Admin" : "User"}
                     </p>
-                    <p className="text-sm text-gray-600">User Settings</p>
+                    <p className="text-xs text-gray-600">Settings</p>
                   </div>
                 </div>
                 {isAdmin ? (
-                  <motion.button
-                    whileTap={{ scale: 0.95 }}
+                  <button
                     onClick={() => navigate("/dashboard")}
-                    className="w-full flex items-center gap-3 p-3 text-left hover:bg-green-50 rounded-lg transition"
+                    className="flex items-center gap-2 p-3 text-left hover:bg-gray-50 rounded-lg text-sm"
                   >
-                    <Settings className="w-5 h-5 text-gray-600" />
+                    <Settings className="w-4 h-4" />
                     Dashboard
-                  </motion.button>
+                  </button>
                 ) : (
-                  <motion.button
-                    whileTap={{ scale: 0.95 }}
+                  <button
                     onClick={() => navigate("/user-dashboard")}
-                    className="w-full flex items-center gap-3 p-3 text-left hover:bg-green-50 rounded-lg transition"
+                    className="flex items-center gap-2 p-3 text-left hover:bg-gray-50 rounded-lg text-sm"
                   >
-                    <User className="w-5 h-5 text-gray-600" />
+                    <User className="w-4 h-4" />
                     Profile
-                  </motion.button>
+                  </button>
                 )}
-
-                <motion.button
-                  whileTap={{ scale: 0.95 }}
+                <button
                   onClick={handleLogout}
-                  className="w-full flex items-center gap-3 p-3 text-left hover:bg-red-50 rounded-lg text-red-600 transition"
+                  className="flex items-center gap-2 p-3 text-left hover:bg-red-50 rounded-lg text-red-600 text-sm"
                 >
-                  <LogOut className="w-5 h-5" />
+                  <LogOut className="w-4 h-4" />
                   Logout
-                </motion.button>
+                </button>
               </div>
             </motion.div>
           </>
