@@ -122,6 +122,7 @@ export default function RightSidebar() {
   // Weather state
   const [weather, setWeather] = useState(null);
   const [weatherLoading, setWeatherLoading] = useState(true);
+  const [isUsingFallback, setIsUsingFallback] = useState(false);
 
   const fetchWeather = async (query) => {
     try {
@@ -146,7 +147,10 @@ export default function RightSidebar() {
 
   // Decide whether to call geolocation or directly fallback, with 1‑day re-try
   useEffect(() => {
-    const fallbackToStateCity = () => fetchWeather(getRandomFallbackCity());
+    const fallbackToStateCity = () => {
+      setIsUsingFallback(true);
+      fetchWeather(getRandomFallbackCity());
+    };
 
     const shouldRetryGeo = () => {
       try {
@@ -177,6 +181,7 @@ export default function RightSidebar() {
         try {
           localStorage.removeItem(GEO_DENIED_KEY);
         } catch {}
+        setIsUsingFallback(false);
         fetchWeather(`${pos.coords.latitude},${pos.coords.longitude}`);
       },
       (error) => {
@@ -320,6 +325,11 @@ export default function RightSidebar() {
               {weather.city}
             </span>
           </div>
+          {isUsingFallback && (
+            <span className="ml-1 text-[9px] sm:text-[10px] uppercase tracking-wide opacity-70">
+              approx
+            </span>
+          )}
         </div>
       </motion.div>
     );
