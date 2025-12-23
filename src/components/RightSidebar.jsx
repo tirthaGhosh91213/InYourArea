@@ -27,7 +27,6 @@ const WEATHER_API_KEY = "08e6542c3ce14ae39f1174408252212";
 
 // localStorage keys
 const WEATHER_CACHE_KEY = "JBU_WEATHER_CACHE";
-const GEO_PERMISSION_STATE_KEY = "JBU_GEO_PERMISSION_STATE";
 const LAST_KNOWN_POSITION_KEY = "JBU_LAST_POSITION";
 const OAUTH_REDIRECT_FLAG = "JBU_OAUTH_REDIRECT";
 
@@ -263,6 +262,7 @@ export default function RightSidebar() {
   const watchIdRef = useRef(null);
   const isWatchingRef = useRef(false);
   const positionAttemptRef = useRef(0);
+  const permissionStatusRef = useRef(null);
 
   const token = localStorage.getItem("accessToken");
   const role = localStorage.getItem("role");
@@ -324,13 +324,110 @@ export default function RightSidebar() {
     }
   };
 
-  // Initialize geolocation with watchPosition
-  useEffect(() => {
+  // Start watching position
+  const startWatchingPosition = () => {
     if (isWatchingRef.current) {
-      console.log("Already watching position, skipping initialization");
+      console.log("Already watching position");
       return;
     }
 
+    const geoOptions = {
+      enableHighAccuracy: true,
+      timeout: 15000,
+      maximumAge: 0,
+    };
+
+    const successCallback = (position) => {
+      positionAttemptRef.current += 1;
+      const newLat = position.coords.latitude;
+      const newLon = position.coords.longitude;
+      const accuracy = position.coords.accuracy;
+
+      console.log(
+        `Position #${positionAttemptRef.current}: ${newLat}, ${newLon} (accuracy: ${accuracy}m)`
+      );
+
+      if (positionAttemptRef.current === 1 && accuracy > MIN_ACCURACY_METERS) {
+        console.log(
+          `Rejecting low-accuracy position (${accuracy}m > ${MIN_ACCURACY_METERS}m), waiting for better...`
+        );
+        return;
+      }
+
+      setGeoPermissionDenied(false);
+
+      const lastPos = getLastKnownPosition();
+      const cached = getWeatherCache();
+      let shouldFetch = true;
+
+      if (lastPos && cached) {
+        const distance = calculateDistance(
+          lastPos.lat,
+          lastPos.lon,
+          newLat,
+          newLon
+        );
+
+        console.log(`Distance from last position: ${distance.toFixed(2)} km`);
+
+        if (distance < MAX_LOCATION_DRIFT_KM) {
+          const cacheAge = Date.now() - (cached.fetchedAt || 0);
+          if (cacheAge < WEATHER_CACHE_TTL) {
+            console.log(
+              "Location drift minimal and cache valid, using cache"
+            );
+            shouldFetch = false;
+          }
+        } else {
+          console.log("Location changed significantly, fetching new weather");
+          localStorage.removeItem(WEATHER_CACHE_KEY);
+        }
+      }
+
+      if (shouldFetch) {
+        fetchWeatherAndCache(newLat, newLon, accuracy);
+      } else if (cached) {
+        setWeather(cached);
+        setWeatherLoading(false);
+      }
+    };
+
+    const errorCallback = (error) => {
+      console.error("Geolocation error:", error.message, error.code);
+
+      if (error.code === 1) {
+        console.log("User denied geolocation");
+        setGeoPermissionDenied(true);
+        localStorage.removeItem(WEATHER_CACHE_KEY);
+        localStorage.removeItem(LAST_KNOWN_POSITION_KEY);
+      }
+
+      setWeatherLoading(false);
+    };
+
+    console.log("Starting position watch...");
+    isWatchingRef.current = true;
+    watchIdRef.current = navigator.geolocation.watchPosition(
+      successCallback,
+      errorCallback,
+      geoOptions
+    );
+    console.log("Position watch started with ID:", watchIdRef.current);
+  };
+
+  // Stop watching position
+  const stopWatchingPosition = () => {
+    if (watchIdRef.current !== null) {
+      console.log("Stopping position watch with ID:", watchIdRef.current);
+      navigator.geolocation.clearWatch(watchIdRef.current);
+      watchIdRef.current = null;
+      isWatchingRef.current = false;
+      positionAttemptRef.current = 0;
+    }
+  };
+
+  // Initialize geolocation with permission monitoring
+  useEffect(() => {
     const initWeather = async () => {
       console.log("Initializing weather system...");
 
@@ -346,190 +443,101 @@ export default function RightSidebar() {
         console.log("Geolocation not supported");
         setGeoPermissionDenied(true);
         setWeatherLoading(false);
-        localStorage.setItem(GEO_PERMISSION_STATE_KEY, "unsupported");
         return;
       }
 
-      const storedPermission = localStorage.getItem(GEO_PERMISSION_STATE_KEY);
-
-      if (
-        storedPermission === "denied" ||
-        storedPermission === "unsupported"
-      ) {
-        console.log("Geolocation previously denied or unsupported");
-        setGeoPermissionDenied(true);
-        setWeatherLoading(false);
-        return;
-      }
-
-      if (!isOAuthRedirect) {
-        const cached = getWeatherCache();
-        const lastPosition = getLastKnownPosition();
-
-        if (cached && lastPosition) {
-          console.log("Using cached weather:", cached.city);
-          setWeather(cached);
-          setWeatherLoading(false);
-        }
-      }
-
-      const geoOptions = {
-        enableHighAccuracy: true,
-        timeout: 15000,
-        maximumAge: 0,
-      };
-
-      const successCallback = (position) => {
-        positionAttemptRef.current += 1;
-        const newLat = position.coords.latitude;
-        const newLon = position.coords.longitude;
-        const accuracy = position.coords.accuracy;
-
-        console.log(
-          `Position #${positionAttemptRef.current}: ${newLat}, ${newLon} (accuracy: ${accuracy}m)`
-        );
-
-        if (
-          (positionAttemptRef.current === 1 || isOAuthRedirect) &&
-          accuracy > MIN_ACCURACY_METERS
-        ) {
-          console.log(
-            `Rejecting low-accuracy position (${accuracy}m > ${MIN_ACCURACY_METERS}m), waiting for better...`
-          );
-          return;
-        }
-
-        setGeoPermissionDenied(false);
-        localStorage.setItem(GEO_PERMISSION_STATE_KEY, "granted");
-
-        const lastPos = getLastKnownPosition();
-        const cached = getWeatherCache();
-        let shouldFetch = true;
-
-        if (lastPos && cached && !isOAuthRedirect) {
-          const distance = calculateDistance(
-            lastPos.lat,
-            lastPos.lon,
-            newLat,
-            newLon
-          );
-
-          console.log(`Distance from last position: ${distance.toFixed(2)} km`);
-
-          if (distance < MAX_LOCATION_DRIFT_KM) {
-            const cacheAge = Date.now() - (cached.fetchedAt || 0);
-            if (cacheAge < WEATHER_CACHE_TTL) {
-              console.log(
-                "Location drift minimal and cache valid, using cache"
-              );
-              shouldFetch = false;
-            }
-          } else {
-            console.log(
-              "Location changed significantly, fetching new weather"
-            );
-            localStorage.removeItem(WEATHER_CACHE_KEY);
-          }
-        }
-
-        if (shouldFetch) {
-          fetchWeatherAndCache(newLat, newLon, accuracy);
-        }
-      };
-
-      const errorCallback = (error) => {
-        console.error("Geolocation error:", error.message, error.code);
-
-        if (error.code === 1) {
-          console.log("User denied geolocation");
-          setGeoPermissionDenied(true);
-          localStorage.setItem(GEO_PERMISSION_STATE_KEY, "denied");
-          localStorage.removeItem(WEATHER_CACHE_KEY);
-          localStorage.removeItem(LAST_KNOWN_POSITION_KEY);
-        } else if (error.code === 2) {
-          console.log("Position unavailable");
-        } else if (error.code === 3) {
-          console.log("Geolocation timeout - retrying with longer timeout");
-        }
-
-        setWeatherLoading(false);
-      };
-
-      if (isOAuthRedirect || positionAttemptRef.current === 0) {
-        console.log("Getting immediate high-accuracy position...");
+      // Check if Permissions API is supported
+      if ("permissions" in navigator) {
         try {
-          navigator.geolocation.getCurrentPosition(
-            (position) => {
-              console.log("Immediate position obtained");
-              successCallback(position);
+          const permissionStatus = await navigator.permissions.query({
+            name: "geolocation",
+          });
+          
+          permissionStatusRef.current = permissionStatus;
 
-              if (!isWatchingRef.current) {
-                console.log(
-                  "Starting position watch after immediate position..."
-                );
-                isWatchingRef.current = true;
-                watchIdRef.current = navigator.geolocation.watchPosition(
-                  successCallback,
-                  errorCallback,
-                  geoOptions
-                );
-                console.log(
-                  "Position watch started with ID:",
-                  watchIdRef.current
-                );
-              }
-            },
-            (error) => {
-              console.error("Failed to get immediate position:", error);
-              errorCallback(error);
+          console.log("Initial permission state:", permissionStatus.state);
 
-              if (error.code !== 1 && !isWatchingRef.current) {
-                console.log(
-                  "Starting position watch despite immediate position failure..."
-                );
-                isWatchingRef.current = true;
-                watchIdRef.current = navigator.geolocation.watchPosition(
-                  successCallback,
-                  errorCallback,
-                  geoOptions
-                );
+          // Handle initial permission state
+          if (permissionStatus.state === "granted") {
+            console.log("Permission already granted");
+            setGeoPermissionDenied(false);
+            
+            // Load cached weather if available
+            if (!isOAuthRedirect) {
+              const cached = getWeatherCache();
+              if (cached) {
+                console.log("Using cached weather:", cached.city);
+                setWeather(cached);
+                setWeatherLoading(false);
               }
-            },
-            { ...geoOptions, timeout: 20000 }
-          );
-        } catch (e) {
-          console.error("Error getting immediate position:", e);
-          errorCallback({ code: 2, message: e.message });
+            }
+            
+            startWatchingPosition();
+          } else if (permissionStatus.state === "denied") {
+            console.log("Permission denied");
+            setGeoPermissionDenied(true);
+            setWeatherLoading(false);
+          } else {
+            // state === "prompt"
+            setWeatherLoading(false);
+          }
+
+          // Listen for permission changes
+          permissionStatus.onchange = () => {
+            console.log("Permission state changed to:", permissionStatus.state);
+
+            if (permissionStatus.state === "granted") {
+              console.log("Permission granted - starting location watch");
+              setGeoPermissionDenied(false);
+              setWeatherLoading(true);
+              
+              // Clear cache on permission re-grant to fetch fresh weather
+              localStorage.removeItem(WEATHER_CACHE_KEY);
+              localStorage.removeItem(LAST_KNOWN_POSITION_KEY);
+              
+              // Stop any existing watch and start fresh
+              stopWatchingPosition();
+              startWatchingPosition();
+            } else if (permissionStatus.state === "denied") {
+              console.log("Permission denied - stopping location watch");
+              setGeoPermissionDenied(true);
+              setWeatherLoading(false);
+              setWeather(null);
+              stopWatchingPosition();
+              localStorage.removeItem(WEATHER_CACHE_KEY);
+              localStorage.removeItem(LAST_KNOWN_POSITION_KEY);
+            }
+          };
+        } catch (error) {
+          console.error("Permissions API error:", error);
+          // Fallback: try to get position anyway
+          setWeatherLoading(false);
         }
       } else {
-        try {
-          console.log("Starting position watch...");
-          isWatchingRef.current = true;
-
-          watchIdRef.current = navigator.geolocation.watchPosition(
-            successCallback,
-            errorCallback,
-            geoOptions
-          );
-
-          console.log("Position watch started with ID:", watchIdRef.current);
-        } catch (e) {
-          console.error("Error setting up geolocation watch:", e);
-          setGeoPermissionDenied(true);
-          setWeatherLoading(false);
-          isWatchingRef.current = false;
+        // Permissions API not supported - fallback behavior
+        console.log("Permissions API not supported - using fallback");
+        
+        if (!isOAuthRedirect) {
+          const cached = getWeatherCache();
+          if (cached) {
+            console.log("Using cached weather:", cached.city);
+            setWeather(cached);
+            setWeatherLoading(false);
+          }
         }
+        
+        startWatchingPosition();
       }
     };
 
     initWeather();
 
     return () => {
-      if (watchIdRef.current !== null) {
-        console.log("Stopping position watch with ID:", watchIdRef.current);
-        navigator.geolocation.clearWatch(watchIdRef.current);
-        watchIdRef.current = null;
-        isWatchingRef.current = false;
+      stopWatchingPosition();
+      
+      // Clean up permission listener
+      if (permissionStatusRef.current) {
+        permissionStatusRef.current.onchange = null;
       }
     };
   }, []);
