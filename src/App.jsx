@@ -39,7 +39,7 @@ function Home() {
       alert("Please enter a valid postcode.");
       return;
     }
-    window.location.href = "/localnews"; // Navigate to localnews
+    window.location.href = "/statenews"; // Navigate to localnews
   };
 
   return (
@@ -73,7 +73,7 @@ export default function App() {
       {/* Routes */}
       <Routes>
         <Route path="/" element={<Home />} />
-        <Route path="/localnews/:district" element={<LocalNews />} />
+        <Route path="/statenews/:state" element={<LocalNews />} />
         <Route path="/auth/google/callback" element={<GoogleCallback />} />
 
         <Route path="/community" element={<Community />} />
@@ -90,7 +90,7 @@ export default function App() {
         <Route path="/community/:id" element={<CommunityDetails />} />
         <Route path="/jobs/:id" element={<JobDetails />} />
         <Route path="/events/:id" element={<EventDetails />} />
-        <Route path="/localnews/details/:id" element={<LocalNewsDetails />} />
+      <Route path="/statenews/details/:id" element={<LocalNewsDetails />} />
         <Route path="/user-dashboard" element={<UserDashboard />} />
         <Route path="/properties" element={<Properties />} />
         <Route path="/createPropertyPost" element={<CreatePropertyPost />} />

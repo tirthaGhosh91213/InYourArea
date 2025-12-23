@@ -14,12 +14,10 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import logo from "../assets/logo.png";
 
-const districts = [
-  "----------- Jharkhand -----------",
-  "Bokaro", "Chatra", "Deoghar", "Dhanbad", "Dumka", "East Singhbhum", "Garhwa", "Giridih", "Godda", "Gumla", "Hazaribagh", "Jamtara", "Jamshedpur", "Khunti", "Koderma", "Latehar", "Lohardaga", "Pakur", "Palamu", "Ramgarh",
-  "Ranchi", "Sahibganj", "Seraikela-Kharsawan", "Simdega", "West Singhbhum",
-  "----------- Bihar -----------",
-  "Araria","Arwal","Aurangabad","Banka","Begusarai","Bhagalpur","Bhojpur","Buxar", "Darbhanga","East Champaran (Motihari)","Gaya","Gopalganj","Jamui","Jehanabad", "Kaimur (Bhabua)","Katihar","Khagaria","Kishanganj","Lakhisarai","Madhepura", "Madhubani","Munger","Muzaffarpur","Nalanda","Nawada","Patna","Purnia","Rohtas", "Saharsa","Samastipur","Saran (Chhapra)","Sheikhpura","Sheohar","Sitamarhi", "Siwan","Supaul","Vaishali","West Champaran (Bettiah)",
+const states = [
+  "----------- States -----------",
+  "Bihar",
+  "Jharkhand",
 ];
 
 const MERAKI_LINK = "https://www.ulmind.com";
@@ -29,11 +27,13 @@ export default function Sidebar({ sidebarOpen, onClose }) {
   const location = useLocation();
   const [showModal, setShowModal] = useState(false);
   const [role, setRole] = useState(null);
-  const [selectedDistrict, setSelectedDistrict] = useState(() => {
-    const saved = localStorage.getItem("district");
-    if (saved && !saved.startsWith("-")) return saved;
-    return districts.find((d) => !d.startsWith("-")) || "";
-  });
+  // ✅ CHANGE TO
+const [selectedState, setSelectedState] = useState(() => {
+  const saved = localStorage.getItem("state");
+  if (saved && !saved.startsWith("-")) return saved;
+  return states.find((s) => !s.startsWith("-")) || "";
+});
+
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   useEffect(() => {
@@ -41,49 +41,59 @@ export default function Sidebar({ sidebarOpen, onClose }) {
     if (storedRole) setRole(storedRole);
 
     const onStorageChange = (e) => {
-      if (e.key === "district" && e.newValue && e.newValue !== selectedDistrict) {
-        setSelectedDistrict(e.newValue);
-        if (location.pathname.startsWith("/localnews")) {
-          window.location.replace(`/localnews/${encodeURIComponent(e.newValue)}`);
-        }
-      }
+      // ✅ CHANGE TO
+if (e.key === "state" && e.newValue && e.newValue !== selectedState) {
+  setSelectedState(e.newValue);
+  if (location.pathname.startsWith("/statenews")) {
+    window.location.replace(`/statenews/${encodeURIComponent(e.newValue)}`);
+  }
+}
+
     };
     window.addEventListener("storage", onStorageChange);
     return () => {
       window.removeEventListener("storage", onStorageChange);
     };
-  }, [selectedDistrict, location.pathname]);
+  }, [selectedState, location.pathname]
+);
 
-  const handleDistrictSelect = (district) => {
-    if (district.startsWith("-")) return;
-    setSelectedDistrict(district);
-    setDropdownOpen(false);
-    localStorage.setItem("district", district);
-    window.location.replace(`/localnews/${encodeURIComponent(district)}`);
-  };
+  // ✅ CHANGE TO
+const handleStateSelect = (state) => {
+  if (state.startsWith("-")) return;
+  setSelectedState(state);
+  setDropdownOpen(false);
+  localStorage.setItem("state", state);
+  window.location.replace(`/statenews/${encodeURIComponent(state)}`);
+};
+
 
   useEffect(() => {
-    if (!selectedDistrict.startsWith("-"))
-      localStorage.setItem("district", selectedDistrict);
-    if (
-      location.pathname.startsWith("/localnews") &&
-      !selectedDistrict.startsWith("-")
-    ) {
-      navigate(`/localnews/${encodeURIComponent(selectedDistrict)}`, { replace: true });
-    }
-  }, [selectedDistrict, location.pathname, navigate]);
+    // ✅ CHANGE TO
+if (!selectedState.startsWith("-"))
+  localStorage.setItem("state", selectedState);
+if (
+  location.pathname.startsWith("/statenews") &&
+  !selectedState.startsWith("-")
+) {
+  navigate(`/statenews/${encodeURIComponent(selectedState)}`, { replace: true });
+}
+
+  }, [selectedState, location.pathname, navigate]
+);
 
   const isActive = (path) =>
-    path === "/localnews"
-      ? location.pathname.startsWith("/localnews")
-      : location.pathname === path;
+  path.startsWith("/statenews")
+    ? location.pathname.startsWith("/statenews")
+    : location.pathname === path;
+
+
 
   const menuItems = [
     {
-      name: "Local News",
-      icon: Radio,
-      path: `/localnews/${encodeURIComponent(selectedDistrict)}`,
-    },
+  name: "Local News",
+  icon: Radio,
+  path: `/statenews/${encodeURIComponent(selectedState)}`,
+},
     { name: "Jobs", icon: Newspaper, path: "/jobs" },
     { name: "Community", icon: Users, path: "/community" },
     { name: "Events", icon: Home, path: "/events" },
@@ -112,13 +122,15 @@ export default function Sidebar({ sidebarOpen, onClose }) {
   };
 
   const handleMenuClick = (item) => {
-    if (item.name === "Local News") {
-      if (!selectedDistrict) {
-        setDropdownOpen(true);
-        return;
-      }
-      navigate(`/localnews/${encodeURIComponent(selectedDistrict)}`);
-    } else {
+    // ✅ CHANGE TO
+if (item.name === "Local News") {
+  if (!selectedState) {
+    setDropdownOpen(true);
+    return;
+  }
+  navigate(`/statenews/${encodeURIComponent(selectedState)}`);
+}
+ else {
       navigate(item.path);
     }
   };
@@ -165,19 +177,19 @@ export default function Sidebar({ sidebarOpen, onClose }) {
                 <span className="flex items-center gap-2 text-lg font-semibold text-gray-700">
                   <MapPin className="text-green-600" size={20} />
                   {
-                    selectedDistrict.startsWith("-")
-                      ? "Select District"
-                      : selectedDistrict
-                  }
+  selectedState.startsWith("-")
+    ? "Select State"
+    : selectedState
+}
                 </span>
                 <ChevronDown className="text-gray-500" size={20} />
               </button>
               {dropdownOpen && (
                 <div className="absolute left-0 right-0 z-40 mt-2 bg-white border border-gray-200 rounded-2xl shadow-xl max-h-60 overflow-y-auto cursor-pointer">
-                  {districts.map((district) =>
-                    district.startsWith("-----------") ? (
+                  {states.map((state) =>
+                    state.startsWith("-----------") ? (
                       <div
-                        key={district}
+                        key={state}
                         className="w-full px-6 py-3 font-bold text-green-600 bg-gray-50 cursor-not-allowed select-none"
                         style={{
                           fontWeight: "bold",
@@ -188,20 +200,20 @@ export default function Sidebar({ sidebarOpen, onClose }) {
                         }}
                         tabIndex={-1}
                       >
-                        {district}
+                        {state}
                       </div>
                     ) : (
                       <button
-                        key={district}
-                        onClick={() => handleDistrictSelect(district)}
-                        disabled={district.startsWith("-")}
+                        key={state}
+                        onClick={() => handleStateSelect(state)}
+                        disabled={state.startsWith("-")}
                         className={`w-full text-left px-6 py-3 hover:bg-green-100 text-gray-700 font-medium cursor-pointer ${
-                          selectedDistrict === district
+                          selectedState === state
                             ? "bg-green-50 text-green-700"
                             : ""
                         }`}
                       >
-                        {district}
+                        {state}
                       </button>
                     )
                   )}

@@ -10,7 +10,6 @@ import LargeAd from "../components/LargeAd";
 import { Clock, Loader2, MessageSquare } from "lucide-react";
 import Loader from '../components/Loader';
 
-
 // Helper: circular next index
 function getNextIndex(current, total) {
   if (total === 0) return 0;
@@ -25,52 +24,37 @@ const truncateText = (text, maxLength) => {
   return cleanText.slice(0, maxLength).trim() + '...';
 };
 
-
-// LocalStorage keys for LocalNews ads
+// LocalStorage keys for StateNews ads ✅ FIXED name
 const SLOT_KEYS = {
-  TOP_RIGHT: "LOCALNEWS_AD_INDEX_TOP_RIGHT",
-  BOTTOM_RIGHT: "LOCALNEWS_AD_INDEX_BOTTOM_RIGHT",
+  TOP_RIGHT: "STATENEWS_AD_INDEX_TOP_RIGHT",  // ✅ FIXED
+  BOTTOM_RIGHT: "STATENEWS_AD_INDEX_BOTTOM_RIGHT",  // ✅ FIXED
 };
-
 
 export default function LocalNews() {
   const params = useParams();
   const navigate = useNavigate();
 
-
-  const districts = [
-    "----------- Jharkhand -----------",
-    "Bokaro", "Chatra", "Deoghar", "Dhanbad", "Dumka", "East Singhbhum",
-    "Garhwa", "Giridih", "Godda", "Gumla", "Hazaribagh", "Jamtara", "Jamshedpur",
-    "Khunti", "Koderma", "Latehar", "Lohardaga", "Pakur", "Palamu", "Ramgarh",
-    "Ranchi", "Sahibganj", "Seraikela-Kharsawan", "Simdega", "West Singhbhum",
-    "----------- Bihar -----------",
-    "Araria", "Arwal", "Aurangabad", "Banka", "Begusarai", "Bhagalpur", "Bhojpur",
-    "Buxar", "Darbhanga", "East Champaran (Motihari)", "Gaya", "Gopalganj",
-    "Jamui", "Jehanabad", "Kaimur (Bhabua)", "Katihar", "Khagaria", "Kishanganj",
-    "Lakhisarai", "Madhepura", "Madhubani", "Munger", "Muzaffarpur", "Nalanda",
-    "Nawada", "Patna", "Purnia", "Rohtas", "Saharsa", "Samastipur",
-    "Saran (Chhapra)", "Sheikhpura", "Sheohar", "Sitamarhi", "Siwan", "Supaul",
-    "Vaishali", "West Champaran (Bettiah)",
+  const states = [  // ✅ CORRECT - already changed
+    "----------- States -----------",
+    "Bihar",
+    "Jharkhand"
   ];
 
-
-  // Prevent heading as selected value
-  const getInitialDistrict = () => {
-    const paramDistrict = params.district ? decodeURIComponent(params.district) : "";
-    if (paramDistrict && !paramDistrict.startsWith("-")) return paramDistrict;
-    const saved = localStorage.getItem("district");
+  // ✅ FIXED: getInitialState function name & logic
+  const getInitialState = () => {  // ✅ CHANGED from getInitialDistrict
+    const paramState = params.state ? decodeURIComponent(params.state) : "";  // params.district rakha hai URL compatibility ke liye
+    if (paramState && !paramState.startsWith("-")) return paramState;
+    const saved = localStorage.getItem("state");  // ✅ FIXED localStorage key
     if (saved && !saved.startsWith("-")) return saved;
-    return districts.find((d) => !d.startsWith("-")) || "";
+    return states.find((s) => !s.startsWith("-")) || "";  // ✅ FIXED states reference
   };
 
-
-  const [district, setDistrict] = useState(getInitialDistrict());
+  // ✅ FIXED: state variable name
+  const [state, setState] = useState(getInitialState());  // ✅ CHANGED from district
   const [newsList, setNewsList] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const token = localStorage.getItem("accessToken");
-
 
   // Small ads state
   const [ads, setAds] = useState([]);
@@ -79,20 +63,17 @@ export default function LocalNews() {
   const [topRightClosed, setTopRightClosed] = useState(false);
   const [bottomRightClosed, setBottomRightClosed] = useState(false);
 
-
   // Large ads state for interleaving
   const [largeAds, setLargeAds] = useState([]);
 
-
-  // Sync district with URL and localStorage
+  // ✅ FIXED: Sync state with URL and localStorage
   useEffect(() => {
-    if (district && !district.startsWith("-") && params.district !== district) {
-      localStorage.setItem("district", district);
-      navigate(`/localnews/${encodeURIComponent(district)}`, { replace: true });
+    if (state && !state.startsWith("-") && params.state !== state) {  // params.district rakha hai URL compatibility
+      localStorage.setItem("state", state);  // ✅ FIXED localStorage key
+      navigate(`/statenews/${encodeURIComponent(state)}`, { replace: true });  // ✅ FIXED path
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [district]);
-
+  }, [state]);
 
   const shuffleArray = (array) => {
     const shuffled = [...array];
@@ -103,16 +84,15 @@ export default function LocalNews() {
     return shuffled;
   };
 
-
-  // Fetch district news
+  // ✅ FIXED: Fetch state news comment
   useEffect(() => {
-    if (!district || district.startsWith("-")) return;
+    if (!state || state.startsWith("-")) return;  // ✅ FIXED variable
     const fetchNews = async () => {
       setLoading(true);
       setError("");
       try {
         const res = await axios.get(
-          `https://api.jharkhandbiharupdates.com/api/v1/district-news/${district}`,
+          `https://api.jharkhandbiharupdates.com/api/v1/state-news/${state}`,  // ✅ ALREADY CORRECT
           token ? { headers: { Authorization: `Bearer ${token}` } } : {}
         );
         if (res.data.success) {
@@ -120,16 +100,15 @@ export default function LocalNews() {
           setNewsList(shuffleArray(fetchedNews));
         } else setError("Failed to load news data");
       } catch (err) {
-        setError("Failed to load local news");
+        setError("Failed to load state news");  // ✅ FIXED error message
       } finally {
         setLoading(false);
       }
     };
     fetchNews();
-  }, [district, token]);
+  }, [state, token]);  // ✅ FIXED dependency
 
-
-  // Fetch small ads for Local News
+  // Fetch small ads for State News ✅ FIXED comment
   useEffect(() => {
     fetch("https://api.jharkhandbiharupdates.com/api/v1/banner-ads/active/small")
       .then((res) => res.json())
@@ -138,28 +117,24 @@ export default function LocalNews() {
           const orderedAds = [...data.data];
           setAds(orderedAds);
 
-
           const total = orderedAds.length;
           let savedTop = parseInt(localStorage.getItem(SLOT_KEYS.TOP_RIGHT) ?? "0", 10);
           let savedBottom = parseInt(localStorage.getItem(SLOT_KEYS.BOTTOM_RIGHT) ?? "1", 10);
 
-
           if (isNaN(savedTop) || savedTop < 0 || savedTop >= total) savedTop = 0;
           if (isNaN(savedBottom) || savedBottom < 0 || savedBottom >= total) savedBottom = total > 1 ? 1 : 0;
           if (savedTop === savedBottom && total > 1) savedBottom = getNextIndex(savedTop, total);
-
 
           setTopRightIndex(savedTop);
           setBottomRightIndex(savedBottom);
         }
       })
       .catch((err) => {
-        console.error("Error fetching local news ads:", err);
+        console.error("Error fetching state news ads:", err);  // ✅ FIXED comment
       });
   }, []);
 
-
-  // Fetch large ads for interleaving (same pattern as Events/Jobs/Community)
+  // Fetch large ads for interleaving
   useEffect(() => {
     fetch("https://api.jharkhandbiharupdates.com/api/v1/banner-ads/active/large")
       .then((r) => r.json())
@@ -169,29 +144,25 @@ export default function LocalNews() {
         }
       })
       .catch((err) => {
-        console.error("Error fetching local news large ads:", err);
+        console.error("Error fetching state news large ads:", err);  // ✅ FIXED comment
       });
   }, []);
-
 
   // Rotate ad index on next refresh after a close
   useEffect(() => {
     if (!ads.length) return;
     const total = ads.length;
 
-
     if (topRightClosed) {
       const nextTop = getNextIndex(topRightIndex, total);
       localStorage.setItem(SLOT_KEYS.TOP_RIGHT, String(nextTop));
     }
-
 
     if (bottomRightClosed) {
       const nextBottom = getNextIndex(bottomRightIndex, total);
       localStorage.setItem(SLOT_KEYS.BOTTOM_RIGHT, String(nextBottom));
     }
   }, [topRightClosed, bottomRightClosed, topRightIndex, bottomRightIndex, ads]);
-
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -201,10 +172,9 @@ export default function LocalNews() {
     });
   };
 
-
-  const handleNewsClick = (id) => navigate(`/localnews/details/${id}`);
-  const handleCommentClick = (id) => navigate(`/localnews/details/${id}`);
-
+  // ✅ FIXED: Navigation paths
+  const handleNewsClick = (id) => navigate(`/statenews/details/${id}`);
+  const handleCommentClick = (id) => navigate(`/statenews/details/${id}`);
 
   // Desktop layout logic
   const getDesktopNewsLayout = () => {
@@ -214,7 +184,6 @@ export default function LocalNews() {
     return { bigTop, smallBoxes, bigMore };
   };
   const { bigTop, smallBoxes, bigMore } = getDesktopNewsLayout();
-
 
   const renderMedia = (url, alt, className) => {
     const isVideo =
@@ -227,10 +196,8 @@ export default function LocalNews() {
     return <img src={url} alt={alt} className={className} />;
   };
 
-
   const topRightAd = ads.length ? ads[topRightIndex % ads.length] : null;
   const bottomRightAd = ads.length ? ads[bottomRightIndex % ads.length] : null;
-
 
   // Mobile interleaved: news then ads
   function buildInterleavedList(newsArr, adsArr) {
@@ -253,11 +220,9 @@ export default function LocalNews() {
   }
   const mobileItems = buildInterleavedList(newsList, largeAds);
 
-
   // Choose ads for desktop columns
   const desktopLargeBoxAds = largeAds.slice(0, 2);
   const desktopSmallBoxAds = largeAds.slice(2, 4);
-
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -268,7 +233,6 @@ export default function LocalNews() {
         <div className="fixed top-0 w-full z-30">
           <RightSidebar />
         </div>
-
 
         {/* Small ads top/bottom right */}
         <AnimatePresence>
@@ -292,7 +256,6 @@ export default function LocalNews() {
           )}
         </AnimatePresence>
 
-
         <main className="flex-1 flex flex-col gap-6 p-6 pt-24 items-center">
           <motion.div
             className="bg-emerald-700 text-white rounded-xl p-5 shadow-lg w-full max-w-6xl flex flex-col sm:flex-row items-center justify-between gap-4"
@@ -301,31 +264,29 @@ export default function LocalNews() {
           >
             <div>
               <h2 className="text-xl sm:text-2xl font-bold">
-                Local District News
+                State News  {/* ✅ ALREADY CORRECT */}
               </h2>
               <p className="text-emerald-200 mt-1">
-                Latest updates from {district || "your district"}
+                Latest updates from {state || "your state"}  {/* ✅ FIXED */}
               </p>
             </div>
           </motion.div>
 
-
           {loading ? (
-  <div className="flex justify-center items-center h-64">
-    <Loader />
-  </div>
-
-
+            <div className="flex justify-center items-center h-64">
+              <Loader />
+            </div>
           ) : error ? (
             <div className="text-center text-red-500 font-semibold">{error}</div>
           ) : newsList.length === 0 ? (
-            district &&
-            !district.startsWith("-") && (
-              <div className="text-center text-gray-600 font-medium">
-                No district news found.
-              </div>
-            )
-          ) : (
+  state &&
+  !state.startsWith("-") && (
+    <div className="text-center text-gray-600 font-medium">
+      No state news found.
+    </div>
+  )
+) : (
+
             <>
               {/* Mobile: interleaved large ads + news (content first) */}
               <div className="w-full max-w-6xl lg:hidden flex flex-col gap-6">
