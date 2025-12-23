@@ -146,7 +146,7 @@ export default function Sidebar({ sidebarOpen, onClose }) {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={onClose}
-                className="lg:hidden p-2 rounded-full hover:bg-gray-100 transition"
+                className="lg:hidden p-2 rounded-full hover:bg-gray-100 transition cursor-pointer"
               >
                 <X size={24} />
               </motion.button>
@@ -160,7 +160,7 @@ export default function Sidebar({ sidebarOpen, onClose }) {
               <button
                 type="button"
                 onClick={() => setDropdownOpen((prev) => !prev)}
-                className="w-full flex items-center justify-between px-6 py-2 border-2 border-gray-300 rounded-full shadow hover:border-green-600 transition relative bg-white"
+                className="w-full flex items-center justify-between px-6 py-2 border-2 border-gray-300 rounded-full shadow hover:border-green-600 transition relative bg-white cursor-pointer"
               >
                 <span className="flex items-center gap-2 text-lg font-semibold text-gray-700">
                   <MapPin className="text-green-600" size={20} />
@@ -173,7 +173,7 @@ export default function Sidebar({ sidebarOpen, onClose }) {
                 <ChevronDown className="text-gray-500" size={20} />
               </button>
               {dropdownOpen && (
-                <div className="absolute left-0 right-0 z-40 mt-2 bg-white border border-gray-200 rounded-2xl shadow-xl max-h-60 overflow-y-auto">
+                <div className="absolute left-0 right-0 z-40 mt-2 bg-white border border-gray-200 rounded-2xl shadow-xl max-h-60 overflow-y-auto cursor-pointer">
                   {districts.map((district) =>
                     district.startsWith("-----------") ? (
                       <div
@@ -195,7 +195,7 @@ export default function Sidebar({ sidebarOpen, onClose }) {
                         key={district}
                         onClick={() => handleDistrictSelect(district)}
                         disabled={district.startsWith("-")}
-                        className={`w-full text-left px-6 py-3 hover:bg-green-100 text-gray-700 font-medium ${
+                        className={`w-full text-left px-6 py-3 hover:bg-green-100 text-gray-700 font-medium cursor-pointer ${
                           selectedDistrict === district
                             ? "bg-green-50 text-green-700"
                             : ""
@@ -221,7 +221,7 @@ export default function Sidebar({ sidebarOpen, onClose }) {
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: index * 0.1 }}
-                    className={`flex items-center gap-3 py-3 px-4 rounded-xl font-medium text-lg transition-all duration-300
+                    className={`flex items-center gap-3 py-3 px-4 rounded-xl font-medium text-lg transition-all duration-300 cursor-pointer
                     ${
                       active
                         ? "bg-red-500 text-white shadow-lg"
@@ -244,7 +244,7 @@ export default function Sidebar({ sidebarOpen, onClose }) {
                   boxShadow: "0 10px 20px rgba(34,197,94,0.4)",
                 }}
                 whileTap={{ scale: 0.95 }}
-                className="w-full bg-gradient-to-r from-green-400 to-green-500 text-white font-semibold rounded-full py-3 shadow-lg hover:shadow-xl transition-all duration-300"
+                className="w-full bg-gradient-to-r from-green-400 to-green-500 text-white font-semibold rounded-full py-3 shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer"
               >
                 + Post
               </motion.button>
@@ -252,7 +252,7 @@ export default function Sidebar({ sidebarOpen, onClose }) {
                 onClick={() => navigate("/emailservice")}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="mt-3 w-full flex items-center justify-center gap-2 bg-blue-500 text-white font-semibold rounded-full py-3 shadow-md hover:bg-blue-600 transition-all"
+                className="mt-3 w-full flex items-center justify-center gap-2 bg-blue-500 text-white font-semibold rounded-full py-3 shadow-md hover:bg-blue-600 transition-all cursor-pointer"
               >
                 <Mail size={18} /> Email Service
               </motion.button>
