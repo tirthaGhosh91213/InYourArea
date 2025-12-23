@@ -477,9 +477,10 @@ export default function RightSidebar() {
             console.log("Permission denied");
             setGeoPermissionDenied(true);
             setWeatherLoading(false);
-          } else {
-            // state === "prompt"
-            setWeatherLoading(false);
+          } else if (permissionStatus.state === "prompt") {
+            // Important: Must call getCurrentPosition to trigger the permission prompt
+            console.log("Permission state is prompt - requesting location to trigger prompt");
+            startWatchingPosition();
           }
 
           // Listen for permission changes
@@ -510,11 +511,12 @@ export default function RightSidebar() {
           };
         } catch (error) {
           console.error("Permissions API error:", error);
-          // Fallback: try to get position anyway
-          setWeatherLoading(false);
+          // Fallback: try to get position anyway which will trigger the prompt
+          startWatchingPosition();
         }
       } else {
         // Permissions API not supported - fallback behavior
+        // This will trigger the permission prompt
         console.log("Permissions API not supported - using fallback");
         
         if (!isOAuthRedirect) {
