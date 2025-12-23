@@ -16,6 +16,8 @@ import {
   Cloud,
   Moon,
   Zap,
+  Calendar,
+  Clock,
 } from "lucide-react";
 import NotificationPanel from "./NotificationPanel";
 import Sidebar from "./SideBar";
@@ -24,31 +26,40 @@ import axios from "axios";
 const WEATHER_API_KEY = "08e6542c3ce14ae39f1174408252212";
 
 // localStorage keys
-const GEO_DENIED_KEY = "JBU_LOCAL_GEO_DENIED_AT";
 const WEATHER_CACHE_KEY = "JBU_WEATHER_CACHE";
+const GEO_PERMISSION_STATE_KEY = "JBU_GEO_PERMISSION_STATE";
+const LAST_KNOWN_POSITION_KEY = "JBU_LAST_POSITION";
+const OAUTH_REDIRECT_FLAG = "JBU_OAUTH_REDIRECT";
 
-// Time constants
-const GEO_RETRY_AFTER_MS = 24 * 60 * 60 * 1000; // 1 day
-const WEATHER_CACHE_TTL = 60 * 60 * 1000; // 1 hour
+// Cache TTL
+const WEATHER_CACHE_TTL = 30 * 60 * 1000; // 30 minutes
 
-const FALLBACK_CITIES = [
-  "Ranchi, Jharkhand",
-  "Jamshedpur, Jharkhand",
-  "Dhanbad, Jharkhand",
-  "Bokaro, Jharkhand",
-  "Deoghar, Jharkhand",
-  "Patna, Bihar",
-  "Gaya, Bihar",
-  "Bhagalpur, Bihar",
-  "Muzaffarpur, Bihar",
-  "Darbhanga, Bihar",
-];
+// Maximum distance drift before re-fetching weather (in km)
+const MAX_LOCATION_DRIFT_KM = 5;
 
-function getRandomFallbackCity() {
-  return FALLBACK_CITIES[Math.floor(Math.random() * FALLBACK_CITIES.length)];
+// Minimum accuracy required (in meters)
+const MIN_ACCURACY_METERS = 1000;
+
+// Calculate distance between two coordinates using Haversine formula
+function calculateDistance(lat1, lon1, lat2, lon2) {
+  const R = 6371; // Earth's radius in km
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const distance = R * c; // Distance in km
+
+  return distance;
 }
 
-// Weather cache helpers with TTL
+// Weather cache helpers
 function setWeatherCache(weatherData) {
   try {
     const cacheEntry = {
@@ -57,6 +68,12 @@ function setWeatherCache(weatherData) {
       expiresAt: Date.now() + WEATHER_CACHE_TTL,
     };
     localStorage.setItem(WEATHER_CACHE_KEY, JSON.stringify(cacheEntry));
+
+    // Also store last known position
+    localStorage.setItem(
+      LAST_KNOWN_POSITION_KEY,
+      JSON.stringify({ lat: weatherData.lat, lon: weatherData.lon })
+    );
   } catch (e) {
     console.error("Failed to cache weather:", e);
   }
@@ -69,6 +86,7 @@ function getWeatherCache() {
 
     const cacheEntry = JSON.parse(stored);
     if (Date.now() > cacheEntry.expiresAt) {
+      console.log("Weather cache expired");
       localStorage.removeItem(WEATHER_CACHE_KEY);
       return null;
     }
@@ -78,6 +96,36 @@ function getWeatherCache() {
     localStorage.removeItem(WEATHER_CACHE_KEY);
     return null;
   }
+}
+
+function getLastKnownPosition() {
+  try {
+    const stored = localStorage.getItem(LAST_KNOWN_POSITION_KEY);
+    if (!stored) return null;
+    return JSON.parse(stored);
+  } catch (e) {
+    return null;
+  }
+}
+
+// Check if this is an OAuth redirect
+function checkOAuthRedirect() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const hasOAuthParams = urlParams.has("code") || urlParams.has("state");
+
+  if (hasOAuthParams) {
+    console.log("OAuth redirect detected");
+    localStorage.setItem(OAUTH_REDIRECT_FLAG, "true");
+    return true;
+  }
+
+  // Check if we previously detected OAuth
+  const wasOAuth = localStorage.getItem(OAUTH_REDIRECT_FLAG) === "true";
+  if (wasOAuth) {
+    localStorage.removeItem(OAUTH_REDIRECT_FLAG);
+  }
+
+  return wasOAuth;
 }
 
 // Map weather condition to icon component and theme
@@ -91,7 +139,11 @@ function getWeatherStyle(conditionText, isDay) {
       iconColor: "text-yellow-300",
     };
   }
-  if (text.includes("rain") || text.includes("drizzle") || text.includes("shower")) {
+  if (
+    text.includes("rain") ||
+    text.includes("drizzle") ||
+    text.includes("shower")
+  ) {
     return {
       icon: CloudRain,
       gradient: isDay
@@ -128,6 +180,73 @@ function getWeatherStyle(conditionText, isDay) {
   };
 }
 
+// Date/Time Component for when geolocation is denied
+function DateTimeDisplay() {
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  const formatTime = (date) => {
+    return date.toLocaleTimeString("en-IN", {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: true,
+    });
+  };
+
+  const formatDate = (date) => {
+    return date.toLocaleDateString("en-IN", {
+      weekday: "short",
+      day: "2-digit",
+      month: "short",
+    });
+  };
+
+  return (
+    <motion.div
+      className="flex items-stretch gap-2 sm:gap-3 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl border border-slate-300/60 bg-white/40 backdrop-blur-sm shadow-sm hover:shadow-md transition-shadow"
+      initial={{ opacity: 0, y: -4 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.25 }}
+    >
+      {/* Left: Clock icon + time */}
+      <div className="flex items-center gap-1.5 sm:gap-2 pr-2 sm:pr-3 border-r border-slate-300/50">
+        <div className="flex h-6 w-6 sm:h-8 sm:w-8 items-center justify-center rounded-lg border border-slate-300/60 bg-slate-50/50">
+          <Clock className="w-3 h-3 sm:w-4 sm:h-4 text-slate-700" />
+        </div>
+        <div className="flex flex-col leading-tight">
+          <span className="text-[9px] sm:text-[10px] uppercase tracking-wider text-slate-500 font-medium">
+            Current Time
+          </span>
+          <span className="text-xs sm:text-sm font-semibold text-slate-900 tabular-nums">
+            {formatTime(currentTime)}
+          </span>
+        </div>
+      </div>
+
+      {/* Right: Date */}
+      <div className="flex flex-col justify-center pl-0.5 sm:pl-1">
+        <span className="text-[9px] sm:text-[10px] uppercase tracking-wider text-slate-500 font-medium">
+          Today
+        </span>
+        <div className="flex items-center gap-1 sm:gap-1.5">
+          <Calendar className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-slate-600" />
+          <span className="text-[11px] sm:text-xs font-medium text-slate-900">
+            {formatDate(currentTime)}
+          </span>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
 export default function RightSidebar() {
   const navigate = useNavigate();
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -141,6 +260,9 @@ export default function RightSidebar() {
 
   const dropdownRef = useRef(null);
   const notifRef = useRef(null);
+  const watchIdRef = useRef(null);
+  const isWatchingRef = useRef(false);
+  const positionAttemptRef = useRef(0);
 
   const token = localStorage.getItem("accessToken");
   const role = localStorage.getItem("role");
@@ -157,97 +279,259 @@ export default function RightSidebar() {
   // Weather state
   const [weather, setWeather] = useState(null);
   const [weatherLoading, setWeatherLoading] = useState(true);
+  const [geoPermissionDenied, setGeoPermissionDenied] = useState(false);
 
-  const fetchWeatherAndCache = async (query, type = "geo") => {
+  // Fetch weather with coordinates
+  const fetchWeatherAndCache = async (lat, lon, accuracy) => {
     try {
-      setWeatherLoading(true);
-      const res = await axios.get("https://api.weatherapi.com/v1/current.json", {
-        params: { key: WEATHER_API_KEY, q: query, aqi: "no" },
-      });
+      console.log(
+        `Fetching weather for: ${lat}, ${lon} (accuracy: ${accuracy}m)`
+      );
+
+      const res = await axios.get(
+        "https://api.weatherapi.com/v1/current.json",
+        {
+          params: {
+            key: WEATHER_API_KEY,
+            q: `${lat},${lon}`,
+            aqi: "no",
+          },
+        }
+      );
+
       const loc = res.data.location;
       const cur = res.data.current;
 
       const weatherData = {
-        type,
-        query,
         city: loc.name,
+        region: loc.region,
         tempC: cur.temp_c,
         conditionText: cur.condition?.text,
         isDay: cur.is_day === 1,
+        lat,
+        lon,
+        accuracy,
+        fetchedAt: Date.now(),
       };
 
+      console.log("Weather fetched successfully:", weatherData.city);
       setWeather(weatherData);
       setWeatherCache(weatherData);
+      setWeatherLoading(false);
     } catch (e) {
       console.error("Weather fetch failed:", e);
-      setWeather(null);
-    } finally {
       setWeatherLoading(false);
     }
   };
 
-  // Initialize weather on mount
+  // Initialize geolocation with watchPosition
   useEffect(() => {
+    if (isWatchingRef.current) {
+      console.log("Already watching position, skipping initialization");
+      return;
+    }
+
     const initWeather = async () => {
-      // Step 1: Check cache first
-      const cached = getWeatherCache();
-      if (cached) {
-        setWeather(cached);
+      console.log("Initializing weather system...");
+
+      const isOAuthRedirect = checkOAuthRedirect();
+
+      if (isOAuthRedirect) {
+        console.log("OAuth redirect detected - forcing fresh location");
+        localStorage.removeItem(WEATHER_CACHE_KEY);
+        localStorage.removeItem(LAST_KNOWN_POSITION_KEY);
+      }
+
+      if (!("geolocation" in navigator)) {
+        console.log("Geolocation not supported");
+        setGeoPermissionDenied(true);
+        setWeatherLoading(false);
+        localStorage.setItem(GEO_PERMISSION_STATE_KEY, "unsupported");
+        return;
+      }
+
+      const storedPermission = localStorage.getItem(GEO_PERMISSION_STATE_KEY);
+
+      if (
+        storedPermission === "denied" ||
+        storedPermission === "unsupported"
+      ) {
+        console.log("Geolocation previously denied or unsupported");
+        setGeoPermissionDenied(true);
         setWeatherLoading(false);
         return;
       }
 
-      // Step 2: No cache, check if we should retry geolocation
-      const shouldRetryGeo = () => {
-        try {
-          const stored = localStorage.getItem(GEO_DENIED_KEY);
-          if (!stored) return true;
-          const lastDenied = parseInt(stored, 10);
-          if (Number.isNaN(lastDenied)) return true;
-          return Date.now() - lastDenied > GEO_RETRY_AFTER_MS;
-        } catch {
-          return true;
+      if (!isOAuthRedirect) {
+        const cached = getWeatherCache();
+        const lastPosition = getLastKnownPosition();
+
+        if (cached && lastPosition) {
+          console.log("Using cached weather:", cached.city);
+          setWeather(cached);
+          setWeatherLoading(false);
+        }
+      }
+
+      const geoOptions = {
+        enableHighAccuracy: true,
+        timeout: 15000,
+        maximumAge: 0,
+      };
+
+      const successCallback = (position) => {
+        positionAttemptRef.current += 1;
+        const newLat = position.coords.latitude;
+        const newLon = position.coords.longitude;
+        const accuracy = position.coords.accuracy;
+
+        console.log(
+          `Position #${positionAttemptRef.current}: ${newLat}, ${newLon} (accuracy: ${accuracy}m)`
+        );
+
+        if (
+          (positionAttemptRef.current === 1 || isOAuthRedirect) &&
+          accuracy > MIN_ACCURACY_METERS
+        ) {
+          console.log(
+            `Rejecting low-accuracy position (${accuracy}m > ${MIN_ACCURACY_METERS}m), waiting for better...`
+          );
+          return;
+        }
+
+        setGeoPermissionDenied(false);
+        localStorage.setItem(GEO_PERMISSION_STATE_KEY, "granted");
+
+        const lastPos = getLastKnownPosition();
+        const cached = getWeatherCache();
+        let shouldFetch = true;
+
+        if (lastPos && cached && !isOAuthRedirect) {
+          const distance = calculateDistance(
+            lastPos.lat,
+            lastPos.lon,
+            newLat,
+            newLon
+          );
+
+          console.log(`Distance from last position: ${distance.toFixed(2)} km`);
+
+          if (distance < MAX_LOCATION_DRIFT_KM) {
+            const cacheAge = Date.now() - (cached.fetchedAt || 0);
+            if (cacheAge < WEATHER_CACHE_TTL) {
+              console.log(
+                "Location drift minimal and cache valid, using cache"
+              );
+              shouldFetch = false;
+            }
+          } else {
+            console.log(
+              "Location changed significantly, fetching new weather"
+            );
+            localStorage.removeItem(WEATHER_CACHE_KEY);
+          }
+        }
+
+        if (shouldFetch) {
+          fetchWeatherAndCache(newLat, newLon, accuracy);
         }
       };
 
-      // Step 3: Handle geolocation or fallback
-      const fallbackToStateCity = async () => {
-        const city = getRandomFallbackCity();
-        await fetchWeatherAndCache(city, "fallback");
+      const errorCallback = (error) => {
+        console.error("Geolocation error:", error.message, error.code);
+
+        if (error.code === 1) {
+          console.log("User denied geolocation");
+          setGeoPermissionDenied(true);
+          localStorage.setItem(GEO_PERMISSION_STATE_KEY, "denied");
+          localStorage.removeItem(WEATHER_CACHE_KEY);
+          localStorage.removeItem(LAST_KNOWN_POSITION_KEY);
+        } else if (error.code === 2) {
+          console.log("Position unavailable");
+        } else if (error.code === 3) {
+          console.log("Geolocation timeout - retrying with longer timeout");
+        }
+
+        setWeatherLoading(false);
       };
 
-      if (!("geolocation" in navigator)) {
-        await fallbackToStateCity();
-        return;
-      }
+      if (isOAuthRedirect || positionAttemptRef.current === 0) {
+        console.log("Getting immediate high-accuracy position...");
+        try {
+          navigator.geolocation.getCurrentPosition(
+            (position) => {
+              console.log("Immediate position obtained");
+              successCallback(position);
 
-      if (!shouldRetryGeo()) {
-        await fallbackToStateCity();
-        return;
-      }
+              if (!isWatchingRef.current) {
+                console.log(
+                  "Starting position watch after immediate position..."
+                );
+                isWatchingRef.current = true;
+                watchIdRef.current = navigator.geolocation.watchPosition(
+                  successCallback,
+                  errorCallback,
+                  geoOptions
+                );
+                console.log(
+                  "Position watch started with ID:",
+                  watchIdRef.current
+                );
+              }
+            },
+            (error) => {
+              console.error("Failed to get immediate position:", error);
+              errorCallback(error);
 
-      // Try geolocation
-      navigator.geolocation.getCurrentPosition(
-        async (pos) => {
-          try {
-            localStorage.removeItem(GEO_DENIED_KEY);
-          } catch {}
-          await fetchWeatherAndCache(
-            `${pos.coords.latitude},${pos.coords.longitude}`,
-            "geo"
+              if (error.code !== 1 && !isWatchingRef.current) {
+                console.log(
+                  "Starting position watch despite immediate position failure..."
+                );
+                isWatchingRef.current = true;
+                watchIdRef.current = navigator.geolocation.watchPosition(
+                  successCallback,
+                  errorCallback,
+                  geoOptions
+                );
+              }
+            },
+            { ...geoOptions, timeout: 20000 }
           );
-        },
-        async (error) => {
-          try {
-            localStorage.setItem(GEO_DENIED_KEY, String(Date.now()));
-          } catch {}
-          await fallbackToStateCity();
-        },
-        { enableHighAccuracy: false, timeout: 4000, maximumAge: 600000 }
-      );
+        } catch (e) {
+          console.error("Error getting immediate position:", e);
+          errorCallback({ code: 2, message: e.message });
+        }
+      } else {
+        try {
+          console.log("Starting position watch...");
+          isWatchingRef.current = true;
+
+          watchIdRef.current = navigator.geolocation.watchPosition(
+            successCallback,
+            errorCallback,
+            geoOptions
+          );
+
+          console.log("Position watch started with ID:", watchIdRef.current);
+        } catch (e) {
+          console.error("Error setting up geolocation watch:", e);
+          setGeoPermissionDenied(true);
+          setWeatherLoading(false);
+          isWatchingRef.current = false;
+        }
+      }
     };
 
     initWeather();
+
+    return () => {
+      if (watchIdRef.current !== null) {
+        console.log("Stopping position watch with ID:", watchIdRef.current);
+        navigator.geolocation.clearWatch(watchIdRef.current);
+        watchIdRef.current = null;
+        isWatchingRef.current = false;
+      }
+    };
   }, []);
 
   // Notifications
@@ -333,26 +617,25 @@ export default function RightSidebar() {
     }
   }, [isLoggedIn]);
 
-  // Weather UI
-  const renderWeather = () => {
-    if (weatherLoading && !weather) {
+  // Render weather or date/time
+  const renderLocationInfo = () => {
+    if (weatherLoading && !weather && !geoPermissionDenied) {
       return (
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 text-slate-600 text-xs shadow-sm">
-          <div className="w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin" />
-          <span className="hidden sm:inline">Detecting...</span>
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-slate-300/60 bg-white/40 backdrop-blur-sm shadow-sm">
+          <div className="w-3.5 h-3.5 sm:w-4 sm:h-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin" />
+          <span className="text-xs sm:text-sm text-slate-600 hidden sm:inline">
+            Loading...
+          </span>
         </div>
       );
     }
 
+    if (geoPermissionDenied) {
+      return <DateTimeDisplay />;
+    }
+
     if (!weather) {
-      return (
-        <div className="flex items-center gap-2">
-          <MapPin className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" />
-          <span className="font-bold text-sm sm:text-base text-green-700">
-            Jharkhand & Bihar
-          </span>
-        </div>
-      );
+      return <DateTimeDisplay />;
     }
 
     const { icon: WeatherIcon, gradient, iconColor } = getWeatherStyle(
@@ -362,6 +645,7 @@ export default function RightSidebar() {
 
     return (
       <motion.div
+        key={`weather-${weather.city}-${weather.lat}`}
         className={`flex items-center gap-2 sm:gap-3 px-3 py-1.5 sm:py-2 rounded-full bg-gradient-to-r ${gradient} text-white shadow-md`}
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -405,7 +689,7 @@ export default function RightSidebar() {
               <Menu className="w-5 h-5 text-gray-700" />
             </motion.button>
           </div>
-          {renderWeather()}
+          {renderLocationInfo()}
         </div>
 
         <div className="flex items-center gap-2 sm:gap-3">
@@ -541,7 +825,9 @@ export default function RightSidebar() {
               className="fixed top-0 right-0 h-full w-72 bg-white shadow-2xl z-[70] sm:hidden"
             >
               <div className="flex items-center justify-between p-4 border-b">
-                <h2 className="text-base font-semibold text-gray-800">Account</h2>
+                <h2 className="text-base font-semibold text-gray-800">
+                  Account
+                </h2>
                 <motion.button
                   whileTap={{ scale: 0.95 }}
                   onClick={() => setRightSidebarOpen(false)}
