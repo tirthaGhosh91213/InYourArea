@@ -26,23 +26,14 @@ const SLOT_KEYS = {
 export default function InYourArea() {
   const navigate = useNavigate();
 
-  const districts = [
-    "----------- Jharkhand -----------",
-    "Bokaro", "Chatra", "Deoghar", "Dhanbad", "Dumka",
-    "East Singhbhum", "Garhwa", "Giridih", "Godda", "Gumla",
-    "Hazaribagh", "Jamtara", "Jamshedpur", "Khunti", "Koderma",
-    "Latehar", "Lohardaga", "Pakur", "Palamu", "Ramgarh",
-    "Ranchi", "Sahibganj", "Seraikela-Kharsawan", "Simdega", "West Singhbhum",
-    "----------- Bihar -----------",
-    "Araria", "Arwal", "Aurangabad", "Banka", "Begusarai", "Bhagalpur", "Bhojpur", "Buxar",
-    "Darbhanga", "East Champaran (Motihari)", "Gaya", "Gopalganj", "Jamui", "Jehanabad",
-    "Kaimur (Bhabua)", "Katihar", "Khagaria", "Kishanganj", "Lakhisarai", "Madhepura",
-    "Madhubani", "Munger", "Muzaffarpur", "Nalanda", "Nawada", "Patna", "Purnia", "Rohtas",
-    "Saharsa", "Samastipur", "Saran (Chhapra)", "Sheikhpura", "Sheohar", "Sitamarhi",
-    "Siwan", "Supaul", "Vaishali", "West Champaran (Bettiah)",
-  ];
+  const states = [
+  "----------- States -----------",
+  "Bihar",
+  "Jharkhand",
+];
 
-  const [selectedDistrict, setSelectedDistrict] = useState("");
+  const [selectedState, setSelectedState] = useState("");
+
 
   // Ads state
   const [ads, setAds] = useState([]);
@@ -52,13 +43,13 @@ export default function InYourArea() {
   const [bottomRightClosed, setBottomRightClosed] = useState(false);
 
   const onSubmit = () => {
-    if (!selectedDistrict || selectedDistrict.startsWith("-")) {
-      toast.error("Please select your district!", { autoClose: 1000 });
-      return;
-    }
-    localStorage.setItem("district", selectedDistrict);
-    navigate(`/localnews/${encodeURIComponent(selectedDistrict)}`);
-  };
+  if (!selectedState || selectedState.startsWith("-")) {
+    toast.error("Please select your state!", { autoClose: 1000 });
+    return;
+  }
+  localStorage.setItem("state", selectedState);
+  navigate(`/statenews/${encodeURIComponent(selectedState)}`);
+};
 
   // Fetch small ads for InYourArea
   useEffect(() => {
@@ -179,7 +170,7 @@ export default function InYourArea() {
           <span className="text-green-700">Community</span> Platform
         </h1>
         <p className="mt-2 text-gray-600 text-base sm:text-lg">
-          Select your district to see local news near you.
+          Select your state to see state news
         </p>
 
         {/* District Dropdown */}
@@ -190,15 +181,15 @@ export default function InYourArea() {
           transition={{ delay: 0.2, duration: 0.4 }}
         >
           <select
-            value={selectedDistrict}
-            onChange={(e) => setSelectedDistrict(e.target.value)}
+            value={selectedState}
+  onChange={(e) => setSelectedState(e.target.value)}
             className="w-72 sm:w-80 px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-600 focus:outline-none text-gray-700 placeholder-gray-400 transition-all"
           >
-            <option value="">-- Select Your District --</option>
-            {districts.map((district) =>
-              district.startsWith("-----------") ? (
+            <option value="">-- Select Your State --</option>
+            {states.map((state) =>
+              state.startsWith("-----------") ? (
                 <option
-                  key={district}
+                  key={state}
                   disabled
                   style={{
                     fontWeight: "bold",
@@ -208,11 +199,11 @@ export default function InYourArea() {
                     letterSpacing: "2px",
                   }}
                 >
-                  {district}
+                  {state}
                 </option>
               ) : (
-                <option key={district} value={district}>
-                  {district}
+                <option key={state} value={state}>
+                  {state}
                 </option>
               )
             )}
