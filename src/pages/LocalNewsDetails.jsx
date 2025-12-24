@@ -550,7 +550,7 @@ export default function LocalNewsDetails() {
               <div className="flex items-center gap-3">
                 <div className="flex items-center gap-1 text-gray-500 text-sm">
                   <MapPin size={16} className="text-green-600" />
-                  {news.districtName || "Unknown District"}
+                  {news.stateName || "Unknown State"}
                 </div>
                 <div className="relative">
                   <motion.button

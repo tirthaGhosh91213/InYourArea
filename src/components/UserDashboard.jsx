@@ -121,6 +121,12 @@ export default function UserDashboard() {
         "https://api.jharkhandbiharupdates.com/api/v1/user/my-content",
         { headers }
       );
+      // console.log("API Response:", res.data.data);
+    //   console.log("📦 Full API Response:", res.data.data);
+    // console.log("📰 State News Array:", res.data.data.stateNews);
+    // if (res.data.data.stateNews && res.data.data.stateNews.length > 0) {
+    //   console.log("🔍 First State News Item:", res.data.data.stateNews[0]);
+    // }
       setContent(res.data.data);
     } catch (error) {
       toast.error("Failed to fetch content");
@@ -278,7 +284,7 @@ export default function UserDashboard() {
     } else if (type === "community") {
       navigate(`/community/${id}`);
     } else if (type === "localNews") {
-      navigate(`/localnews/details/${id}`);
+      navigate(`/statenews/details/${id}`);
     }
   };
 
@@ -296,7 +302,7 @@ export default function UserDashboard() {
       if (type === "community")
         url = `https://api.jharkhandbiharupdates.com/api/v1/community/${id}`;
       if (type === "localNews")
-        url = `https://api.jharkhandbiharupdates.com/api/v1/district-news/${id}`;
+        url = `https://api.jharkhandbiharupdates.com/api/v1/state-news/${id}`;
       await axios.delete(url, { headers });
       toast.success("Deleted successfully!");
       setDeleteConfirmOpen(false);
@@ -320,7 +326,7 @@ export default function UserDashboard() {
     setLoading(true);
     try {
       await axios.put(
-        `https://api.jharkhandbiharupdates.com/api/v1/district-news/${editNewsId}`,
+        `https://api.jharkhandbiharupdates.com/api/v1/state-news/${editNewsId}`,
         editNewsData,
         { headers }
       );
@@ -364,7 +370,7 @@ export default function UserDashboard() {
     if (activeTab === "jobs") return content.jobs;
     if (activeTab === "community") return content.communityPosts;
     if (activeTab === "comments") return comments;
-    if (activeTab === "localNews") return content.districtNews;
+    if (activeTab === "localNews") return content.stateNews;
     return [];
   })();
 
@@ -375,7 +381,7 @@ export default function UserDashboard() {
     { key: "community", label: "Community", icon: FileText },
   ];
   if (role === "admin")
-    tabs.push({ key: "localNews", label: "Local News", icon: FileText });
+    tabs.push({ key: "localNews", label: "State News", icon: FileText });
 
   if (!profile || !stats || !content) {
     return (
@@ -489,7 +495,7 @@ export default function UserDashboard() {
       {/* Stats */}
       <motion.div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         {[
-          { title: "District News", value: stats.totalDistrictNews },
+          { title: "State News", value: stats.totalStateNews },
           { title: "Events", value: stats.totalEvents },
           { title: "Jobs", value: stats.totalJobs },
           { title: "Community", value: stats.totalCommunityPosts },
@@ -538,17 +544,21 @@ export default function UserDashboard() {
             >
               <div className="flex-1">
                 <div className="flex items-center flex-wrap gap-3">
-                  <h3 className="text-lg font-semibold text-gray-900">
-                    {item.title}
-                  </h3>
-                  <span
-                    className={`px-3 py-1 text-xs rounded-full ${getStatusColor(
-                      item.status
-                    )}`}
-                  >
-                    {item.status || "UNKNOWN"}
-                  </span>
-                </div>
+  <h3 className="text-lg font-semibold text-gray-900">
+    {item.title}
+  </h3>
+  {/* ✅ Only show status badge for Events, Jobs, Community - NOT for localNews */}
+  {activeTab !== "localNews" && (
+    <span
+      className={`px-3 py-1 text-xs rounded-full ${getStatusColor(
+        item.status
+      )}`}
+    >
+      {item.status || "UNKNOWN"}
+    </span>
+  )}
+</div>
+
                 <p className="text-sm text-gray-500 mt-1 flex flex-wrap items-center gap-7">
                   {activeTab === "jobs" && (
                     <span>Deadline: {item.applicationDeadline || "N/A"}</span>
@@ -564,9 +574,7 @@ export default function UserDashboard() {
                       Created: {new Date(item.createdAt).toLocaleDateString()}
                     </span>
                   )}
-                  {activeTab === "localNews" && (
-                    <span>District: {item.districtName || "N/A"}</span>
-                  )}
+                  
                   <span>
                     Created: {new Date(item.createdAt).toLocaleDateString()}
                   </span>
