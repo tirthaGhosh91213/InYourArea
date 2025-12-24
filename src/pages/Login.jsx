@@ -163,7 +163,7 @@ const handleSignin = async (e) => {
       }, 2000); // Wait 2 seconds for OneSignal to be ready
 
       setTimeout(() => {
-        navigate("/jobs");
+        navigate("/community");
       }, 500);
     } else {
       showPopup(result.message || "Invalid credentials", "error");
