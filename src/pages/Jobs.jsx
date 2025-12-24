@@ -433,7 +433,7 @@ export default function Jobs() {
                 <div className="flex flex-col gap-6">
                   {leftJobs.length === 0 && (
                     <div className="text-center text-gray-500 mt-12">
-                      No jobs found.
+                      No job listings yet. Post an opportunity!
                     </div>
                   )}
                   {leftJobs.map((job) => (

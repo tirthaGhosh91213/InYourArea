@@ -539,7 +539,7 @@ export default function Community() {
               animate={{ opacity: 1 }}
               className="text-center text-gray-500 mt-10 text-lg sm:text-xl px-4"
             >
-              No results found for{" "}
+              No community posts yet. Start the conversation!
               <span className="font-semibold">{searchTerm}</span>
             </motion.p>
           ) : (
