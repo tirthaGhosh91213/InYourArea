@@ -1,4 +1,3 @@
-// src/pages/JobDetails.jsx
 import React, { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -10,13 +9,18 @@ import {
   ArrowLeft,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
+  ChevronUp,
   X,
+  UserCircle,
+  Send,
   Edit2,
   Trash2,
   Save,
   XCircle,
   Share2,
   Link2,
+  MoreVertical,
 } from "lucide-react";
 import axios from "axios";
 import { toast } from "react-toastify";
@@ -43,6 +47,25 @@ const formatDateTime = (dateString) => {
   return `${day} ${month} ${year} ${hours}:${minutes}`;
 };
 
+  const formatDate = (date) => {
+    const now = new Date();
+    const commentDate = new Date(date);
+    const diffInSeconds = Math.floor((now - commentDate) / 1000);
+
+    if (diffInSeconds < 60) return `${diffInSeconds}s`;
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h`;
+    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d`;
+    if (diffInSeconds < 2592000)
+      return `${Math.floor(diffInSeconds / 604800)}w`;
+
+    return new Date(date).toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  };
+
 
 // LocalStorage keys for JobDetails ads
 const SLOT_KEYS = {
@@ -68,6 +91,17 @@ export default function JobDetails() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deletingCommentId, setDeletingCommentId] = useState(null);
   const [showShareMenu, setShowShareMenu] = useState(false);
+
+  // Reply functionality states
+  const [replyingToId, setReplyingToId] = useState(null);
+  const [replyText, setReplyText] = useState("");
+  const [postingReply, setPostingReply] = useState(false);
+
+  // Collapse/Expand replies state - BY DEFAULT ALL COLLAPSED
+  const [collapsedReplies, setCollapsedReplies] = useState({});
+
+  // YouTube-style menu state
+  const [openMenuId, setOpenMenuId] = useState(null);
 
   // Ads state
   const [ads, setAds] = useState([]);
@@ -166,6 +200,16 @@ export default function JobDetails() {
     }
   };
 
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = () => {
+      if (openMenuId) setOpenMenuId(null);
+    };
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [openMenuId]);
+
   // Fetch Current User
   useEffect(() => {
     const fetchCurrentUser = async () => {
@@ -210,7 +254,21 @@ export default function JobDetails() {
         `https://api.jharkhandbiharupdates.com/api/v1/comments/jobs/${id}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      if (res.data.success) setComments(res.data.data);
+      if (res.data.success) {
+        setComments(res.data.data);
+        // Initialize all replies as collapsed by default
+        const allCollapsed = {};
+        const markAsCollapsed = (comments) => {
+          comments.forEach(comment => {
+            if (comment.replies && comment.replies.length > 0) {
+              allCollapsed[comment.id] = true;
+              markAsCollapsed(comment.replies);
+            }
+          });
+        };
+        markAsCollapsed(res.data.data);
+        setCollapsedReplies(allCollapsed);
+      }
     } catch {
       toast.error("Failed to fetch comments");
     }
@@ -225,8 +283,8 @@ export default function JobDetails() {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (res.data.success) {
-        setComments((prev) => [...prev, res.data.data]);
         setCommentText("");
+        fetchComments();
         toast.success("Comment added!");
       }
     } catch {
@@ -234,10 +292,64 @@ export default function JobDetails() {
     }
   };
 
+
+  // Start Reply
+  const handleStartReply = (commentId) => {
+    setReplyingToId(commentId);
+    setReplyText("");
+  };
+
+  // Cancel Reply
+  const handleCancelReply = () => {
+    setReplyingToId(null);
+    setReplyText("");
+  };
+
+  // Post Reply
+  const handlePostReply = async (parentId) => {
+    if (!replyText.trim()) {
+      toast.warning("Reply cannot be empty!");
+      return;
+    }
+    try {
+      setPostingReply(true);
+      const res = await axios.post(
+        `https://api.jharkhandbiharupdates.com/api/v1/comments/jobs/${id}`,
+        { content: replyText, parentId: parentId },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (res.data.success) {
+        toast.success("Reply added successfully!");
+        setReplyText("");
+        setReplyingToId(null);
+        fetchComments();
+      } else toast.error("Failed to add reply.");
+    } catch {
+      toast.error("Error adding reply.");
+    } finally {
+      setPostingReply(false);
+    }
+  };
+
+  // Toggle replies visibility
+  const toggleReplies = (commentId) => {
+    setCollapsedReplies((prev) => ({
+      ...prev,
+      [commentId]: !prev[commentId],
+    }));
+  };
+
+  // Count total replies
+  const countReplies = (comment) => {
+    if (!comment.replies || comment.replies.length === 0) return 0;
+    return comment.replies.length;
+  };
+
   // Start Edit Comment
   const handleStartEdit = (comment) => {
     setEditingCommentId(comment.id);
     setEditCommentText(comment.content);
+    setOpenMenuId(null);
   };
 
   // Cancel Edit
@@ -281,6 +393,7 @@ export default function JobDetails() {
   const handleOpenDeleteModal = (commentId) => {
     setDeletingCommentId(commentId);
     setShowDeleteModal(true);
+    setOpenMenuId(null);
   };
 
   // Close Delete Modal
@@ -390,6 +503,230 @@ export default function JobDetails() {
       localStorage.setItem(SLOT_KEYS.BOTTOM_RIGHT, String(nextBottom));
     }
   }, [topRightClosed, bottomRightClosed, topRightIndex, bottomRightIndex, ads]);
+
+  
+  // 🔥 PERFECT HIERARCHY - Recursive Comment Renderer (EventDetails Style)
+  const renderComment = (comment, level = 0) => {
+    const isEditing = editingCommentId === comment.id;
+    const isReplying = replyingToId === comment.id;
+    const hasReplies = comment.replies && comment.replies.length > 0;
+    const repliesCount = countReplies(comment);
+    const areRepliesCollapsed = collapsedReplies[comment.id] !== false;
+    const isMenuOpen = openMenuId === comment.id;
+
+    // MAX DEPTH LIMIT - Industry Standard (3 levels)
+    const maxLevel = Math.min(level, 3);
+
+    return (
+      <div key={comment.id} className="relative">
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.2 }}
+          className="flex gap-3 py-3"
+        >
+          {/* Avatar */}
+          <div className="flex-shrink-0 relative z-10">
+            {comment.author?.profileImageUrl ? (
+              <img
+                src={comment.author.profileImageUrl}
+                alt={`${comment.author.firstName} ${comment.author.lastName}`}
+                className="w-9 h-9 rounded-full object-cover bg-white border border-white"
+                onError={(e) => {
+                  e.target.style.display = "none";
+                  e.target.nextSibling.style.display = "flex";
+                }}
+              />
+            ) : null}
+            <div
+              className="w-9 h-9 bg-gray-300 text-gray-600 flex items-center justify-center rounded-full font-semibold text-sm"
+              style={{
+                display: comment.author?.profileImageUrl ? "none" : "flex",
+              }}
+            >
+              {(comment.author?.firstName?.[0] || "U").toUpperCase()}
+            </div>
+          </div>
+
+          {/* Comment Content */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="font-semibold text-sm text-gray-900">
+                    {comment.author
+                      ? `${comment.author.firstName} ${comment.author.lastName}`
+                      : "Anonymous"}
+                  </span>
+                  <span className="text-xs text-gray-500">
+                    {formatDate(comment.createdAt)}
+                  </span>
+                </div>
+
+                {/* Edit Mode */}
+                {isEditing ? (
+                  <div className="mt-2 space-y-2">
+                    <textarea
+                      value={editCommentText}
+                      onChange={(e) => setEditCommentText(e.target.value)}
+                      className="w-full border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm resize-none"
+                      rows="3"
+                      autoFocus
+                    />
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleUpdateComment(comment.id)}
+                        className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-md transition"
+                      >
+                        Save
+                      </button>
+                      <button
+                        onClick={handleCancelEdit}
+                        className="px-3 py-1 bg-gray-200 hover:bg-gray-300 text-gray-700 text-xs font-semibold rounded-md transition"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-800 mt-0.5 whitespace-pre-wrap break-words leading-relaxed">
+                    {comment.content}
+                  </p>
+                )}
+
+                {/* 🔥 Reply Button + View Replies on SAME LINE */}
+                {!isEditing && (
+                  <div className="flex items-center gap-4 mt-2 flex-wrap">
+                    <button
+                      onClick={() => handleStartReply(comment.id)}
+                      className="text-xs font-semibold text-gray-500 hover:text-blue-600 transition"
+                    >
+                      Reply
+                    </button>
+
+                    {/* View/Hide Replies Button */}
+                    {hasReplies && (
+                      <button
+                        onClick={() => toggleReplies(comment.id)}
+                        className="flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-700 transition"
+                      >
+                        {areRepliesCollapsed ? (
+                          <>
+                            <ChevronDown size={14} />
+                            <span>{repliesCount} {repliesCount === 1 ? "reply" : "replies"}</span>
+                          </>
+                        ) : (
+                          <>
+                            <ChevronUp size={14} />
+                            <span>Hide {repliesCount}</span>
+                          </>
+                        )}
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                {/* Reply Input */}
+                {isReplying && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="mt-3 space-y-2"
+                  >
+                    <textarea
+                      value={replyText}
+                      onChange={(e) => setReplyText(e.target.value)}
+                      placeholder={`Reply to ${comment.author?.firstName}...`}
+                      className="w-full border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-1 focus:ring-green-500 text-sm resize-none"
+                      rows="2"
+                      autoFocus
+                    />
+                    <div className="flex items-center gap-2">
+                      <button
+                        disabled={postingReply}
+                        onClick={() => handlePostReply(comment.id)}
+                        className="px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-xs font-semibold rounded-md disabled:opacity-60 transition"
+                      >
+                        {postingReply ? "Posting..." : "Post"}
+                      </button>
+                      <button
+                        onClick={handleCancelReply}
+                        className="px-3 py-1 bg-gray-200 hover:bg-gray-300 text-gray-700 text-xs font-semibold rounded-md transition"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* 🔥 CORRECT: Nested Replies INSIDE parent's content, maintaining hierarchy */}
+                {hasReplies && !areRepliesCollapsed && (
+                  <div className="mt-2 ml-0">
+                    {[...comment.replies].reverse().map((reply) => 
+                      renderComment(reply, level + 1)
+                    )}
+                  </div>
+                )}
+
+              </div>
+
+              {/* YouTube-style 3-Dot Menu */}
+              {currentUser && (canEditComment(comment) || canDeleteComment(comment)) && !isEditing && (
+                <div className="relative">
+                  <motion.button
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setOpenMenuId(isMenuOpen ? null : comment.id);
+                    }}
+                    className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition"
+                    title="More options"
+                  >
+                    <MoreVertical size={18} />
+                  </motion.button>
+
+                  {/* Dropdown Menu */}
+                  <AnimatePresence>
+                    {isMenuOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                        transition={{ duration: 0.15 }}
+                        className="absolute right-0 top-8 bg-white border border-gray-200 rounded-lg shadow-xl py-1 z-20 min-w-[140px]"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {canEditComment(comment) && (
+                          <button
+                            onClick={() => handleStartEdit(comment)}
+                            className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 w-full text-left transition"
+                          >
+                            <Edit2 size={16} className="text-blue-600" />
+                            <span className="font-medium">Edit</span>
+                          </button>
+                        )}
+                        {canDeleteComment(comment) && (
+                          <button
+                            onClick={() => handleOpenDeleteModal(comment.id)}
+                            className="flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 w-full text-left transition"
+                          >
+                            <Trash2 size={16} />
+                            <span className="font-medium">Delete</span>
+                          </button>
+                        )}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              )}
+            </div>
+          </div>
+        </motion.div>
+      </div>
+    );
+  };
 
   const topRightAd = ads.length ? ads[topRightIndex % ads.length] : null;
   const bottomRightAd = ads.length ? ads[bottomRightIndex % ads.length] : null;
@@ -701,131 +1038,7 @@ export default function JobDetails() {
                   transition={{ staggerChildren: 0.15 }}
                 >
                   {comments.length > 0 ? (
-  [...comments].reverse().map((c, index) => (
-                      <motion.div
-                        key={c.id}
-                        initial={{ opacity: 0, y: 30 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{
-                          delay: index * 0.05,
-                          type: "spring",
-                          stiffness: 80,
-                        }}
-                        className="bg-white p-4 rounded-2xl shadow-md flex items-start gap-4 border border-green-100 hover:shadow-lg transition-transform duration-300 hover:scale-[1.01]"
-                      >
-                        {c.author?.profileImageUrl ? (
-                          <img
-                            src={c.author.profileImageUrl}
-                            alt={`${c.author.firstName} ${c.author.lastName}`}
-                            className="w-10 h-10 rounded-full object-cover border-2 border-green-200 shadow-sm flex-shrink-0"
-                            onError={(e) => {
-                              e.target.style.display = "none";
-                              e.target.nextSibling.style.display = "flex";
-                            }}
-                          />
-                        ) : null}
-                        <div
-                          className="w-10 h-10 bg-green-100 text-green-700 flex items-center justify-center rounded-full font-bold text-lg shadow-sm flex-shrink-0"
-                          style={{
-                            display: c.author?.profileImageUrl ? "none" : "flex",
-                          }}
-                        >
-                          {(c.author?.firstName?.[0] || "U").toUpperCase()}
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2">
-                            <div className="flex-1">
-                              <h4 className="font-semibold text-gray-800">
-                                {c.author
-                                  ? `${c.author.firstName} ${c.author.lastName}`
-                                  : "Anonymous"}
-                              </h4>
-                              <span className="text-xs text-gray-500 italic">
-                                {new Date(c.createdAt).toLocaleDateString(
-                                  "en-GB",
-                                  {
-                                    day: "2-digit",
-                                    month: "short",
-                                    year: "numeric",
-                                  }
-                                )}
-                              </span>
-                            </div>
-
-                            {/* Action Buttons */}
-                            {currentUser &&
-                              (canEditComment(c) || canDeleteComment(c)) && (
-                                <div className="flex items-center gap-2">
-                                  {canEditComment(c) &&
-                                    editingCommentId !== c.id && (
-                                      <motion.button
-                                        whileHover={{ scale: 1.1 }}
-                                        whileTap={{ scale: 0.95 }}
-                                        onClick={() => handleStartEdit(c)}
-                                        className="text-blue-600 hover:text-blue-700 p-1.5 rounded-lg hover:bg-blue-50 transition"
-                                        title="Edit comment"
-                                      >
-                                        <Edit2 size={16} />
-                                      </motion.button>
-                                    )}
-                                  {canDeleteComment(c) &&
-                                    editingCommentId !== c.id && (
-                                      <motion.button
-                                        whileHover={{ scale: 1.1 }}
-                                        whileTap={{ scale: 0.95 }}
-                                        onClick={() =>
-                                          handleOpenDeleteModal(c.id)
-                                        }
-                                        className="text-red-600 hover:text-red-700 p-1.5 rounded-lg hover:bg-red-50 transition"
-                                        title="Delete comment"
-                                      >
-                                        <Trash2 size={16} />
-                                      </motion.button>
-                                    )}
-                                </div>
-                              )}
-                          </div>
-
-                          {/* Edit Mode */}
-                          {editingCommentId === c.id ? (
-                            <div className="mt-2 space-y-2">
-                              <textarea
-                                value={editCommentText}
-                                onChange={(e) =>
-                                  setEditCommentText(e.target.value)
-                                }
-                                className="w-full border border-gray-300 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
-                                rows="3"
-                              />
-                              <div className="flex items-center gap-2">
-                                <motion.button
-                                  whileHover={{ scale: 1.05 }}
-                                  whileTap={{ scale: 0.95 }}
-                                  onClick={() => handleUpdateComment(c.id)}
-                                  className="flex items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg px-4 py-2 text-sm transition"
-                                >
-                                  <Save size={14} />
-                                  Save
-                                </motion.button>
-                                <motion.button
-                                  whileHover={{ scale: 1.05 }}
-                                  whileTap={{ scale: 0.95 }}
-                                  onClick={handleCancelEdit}
-                                  className="flex items-center gap-1 bg-gray-300 hover:bg-gray-400 text-gray-700 font-semibold rounded-lg px-4 py-2 text-sm transition"
-                                >
-                                  <XCircle size={14} />
-                                  Cancel
-                                </motion.button>
-                              </div>
-                            </div>
-                          ) : (
-                            <p className="text-gray-700 bg-green-50 px-4 py-2 rounded-xl leading-relaxed border border-green-100 mt-2">
-                              {c.content}
-                            </p>
-                          )}
-                        </div>
-                      </motion.div>
-                    ))
+                    [...comments].reverse().map((c) => renderComment(c))
                   ) : (
                     <p className="text-gray-500 italic text-center">
                       No comments yet. Be the first to share your thoughts!

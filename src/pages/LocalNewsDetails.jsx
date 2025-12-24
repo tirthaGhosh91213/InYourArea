@@ -1,4 +1,3 @@
-// src/pages/LocalNewsDetails.jsx
 import React, { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -6,6 +5,8 @@ import {
   ArrowLeft,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
+  ChevronUp,
   X,
   UserCircle,
   Calendar,
@@ -17,6 +18,7 @@ import {
   XCircle,
   Share2,
   Link2,
+  MoreVertical,
 } from "lucide-react";
 import axios from "axios";
 import { toast } from "react-toastify";
@@ -52,6 +54,17 @@ export default function LocalNewsDetails() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deletingCommentId, setDeletingCommentId] = useState(null);
   const [showShareMenu, setShowShareMenu] = useState(false);
+
+  // Reply functionality states
+  const [replyingToId, setReplyingToId] = useState(null);
+  const [replyText, setReplyText] = useState("");
+  const [postingReply, setPostingReply] = useState(false);
+
+  // Collapse/Expand replies state - BY DEFAULT ALL COLLAPSED
+  const [collapsedReplies, setCollapsedReplies] = useState({});
+
+  // YouTube-style menu state
+  const [openMenuId, setOpenMenuId] = useState(null);
 
   // Ads state
   const [ads, setAds] = useState([]);
@@ -115,7 +128,26 @@ export default function LocalNewsDetails() {
       prev === news.imageUrls.length - 1 ? 0 : prev + 1
     );
 
-  const formatDate = (date) =>
+  const formatDate = (date) => {
+    const now = new Date();
+    const commentDate = new Date(date);
+    const diffInSeconds = Math.floor((now - commentDate) / 1000);
+
+    if (diffInSeconds < 60) return `${diffInSeconds}s`;
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h`;
+    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d`;
+    if (diffInSeconds < 2592000)
+      return `${Math.floor(diffInSeconds / 604800)}w`;
+
+    return new Date(date).toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  };
+
+  const formatFullDate = (date) =>
     new Date(date).toLocaleString("en-GB", {
       day: "2-digit",
       month: "short",
@@ -180,6 +212,15 @@ export default function LocalNewsDetails() {
     }
   };
 
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = () => {
+      if (openMenuId) setOpenMenuId(null);
+    };
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [openMenuId]);
+
   // Fetch Current User
   useEffect(() => {
     const fetchCurrentUser = async () => {
@@ -225,7 +266,21 @@ export default function LocalNewsDetails() {
       const res = await axios.get(
         `https://api.jharkhandbiharupdates.com/api/v1/comments/state-news/${id}`
       );
-      if (res.data.success) setComments(res.data.data);
+      if (res.data.success) {
+        setComments(res.data.data);
+        // Initialize all replies as collapsed by default
+        const allCollapsed = {};
+        const markAsCollapsed = (comments) => {
+          comments.forEach(comment => {
+            if (comment.replies && comment.replies.length > 0) {
+              allCollapsed[comment.id] = true;
+              markAsCollapsed(comment.replies);
+            }
+          });
+        };
+        markAsCollapsed(res.data.data);
+        setCollapsedReplies(allCollapsed);
+      }
     } catch {
       toast.error("Failed to load comments.");
     }
@@ -328,10 +383,70 @@ export default function LocalNewsDetails() {
     }
   };
 
+  // Start Reply
+  const handleStartReply = (commentId) => {
+    setReplyingToId(commentId);
+    setReplyText("");
+  };
+
+  // Cancel Reply
+  const handleCancelReply = () => {
+    setReplyingToId(null);
+    setReplyText("");
+  };
+
+  // Post Reply
+  const handlePostReply = async (parentId) => {
+    if (!replyText.trim()) {
+      toast.warning("Reply cannot be empty!");
+      return;
+    }
+
+    const token = localStorage.getItem("accessToken");
+    if (!token) {
+      navigate("/login");
+      return;
+    }
+
+    try {
+      setPostingReply(true);
+      const res = await axios.post(
+        `https://api.jharkhandbiharupdates.com/api/v1/comments/state-news/${id}`,
+        { content: replyText, parentId: parentId },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (res.data.success) {
+        toast.success("Reply added successfully!");
+        setReplyText("");
+        setReplyingToId(null);
+        fetchComments();
+      } else toast.error("Failed to add reply.");
+    } catch {
+      toast.error("Error adding reply.");
+    } finally {
+      setPostingReply(false);
+    }
+  };
+
+  // Toggle replies visibility
+  const toggleReplies = (commentId) => {
+    setCollapsedReplies((prev) => ({
+      ...prev,
+      [commentId]: !prev[commentId],
+    }));
+  };
+
+  // Count total replies
+  const countReplies = (comment) => {
+    if (!comment.replies || comment.replies.length === 0) return 0;
+    return comment.replies.length;
+  };
+
   // Start Edit Comment
   const handleStartEdit = (comment) => {
     setEditingCommentId(comment.id);
     setEditCommentText(comment.content);
+    setOpenMenuId(null);
   };
 
   // Cancel Edit
@@ -381,6 +496,7 @@ export default function LocalNewsDetails() {
   const handleOpenDeleteModal = (commentId) => {
     setDeletingCommentId(commentId);
     setShowDeleteModal(true);
+    setOpenMenuId(null);
   };
 
   // Close Delete Modal
@@ -419,12 +535,12 @@ export default function LocalNewsDetails() {
     }
   };
 
-  // Check if user can edit comment (only comment owner)
+  // Check if user can edit comment
   const canEditComment = (comment) => {
     return currentUser && comment.author?.id === currentUser.id;
   };
 
-  // Check if user can delete comment (comment owner or post owner)
+  // Check if user can delete comment
   const canDeleteComment = (comment) => {
     if (!currentUser) return false;
     const isCommentOwner = comment.author?.id === currentUser.id;
@@ -432,21 +548,243 @@ export default function LocalNewsDetails() {
     return isCommentOwner || isPostOwner;
   };
 
+  // 🔥 PERFECT HIERARCHY - Recursive Comment Renderer (EventDetails Style)
+  const renderComment = (comment, level = 0) => {
+    const isEditing = editingCommentId === comment.id;
+    const isReplying = replyingToId === comment.id;
+    const hasReplies = comment.replies && comment.replies.length > 0;
+    const repliesCount = countReplies(comment);
+    const areRepliesCollapsed = collapsedReplies[comment.id] !== false;
+    const isMenuOpen = openMenuId === comment.id;
+
+    // MAX DEPTH LIMIT - Industry Standard (3 levels)
+    const maxLevel = Math.min(level, 3);
+
+    return (
+      <div key={comment.id} className="relative">
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.2 }}
+          className="flex gap-3 py-3"
+        >
+          {/* Avatar */}
+          <div className="flex-shrink-0 relative z-10">
+            {comment.author?.profileImageUrl ? (
+              <img
+                src={comment.author.profileImageUrl}
+                alt={`${comment.author.firstName} ${comment.author.lastName}`}
+                className="w-9 h-9 rounded-full object-cover bg-white border border-white"
+                onError={(e) => {
+                  e.target.style.display = "none";
+                  e.target.nextSibling.style.display = "flex";
+                }}
+              />
+            ) : null}
+            <div
+              className="w-9 h-9 bg-gray-300 text-gray-600 flex items-center justify-center rounded-full font-semibold text-sm"
+              style={{
+                display: comment.author?.profileImageUrl ? "none" : "flex",
+              }}
+            >
+              {(comment.author?.firstName?.[0] || "U").toUpperCase()}
+            </div>
+          </div>
+
+          {/* Comment Content */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="font-semibold text-sm text-gray-900">
+                    {comment.author
+                      ? `${comment.author.firstName} ${comment.author.lastName}`
+                      : "Anonymous"}
+                  </span>
+                  <span className="text-xs text-gray-500">
+                    {formatDate(comment.createdAt)}
+                  </span>
+                </div>
+
+                {/* Edit Mode */}
+                {isEditing ? (
+                  <div className="mt-2 space-y-2">
+                    <textarea
+                      value={editCommentText}
+                      onChange={(e) => setEditCommentText(e.target.value)}
+                      className="w-full border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm resize-none"
+                      rows="3"
+                      autoFocus
+                    />
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleUpdateComment(comment.id)}
+                        className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-md transition"
+                      >
+                        Save
+                      </button>
+                      <button
+                        onClick={handleCancelEdit}
+                        className="px-3 py-1 bg-gray-200 hover:bg-gray-300 text-gray-700 text-xs font-semibold rounded-md transition"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-800 mt-0.5 whitespace-pre-wrap break-words leading-relaxed">
+                    {comment.content}
+                  </p>
+                )}
+
+                {/* 🔥 Reply Button + View Replies on SAME LINE */}
+                {!isEditing && (
+                  <div className="flex items-center gap-4 mt-2 flex-wrap">
+                    <button
+                      onClick={() => handleStartReply(comment.id)}
+                      className="text-xs font-semibold text-gray-500 hover:text-blue-600 transition"
+                    >
+                      Reply
+                    </button>
+
+                    {/* View/Hide Replies Button */}
+                    {hasReplies && (
+                      <button
+                        onClick={() => toggleReplies(comment.id)}
+                        className="flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-700 transition"
+                      >
+                        {areRepliesCollapsed ? (
+                          <>
+                            <ChevronDown size={14} />
+                            <span>{repliesCount} {repliesCount === 1 ? "reply" : "replies"}</span>
+                          </>
+                        ) : (
+                          <>
+                            <ChevronUp size={14} />
+                            <span>Hide {repliesCount}</span>
+                          </>
+                        )}
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                {/* Reply Input */}
+                {isReplying && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="mt-3 space-y-2"
+                  >
+                    <textarea
+                      value={replyText}
+                      onChange={(e) => setReplyText(e.target.value)}
+                      placeholder={`Reply to ${comment.author?.firstName}...`}
+                      className="w-full border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-1 focus:ring-green-500 text-sm resize-none"
+                      rows="2"
+                      autoFocus
+                    />
+                    <div className="flex items-center gap-2">
+                      <button
+                        disabled={postingReply}
+                        onClick={() => handlePostReply(comment.id)}
+                        className="px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-xs font-semibold rounded-md disabled:opacity-60 transition"
+                      >
+                        {postingReply ? "Posting..." : "Post"}
+                      </button>
+                      <button
+                        onClick={handleCancelReply}
+                        className="px-3 py-1 bg-gray-200 hover:bg-gray-300 text-gray-700 text-xs font-semibold rounded-md transition"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* 🔥 CORRECT: Nested Replies INSIDE parent's content, maintaining hierarchy */}
+                {hasReplies && !areRepliesCollapsed && (
+                  <div className="mt-2 ml-0">
+                    {[...comment.replies].reverse().map((reply) => 
+                      renderComment(reply, level + 1)
+                    )}
+                  </div>
+                )}
+
+              </div>
+
+              {/* YouTube-style 3-Dot Menu */}
+              {currentUser && (canEditComment(comment) || canDeleteComment(comment)) && !isEditing && (
+                <div className="relative">
+                  <motion.button
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setOpenMenuId(isMenuOpen ? null : comment.id);
+                    }}
+                    className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition"
+                    title="More options"
+                  >
+                    <MoreVertical size={18} />
+                  </motion.button>
+
+                  {/* Dropdown Menu */}
+                  <AnimatePresence>
+                    {isMenuOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                        transition={{ duration: 0.15 }}
+                        className="absolute right-0 top-8 bg-white border border-gray-200 rounded-lg shadow-xl py-1 z-20 min-w-[140px]"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {canEditComment(comment) && (
+                          <button
+                            onClick={() => handleStartEdit(comment)}
+                            className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 w-full text-left transition"
+                          >
+                            <Edit2 size={16} className="text-blue-600" />
+                            <span className="font-medium">Edit</span>
+                          </button>
+                        )}
+                        {canDeleteComment(comment) && (
+                          <button
+                            onClick={() => handleOpenDeleteModal(comment.id)}
+                            className="flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 w-full text-left transition"
+                          >
+                            <Trash2 size={16} />
+                            <span className="font-medium">Delete</span>
+                          </button>
+                        )}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              )}
+            </div>
+          </div>
+        </motion.div>
+      </div>
+    );
+  };
+
   const topRightAd = ads.length ? ads[topRightIndex % ads.length] : null;
   const bottomRightAd = ads.length ? ads[bottomRightIndex % ads.length] : null;
 
   if (loading || !news)
-  return (
-    <div className="flex justify-center items-center h-screen">
-      <Loader />
-    </div>
-  );
-
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <Loader />
+      </div>
+    );
 
   return (
     <>
       <div className="flex h-screen bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden">
-        {/* Ads like Events/Jobs (top-right just under navbar, bottom-right) */}
+        {/* Ads */}
         {topRightAd && !topRightClosed && (
           <SmallAdd
             ad={topRightAd}
@@ -464,33 +802,31 @@ export default function LocalNewsDetails() {
           />
         )}
 
-        <main className="flex-1 overflow-y-auto p-6 relative">
+        <main className="flex-1 overflow-y-auto p-4 md:p-6 relative">
           <motion.button
-  whileHover={{ scale: 1.05 }}
-  whileTap={{ scale: 0.95 }}
-  onClick={() => {
-    if (window.history.length > 2) {
-      window.history.back();
-    } else {
-      window.location.href = '/';
-    }
-  }}
-  className="flex items-center gap-2 mb-4 text-green-700 font-semibold hover:text-teal-700 transition"
->
-  <ArrowLeft size={20} /> Back
-</motion.button>
-
-
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => {
+              if (window.history.length > 2) {
+                window.history.back();
+              } else {
+                window.location.href = '/';
+              }
+            }}
+            className="flex items-center gap-2 mb-4 text-green-700 font-semibold hover:text-teal-700 transition"
+          >
+            <ArrowLeft size={20} /> Back
+          </motion.button>
 
           <motion.div
             layout
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
-            className="max-w-3xl mx-auto bg-white rounded-3xl shadow-2xl p-6 space-y-6 border border-green-200"
+            className="max-w-3xl mx-auto bg-white rounded-3xl shadow-2xl p-4 md:p-6 space-y-6 border border-green-200"
           >
             {/* Image/Video Carousel */}
             {news.imageUrls?.length > 0 && (
-              <div className="relative w-full h-64 md:h-80 rounded-2xl overflow-hidden shadow-lg">
+              <div className="relative w-full h-60 sm:h-72 md:h-80 rounded-2xl overflow-hidden shadow-lg">
                 {renderMedia(
                   news.imageUrls[currentImage],
                   news.title,
@@ -500,13 +836,13 @@ export default function LocalNewsDetails() {
                   <>
                     <button
                       onClick={prevImage}
-                      className="absolute top-1/2 left-3 transform -translate-y-1/2 bg-white/70 text-green-700 p-2 rounded-full hover:bg-white/90 transition"
+                      className="absolute top-1/2 left-2 sm:left-3 transform -translate-y-1/2 bg-white/70 text-green-700 p-2 rounded-full hover:bg-white/90 transition"
                     >
                       <ChevronLeft size={24} />
                     </button>
                     <button
                       onClick={nextImage}
-                      className="absolute top-1/2 right-3 transform -translate-y-1/2 bg-white/70 text-green-700 p-2 rounded-full hover:bg-white/90 transition"
+                      className="absolute top-1/2 right-2 sm:right-3 transform -translate-y-1/2 bg-white/70 text-green-700 p-2 rounded-full hover:bg-white/90 transition"
                     >
                       <ChevronRight size={24} />
                     </button>
@@ -517,12 +853,12 @@ export default function LocalNewsDetails() {
 
             {/* Author Info and Share Button */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 flex-1">
                 {news.author?.profileImageUrl ? (
                   <img
                     src={news.author.profileImageUrl}
                     alt={`${news.author.firstName} ${news.author.lastName}`}
-                    className="w-12 h-12 rounded-full object-cover border-2 border-green-200"
+                    className="w-12 h-12 rounded-full object-cover border-2 border-green-200 flex-shrink-0"
                     onError={(e) => {
                       e.target.style.display = "none";
                       e.target.nextSibling.style.display = "block";
@@ -531,43 +867,45 @@ export default function LocalNewsDetails() {
                 ) : null}
                 <UserCircle
                   size={48}
-                  className="text-green-600"
+                  className="text-green-600 flex-shrink-0"
                   style={{
                     display: news.author?.profileImageUrl ? "none" : "block",
                   }}
                 />
-                <div>
-                  <div className="font-semibold text-gray-800">
+                <div className="flex-1 min-w-0">
+                  <div className="font-semibold text-gray-800 text-base sm:text-lg truncate">
                     {news.author
                       ? `${news.author.firstName} ${news.author.lastName}`
                       : "Unknown Author"}
                   </div>
                   <div className="text-sm text-gray-500 flex items-center gap-1">
-                    <Calendar size={14} /> {formatDate(news.createdAt)}
+                    <Calendar size={14} className="shrink-0" />
+                    <span className="truncate">{formatFullDate(news.createdAt)}</span>
                   </div>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
+
+              <div className="flex items-center gap-3 justify-between sm:justify-end">
                 <div className="flex items-center gap-1 text-gray-500 text-sm">
-                  <MapPin size={16} className="text-green-600" />
-                  {news.stateName || "Unknown State"}
+                  <MapPin size={16} className="text-green-600 flex-shrink-0" />
+                  <span className="truncate max-w-[200px]">{news.stateName || "Unknown State"}</span>
                 </div>
                 <div className="relative">
                   <motion.button
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={() => setShowShareMenu(!showShareMenu)}
-                    className="flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg transition"
+                    className="flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg transition flex-shrink-0"
                     title="Share this post"
                   >
-                    <Share2 size={20} />
+                    <Share2 size={20} className="sm:hidden" />
+                    <Share2 size={22} className="hidden sm:block" />
                   </motion.button>
 
-                  {/* Horizontal Share Menu - Fixed Responsive */}
+                  {/* Horizontal Share Menu */}
                   <AnimatePresence>
                     {showShareMenu && (
                       <>
-                        {/* Backdrop for mobile */}
                         <motion.div
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 1 }}
@@ -581,31 +919,28 @@ export default function LocalNewsDetails() {
                           animate={{ opacity: 1, y: 0, scale: 1 }}
                           exit={{ opacity: 0, y: -10, scale: 0.9 }}
                           transition={{ duration: 0.2 }}
-                          className="absolute top-16 sm:top-20 left-1/2 -translate-x-1/2 sm:left-auto sm:right-0 sm:translate-x-0 z-50"
+                          className="absolute top-16 sm:top-20 right-0 z-50 w-[280px] xs:w-[300px] sm:w-auto"
                         >
-                          <div className="bg-blue-600 rounded-full shadow-2xl px-1.5 sm:px-3 py-2 sm:py-3 flex items-center gap-1 sm:gap-2 md:gap-3">
-                            {/* Close Button */}
+                          <div className="bg-blue-600 rounded-full shadow-2xl px-2 sm:px-3 py-2.5 sm:py-3 flex items-center gap-2 sm:gap-3">
                             <motion.button
                               whileHover={{ scale: 1.1, rotate: 90 }}
                               whileTap={{ scale: 0.95 }}
                               onClick={() => setShowShareMenu(false)}
-                              className="w-9 h-9 sm:w-11 sm:h-11 md:w-12 md:h-12 bg-gray-900 hover:bg-gray-800 rounded-full flex items-center justify-center text-white transition flex-shrink-0"
-                              title="Close"
+                              className="w-10 h-10 sm:w-12 sm:h-12 bg-gray-900 hover:bg-gray-800 rounded-full flex items-center justify-center text-white transition flex-shrink-0"
                             >
-                              <X size={16} className="sm:hidden" />
-                              <X size={18} className="hidden sm:block" />
+                              <X size={18} className="sm:hidden" />
+                              <X size={20} className="hidden sm:block" />
                             </motion.button>
 
-                            {/* WhatsApp */}
                             <motion.button
                               whileHover={{ scale: 1.15 }}
                               whileTap={{ scale: 0.95 }}
                               onClick={handleShareWhatsApp}
-                              className="w-9 h-9 sm:w-11 sm:h-11 md:w-12 md:h-12 flex items-center justify-center text-white hover:bg-blue-700 rounded-full transition flex-shrink-0"
-                              title="Share on WhatsApp"
+                              className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center text-white hover:bg-blue-700 rounded-full transition flex-shrink-0"
+                              title="WhatsApp"
                             >
                               <svg
-                                className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6"
+                                className="w-5 h-5 sm:w-6 sm:h-6"
                                 fill="currentColor"
                                 viewBox="0 0 24 24"
                               >
@@ -613,16 +948,15 @@ export default function LocalNewsDetails() {
                               </svg>
                             </motion.button>
 
-                            {/* Facebook */}
                             <motion.button
                               whileHover={{ scale: 1.15 }}
                               whileTap={{ scale: 0.95 }}
                               onClick={handleShareFacebook}
-                              className="w-9 h-9 sm:w-11 sm:h-11 md:w-12 md:h-12 flex items-center justify-center text-white hover:bg-blue-700 rounded-full transition flex-shrink-0"
-                              title="Share on Facebook"
+                              className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center text-white hover:bg-blue-700 rounded-full transition flex-shrink-0"
+                              title="Facebook"
                             >
                               <svg
-                                className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6"
+                                className="w-5 h-5 sm:w-6 sm:h-6"
                                 fill="currentColor"
                                 viewBox="0 0 24 24"
                               >
@@ -630,16 +964,15 @@ export default function LocalNewsDetails() {
                               </svg>
                             </motion.button>
 
-                            {/* Instagram */}
                             <motion.button
                               whileHover={{ scale: 1.15 }}
                               whileTap={{ scale: 0.95 }}
                               onClick={handleShareInstagram}
-                              className="w-9 h-9 sm:w-11 sm:h-11 md:w-12 md:h-12 flex items-center justify-center text-white hover:bg-blue-700 rounded-full transition flex-shrink-0"
-                              title="Share on Instagram"
+                              className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center text-white hover:bg-blue-700 rounded-full transition flex-shrink-0"
+                              title="Instagram"
                             >
                               <svg
-                                className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6"
+                                className="w-5 h-5 sm:w-6 sm:h-6"
                                 fill="currentColor"
                                 viewBox="0 0 24 24"
                               >
@@ -647,16 +980,15 @@ export default function LocalNewsDetails() {
                               </svg>
                             </motion.button>
 
-                            {/* Twitter/X */}
                             <motion.button
                               whileHover={{ scale: 1.15 }}
                               whileTap={{ scale: 0.95 }}
                               onClick={handleShareTwitter}
-                              className="w-9 h-9 sm:w-11 sm:h-11 md:w-12 md:h-12 flex items-center justify-center text-white hover:bg-blue-700 rounded-full transition flex-shrink-0"
-                              title="Share on X (Twitter)"
+                              className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center text-white hover:bg-blue-700 rounded-full transition flex-shrink-0"
+                              title="Twitter/X"
                             >
                               <svg
-                                className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5"
+                                className="w-4 h-4 sm:w-5 sm:h-5"
                                 fill="currentColor"
                                 viewBox="0 0 24 24"
                               >
@@ -664,17 +996,15 @@ export default function LocalNewsDetails() {
                               </svg>
                             </motion.button>
 
-                            {/* Copy Link */}
                             <motion.button
                               whileHover={{ scale: 1.15 }}
                               whileTap={{ scale: 0.95 }}
                               onClick={handleCopyLink}
-                              className="w-9 h-9 sm:w-11 sm:h-11 md:w-12 md:h-12 flex items-center justify-center text-white hover:bg-blue-700 rounded-full transition flex-shrink-0"
-                              title="Copy link"
+                              className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center text-white hover:bg-blue-700 rounded-full transition flex-shrink-0"
+                              title="Copy Link"
                             >
-                              <Link2 size={16} className="sm:hidden" />
-                              <Link2 size={18} className="hidden sm:block md:hidden" />
-                              <Link2 size={20} className="hidden md:block" />
+                              <Link2 size={18} className="sm:hidden" />
+                              <Link2 size={20} className="hidden sm:block" />
                             </motion.button>
                           </div>
                         </motion.div>
@@ -687,12 +1017,12 @@ export default function LocalNewsDetails() {
 
             {/* Title & Content */}
             <h1
-              className="text-3xl font-bold text-gray-800"
+              className="text-2xl md:text-3xl font-bold text-gray-800"
               dangerouslySetInnerHTML={{ __html: news.title }}
             />
             <div className="relative">
               <div
-                className={`text-gray-700 whitespace-pre-line leading-relaxed text-lg transition-all duration-500 ${
+                className={`text-gray-700 whitespace-pre-line leading-relaxed text-base md:text-lg transition-all duration-500 ${
                   isExpanded ? "" : "line-clamp-4"
                 }`}
                 dangerouslySetInnerHTML={{ __html: news.content }}
@@ -707,168 +1037,55 @@ export default function LocalNewsDetails() {
 
             {/* Comments Section */}
             <div className="pt-6 border-t border-gray-200">
-              <h2 className="text-2xl font-semibold text-gray-800 mb-4">
-                💬 Comments
+              <h2 className="text-xl md:text-2xl font-semibold text-gray-800 mb-4">
+                💬 Comments ({comments.length})
               </h2>
 
-              {/* Comment Input */}
-              <div className="flex flex-col sm:flex-row items-center gap-3 mb-6">
-                <textarea
-                  value={commentText}
-                  onChange={(e) => setCommentText(e.target.value)}
-                  placeholder="Share your thoughts..."
-                  rows="2"
-                  className="w-full sm:flex-1 border border-gray-300 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-green-400 resize-none"
-                />
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  disabled={posting}
-                  onClick={handlePostComment}
-                  className="flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-xl px-5 py-3 w-full sm:w-auto disabled:opacity-60 transition"
-                >
-                  <Send size={18} />
-                  {posting ? "Posting..." : "Post"}
-                </motion.button>
+              {/* Add Comment Input */}
+              <div className="flex gap-3 mb-6 pb-6 border-b border-gray-200">
+                <div className="flex-shrink-0">
+                  {currentUser?.profileImageUrl ? (
+                    <img
+                      src={currentUser.profileImageUrl}
+                      alt={`${currentUser.firstName} ${currentUser.lastName}`}
+                      className="w-9 h-9 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-9 h-9 bg-gray-300 text-gray-600 flex items-center justify-center rounded-full font-semibold text-sm">
+                      {currentUser?.firstName?.[0]?.toUpperCase() || "U"}
+                    </div>
+                  )}
+                </div>
+                <div className="flex-1 flex flex-col gap-2">
+                  <textarea
+                    value={commentText}
+                    onChange={(e) => setCommentText(e.target.value)}
+                    placeholder="Add a comment..."
+                    rows="2"
+                    className="w-full border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-1 focus:ring-green-500 text-sm resize-none"
+                  />
+                  <div className="flex justify-end">
+                    <button
+                      disabled={posting}
+                      onClick={handlePostComment}
+                      className="px-4 py-1.5 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold rounded-md disabled:opacity-60 transition"
+                    >
+                      {posting ? "Posting..." : "Post"}
+                    </button>
+                  </div>
+                </div>
               </div>
 
               {/* Comments List */}
-              <AnimatePresence>
-                <motion.div
-                  layout
-                  className="space-y-5"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ staggerChildren: 0.15 }}
-                >
-                  {comments.length > 0 ? (
-  [...comments].reverse().map((c, index) => (
-                      <motion.div
-                        key={c.id}
-                        initial={{ opacity: 0, y: 30 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{
-                          delay: index * 0.05,
-                          type: "spring",
-                          stiffness: 80,
-                        }}
-                        className="bg-white p-4 rounded-2xl shadow-md flex items-start gap-4 border border-green-100 hover:shadow-lg transition-transform duration-300 hover:scale-[1.01]"
-                      >
-                        {c.author?.profileImageUrl ? (
-                          <img
-                            src={c.author.profileImageUrl}
-                            alt={`${c.author.firstName} ${c.author.lastName}`}
-                            className="w-12 h-12 rounded-full object-cover border-2 border-green-200 shadow-sm flex-shrink-0"
-                            onError={(e) => {
-                              e.target.style.display = "none";
-                              e.target.nextSibling.style.display = "flex";
-                            }}
-                          />
-                        ) : null}
-                        <div
-                          className="w-12 h-12 bg-green-100 text-green-700 flex items-center justify-center rounded-full font-bold text-lg shadow-sm flex-shrink-0"
-                          style={{
-                            display: c.author?.profileImageUrl
-                              ? "none"
-                              : "flex",
-                          }}
-                        >
-                          {(c.author?.firstName?.[0] || "U").toUpperCase()}
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2">
-                            <div className="flex-1">
-                              <h4 className="font-semibold text-gray-800">
-                                {c.author
-                                  ? `${c.author.firstName} ${c.author.lastName}`
-                                  : "Anonymous"}
-                              </h4>
-                              <span className="text-xs text-gray-500 italic">
-                                {formatDate(c.createdAt)}
-                              </span>
-                            </div>
-
-                            {/* Action Buttons */}
-                            {currentUser &&
-                              (canEditComment(c) || canDeleteComment(c)) && (
-                                <div className="flex items-center gap-2">
-                                  {canEditComment(c) &&
-                                    editingCommentId !== c.id && (
-                                      <motion.button
-                                        whileHover={{ scale: 1.1 }}
-                                        whileTap={{ scale: 0.95 }}
-                                        onClick={() => handleStartEdit(c)}
-                                        className="text-blue-600 hover:text-blue-700 p-1.5 rounded-lg hover:bg-blue-50 transition"
-                                        title="Edit comment"
-                                      >
-                                        <Edit2 size={16} />
-                                      </motion.button>
-                                    )}
-                                  {canDeleteComment(c) &&
-                                    editingCommentId !== c.id && (
-                                      <motion.button
-                                        whileHover={{ scale: 1.1 }}
-                                        whileTap={{ scale: 0.95 }}
-                                        onClick={() =>
-                                          handleOpenDeleteModal(c.id)
-                                        }
-                                        className="text-red-600 hover:text-red-700 p-1.5 rounded-lg hover:bg-red-50 transition"
-                                        title="Delete comment"
-                                      >
-                                        <Trash2 size={16} />
-                                      </motion.button>
-                                    )}
-                                </div>
-                              )}
-                          </div>
-
-                          {/* Edit Mode */}
-                          {editingCommentId === c.id ? (
-                            <div className="mt-2 space-y-2">
-                              <textarea
-                                value={editCommentText}
-                                onChange={(e) =>
-                                  setEditCommentText(e.target.value)
-                                }
-                                className="w-full border border-gray-300 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
-                                rows="3"
-                              />
-                              <div className="flex items-center gap-2">
-                                <motion.button
-                                  whileHover={{ scale: 1.05 }}
-                                  whileTap={{ scale: 0.95 }}
-                                  onClick={() => handleUpdateComment(c.id)}
-                                  className="flex items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg px-4 py-2 text-sm transition"
-                                >
-                                  <Save size={14} />
-                                  Save
-                                </motion.button>
-                                <motion.button
-                                  whileHover={{ scale: 1.05 }}
-                                  whileTap={{ scale: 0.95 }}
-                                  onClick={handleCancelEdit}
-                                  className="flex items-center gap-1 bg-gray-300 hover:bg-gray-400 text-gray-700 font-semibold rounded-lg px-4 py-2 text-sm transition"
-                                >
-                                  <XCircle size={14} />
-                                  Cancel
-                                </motion.button>
-                              </div>
-                            </div>
-                          ) : (
-                            <p className="text-gray-700 bg-green-50 px-4 py-2 rounded-xl leading-relaxed border border-green-100 mt-2">
-                              {c.content}
-                            </p>
-                          )}
-                        </div>
-                      </motion.div>
-                    ))
-                  ) : (
-                    <p className="text-gray-500 italic text-center">
-                      No comments yet. Be the first to share your thoughts!
-                    </p>
-                  )}
-                </motion.div>
-              </AnimatePresence>
+              <div className="space-y-1">
+                {comments.length > 0 ? (
+                  [...comments].reverse().map((comment) => renderComment(comment, 0))
+                ) : (
+                  <p className="text-gray-500 text-sm text-center py-8">
+                    No comments yet. Be the first to comment!
+                  </p>
+                )}
+              </div>
             </div>
           </motion.div>
         </main>
@@ -941,22 +1158,18 @@ export default function LocalNewsDetails() {
                   cannot be undone.
                 </p>
                 <div className="flex gap-3 justify-end">
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
+                  <button
                     onClick={handleCloseDeleteModal}
-                    className="px-5 py-2 bg-gray-300 hover:bg-gray-400 text-gray-700 font-semibold rounded-lg transition"
+                    className="px-5 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold rounded-lg transition"
                   >
                     Cancel
-                  </motion.button>
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
+                  </button>
+                  <button
                     onClick={handleDeleteComment}
                     className="px-5 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition"
                   >
                     Delete
-                  </motion.button>
+                  </button>
                 </div>
               </motion.div>
             </motion.div>

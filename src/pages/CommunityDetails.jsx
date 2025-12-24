@@ -1,4 +1,3 @@
-// src/pages/CommunityDetails.jsx
 import React, { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -19,7 +18,7 @@ import {
   XCircle,
   Share2,
   Link2,
-  MoreHorizontal,
+  MoreVertical,
 } from "lucide-react";
 import axios from "axios";
 import { toast } from "react-toastify";
@@ -63,8 +62,11 @@ export default function CommunityDetails() {
   const [replyText, setReplyText] = useState("");
   const [postingReply, setPostingReply] = useState(false);
 
-  // Collapse/Expand replies state (Instagram style)
+  // Collapse/Expand replies state - BY DEFAULT ALL COLLAPSED
   const [collapsedReplies, setCollapsedReplies] = useState({});
+
+  // YouTube-style menu state
+  const [openMenuId, setOpenMenuId] = useState(null);
 
   // Ads state
   const [ads, setAds] = useState([]);
@@ -220,6 +222,15 @@ export default function CommunityDetails() {
     }
   };
 
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = () => {
+      if (openMenuId) setOpenMenuId(null);
+    };
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [openMenuId]);
+
   // Fetch Current User
   useEffect(() => {
     const fetchCurrentUser = async () => {
@@ -315,8 +326,21 @@ export default function CommunityDetails() {
         `https://api.jharkhandbiharupdates.com/api/v1/comments/community-posts/${id}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      if (res.data.success) setComments(res.data.data);
-      else toast.error("Failed to fetch comments");
+      if (res.data.success) {
+        setComments(res.data.data);
+        // Initialize all replies as collapsed by default
+        const allCollapsed = {};
+        const markAsCollapsed = (comments) => {
+          comments.forEach(comment => {
+            if (comment.replies && comment.replies.length > 0) {
+              allCollapsed[comment.id] = true;
+              markAsCollapsed(comment.replies);
+            }
+          });
+        };
+        markAsCollapsed(res.data.data);
+        setCollapsedReplies(allCollapsed);
+      } else toast.error("Failed to fetch comments");
     } catch {
       toast.error("Failed to fetch comments");
     }
@@ -412,7 +436,7 @@ export default function CommunityDetails() {
     }
   };
 
-  // Toggle replies visibility (Instagram style)
+  // Toggle replies visibility
   const toggleReplies = (commentId) => {
     setCollapsedReplies((prev) => ({
       ...prev,
@@ -430,6 +454,7 @@ export default function CommunityDetails() {
   const handleStartEdit = (comment) => {
     setEditingCommentId(comment.id);
     setEditCommentText(comment.content);
+    setOpenMenuId(null);
   };
 
   // Cancel Edit
@@ -473,6 +498,7 @@ export default function CommunityDetails() {
   const handleOpenDeleteModal = (commentId) => {
     setDeletingCommentId(commentId);
     setShowDeleteModal(true);
+    setOpenMenuId(null);
   };
 
   // Close Delete Modal
@@ -518,22 +544,25 @@ export default function CommunityDetails() {
     return isCommentOwner || isPostOwner;
   };
 
-  // Recursive Comment Renderer with LinkedIn-style nested lines
-  const renderComment = (comment, level = 0, isLastReply = false) => {
+  // 🔥 PERFECT HIERARCHY - Recursive Comment Renderer (EventDetails Style)
+  const renderComment = (comment, level = 0) => {
     const isEditing = editingCommentId === comment.id;
     const isReplying = replyingToId === comment.id;
     const hasReplies = comment.replies && comment.replies.length > 0;
     const repliesCount = countReplies(comment);
-    const areRepliesCollapsed = collapsedReplies[comment.id] || false;
+    const areRepliesCollapsed = collapsedReplies[comment.id] !== false;
+    const isMenuOpen = openMenuId === comment.id;
+
+    // MAX DEPTH LIMIT - Industry Standard (3 levels)
+    const maxLevel = Math.min(level, 3);
 
     return (
       <div key={comment.id} className="relative">
-        
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.2 }}
-          className={`flex gap-3 py-3 ${level > 0 ? "ml-11" : ""}`}
+          className="flex gap-3 py-3"
         >
           {/* Avatar */}
           <div className="flex-shrink-0 relative z-10">
@@ -604,44 +633,35 @@ export default function CommunityDetails() {
                   </p>
                 )}
 
-                {/* Action Buttons */}
+                {/* 🔥 Reply Button + View Replies on SAME LINE */}
                 {!isEditing && (
-                  <div className="flex items-center gap-4 mt-2">
+                  <div className="flex items-center gap-4 mt-2 flex-wrap">
                     <button
                       onClick={() => handleStartReply(comment.id)}
-                      className="text-xs font-semibold text-gray-500 hover:text-gray-700 transition"
+                      className="text-xs font-semibold text-gray-500 hover:text-blue-600 transition"
                     >
                       Reply
                     </button>
 
-                    {currentUser &&
-                      (canEditComment(comment) || canDeleteComment(comment)) && (
-                        <div className="relative group">
-                          <button className="text-gray-400 hover:text-gray-600 transition">
-                            <MoreHorizontal size={16} />
-                          </button>
-                          <div className="absolute left-0 top-6 bg-white border border-gray-200 rounded-lg shadow-lg py-1 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10">
-                            {canEditComment(comment) && (
-                              <button
-                                onClick={() => handleStartEdit(comment)}
-                                className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 w-full text-left whitespace-nowrap"
-                              >
-                                <Edit2 size={14} />
-                                Edit
-                              </button>
-                            )}
-                            {canDeleteComment(comment) && (
-                              <button
-                                onClick={() => handleOpenDeleteModal(comment.id)}
-                                className="flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 w-full text-left whitespace-nowrap"
-                              >
-                                <Trash2 size={14} />
-                                Delete
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      )}
+                    {/* View/Hide Replies Button */}
+                    {hasReplies && (
+                      <button
+                        onClick={() => toggleReplies(comment.id)}
+                        className="flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-700 transition"
+                      >
+                        {areRepliesCollapsed ? (
+                          <>
+                            <ChevronDown size={14} />
+                            <span>{repliesCount} {repliesCount === 1 ? "reply" : "replies"}</span>
+                          </>
+                        ) : (
+                          <>
+                            <ChevronUp size={14} />
+                            <span>Hide {repliesCount}</span>
+                          </>
+                        )}
+                      </button>
+                    )}
                   </div>
                 )}
 
@@ -678,41 +698,71 @@ export default function CommunityDetails() {
                     </div>
                   </motion.div>
                 )}
+
+                {/* 🔥 CORRECT: Nested Replies INSIDE parent's content, maintaining hierarchy */}
+                {hasReplies && !areRepliesCollapsed && (
+                  <div className="mt-2 ml-0">
+                    {[...comment.replies].reverse().map((reply) => 
+                      renderComment(reply, level + 1)
+                    )}
+                  </div>
+                )}
+
               </div>
+
+              {/* YouTube-style 3-Dot Menu */}
+              {currentUser && (canEditComment(comment) || canDeleteComment(comment)) && !isEditing && (
+                <div className="relative">
+                  <motion.button
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setOpenMenuId(isMenuOpen ? null : comment.id);
+                    }}
+                    className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition"
+                    title="More options"
+                  >
+                    <MoreVertical size={18} />
+                  </motion.button>
+
+                  {/* Dropdown Menu */}
+                  <AnimatePresence>
+                    {isMenuOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                        transition={{ duration: 0.15 }}
+                        className="absolute right-0 top-8 bg-white border border-gray-200 rounded-lg shadow-xl py-1 z-20 min-w-[140px]"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {canEditComment(comment) && (
+                          <button
+                            onClick={() => handleStartEdit(comment)}
+                            className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 w-full text-left transition"
+                          >
+                            <Edit2 size={16} className="text-blue-600" />
+                            <span className="font-medium">Edit</span>
+                          </button>
+                        )}
+                        {canDeleteComment(comment) && (
+                          <button
+                            onClick={() => handleOpenDeleteModal(comment.id)}
+                            className="flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 w-full text-left transition"
+                          >
+                            <Trash2 size={16} />
+                            <span className="font-medium">Delete</span>
+                          </button>
+                        )}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              )}
             </div>
           </div>
         </motion.div>
-
-        {/* View/Hide Replies Button */}
-        {hasReplies && (
-          <div className={level > 0 ? "ml-11" : ""}>
-            <button
-              onClick={() => toggleReplies(comment.id)}
-              className="flex items-center gap-2 ml-12 py-2 text-xs font-semibold text-gray-600 hover:text-gray-900 transition"
-            >
-              {areRepliesCollapsed ? (
-                <>
-                  <ChevronDown size={14} />
-                  View {repliesCount} {repliesCount === 1 ? "reply" : "replies"}
-                </>
-              ) : (
-                <>
-                  <ChevronUp size={14} />
-                  Hide {repliesCount} {repliesCount === 1 ? "reply" : "replies"}
-                </>
-              )}
-            </button>
-          </div>
-        )}
-
-        {/* Render Nested Replies */}
-        {hasReplies && !areRepliesCollapsed && (
-          <div className="mt-1">
-            {comment.replies.map((reply, index) => 
-              renderComment(reply, level + 1, index === comment.replies.length - 1)
-            )}
-          </div>
-        )}
       </div>
     );
   };
@@ -988,7 +1038,7 @@ export default function CommunityDetails() {
             {/* Comments Section */}
             <div className="pt-6 border-t border-gray-200">
               <h2 className="text-xl md:text-2xl font-semibold text-gray-800 mb-4">
-                💬 Comments
+                💬 Comments ({comments.length})
               </h2>
 
               {/* Add Comment Input */}
@@ -1029,7 +1079,7 @@ export default function CommunityDetails() {
               {/* Comments List */}
               <div className="space-y-1">
                 {comments.length > 0 ? (
-                  [...comments].reverse().map((comment) => renderComment(comment, 0, false))
+                  [...comments].reverse().map((comment) => renderComment(comment, 0))
                 ) : (
                   <p className="text-gray-500 text-sm text-center py-8">
                     No comments yet. Be the first to comment!
