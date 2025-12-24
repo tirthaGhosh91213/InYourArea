@@ -90,7 +90,7 @@ if (
 
   const menuItems = [
     {
-  name: "Local News",
+  name: "State News",
   icon: Radio,
   path: `/statenews/${encodeURIComponent(selectedState)}`,
 },

@@ -243,8 +243,8 @@ export default function CreateLocalNewsPost() {
               required
             >
               <option value="">-- Choose a State --</option>
-              <option value="Jharkhand">Jharkhand</option>
               <option value="Bihar">Bihar</option>
+              <option value="Jharkhand">Jharkhand</option>
             </select>
           </div>
 
