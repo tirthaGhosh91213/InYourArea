@@ -459,7 +459,7 @@ export default function Events() {
                 <div className="flex flex-col gap-6">
                   {leftEvents.length === 0 && !loading && (
                     <div className="text-center text-gray-500 mt-12 col-span-full">
-                      No events found.
+                      No events scheduled yet. Create the first one!
                     </div>
                   )}
                   {leftEvents.map((event, idx) => (
