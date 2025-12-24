@@ -57,8 +57,8 @@ function GoogleCallback() {
         }, 2000); // Wait 2 seconds for OneSignal to be ready
 
         setTimeout(() => {
-          console.log('🚀 Navigating to /jobs...');
-          navigate('/jobs');
+          console.log('🚀 Navigating to /Community...');
+          navigate('/community');
         }, 500);
       } catch (error) {
         console.error('❌ Error storing tokens:', error);
