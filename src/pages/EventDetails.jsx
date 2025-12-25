@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import axios from "axios";
 import { toast } from "react-toastify";
+import { MdVerified } from "react-icons/md";
 import SmallAdd from "../components/SmallAdd";
 import Loader from '../components/Loader';
 
@@ -504,6 +505,7 @@ export default function EventDetails() {
     const repliesCount = countReplies(comment);
     const areRepliesCollapsed = collapsedReplies[comment.id] !== false;
     const isMenuOpen = openMenuId === comment.id;
+    const isCommentAuthorAdmin = comment.author?.role === "ADMIN";
 
     // MAX DEPTH LIMIT - Industry Standard (3 levels)
     const maxLevel = Math.min(level, 3);
@@ -514,8 +516,7 @@ export default function EventDetails() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.2 }}
-          className="flex gap-3 py-3"
-
+          className="flex gap-3 py-2"
         >
           {/* Avatar */}
           <div className="flex-shrink-0 relative z-10">
@@ -545,11 +546,19 @@ export default function EventDetails() {
             <div className="flex items-start justify-between gap-2">
               <div className="flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="font-semibold text-sm text-gray-900">
-                    {comment.author
-                      ? `${comment.author.firstName} ${comment.author.lastName}`
-                      : "Anonymous"}
-                  </span>
+                  <div className="flex items-center gap-1">
+                    <span className="font-semibold text-sm text-gray-900">
+                      {comment.author
+                        ? `${comment.author.firstName} ${comment.author.lastName}`
+                        : "Anonymous"}
+                    </span>
+                    {isCommentAuthorAdmin && (
+                      <MdVerified 
+                        size={16} 
+                        className="text-blue-500 flex-shrink-0" 
+                      />
+                    )}
+                  </div>
                   <span className="text-xs text-gray-500">
                     {formatDate(comment.createdAt)}
                   </span>
@@ -653,13 +662,13 @@ export default function EventDetails() {
                 )}
 
                 {/* 🔥 CORRECT: Nested Replies INSIDE parent's content, maintaining hierarchy */}
-{hasReplies && !areRepliesCollapsed && (
-  <div className="mt-2 ml-0">
-    {[...comment.replies].reverse().map((reply) => 
-      renderComment(reply, level + 1)
-    )}
-  </div>
-)}
+                {hasReplies && !areRepliesCollapsed && (
+                  <div className="mt-2 ml-0">
+                    {[...comment.replies].reverse().map((reply) => 
+                      renderComment(reply, level + 1)
+                    )}
+                  </div>
+                )}
 
               </div>
 
@@ -730,6 +739,8 @@ export default function EventDetails() {
     </div>
   );
 
+  const isEventAuthorAdmin = event.author?.role === "ADMIN";
+
   return (
     <>
       <div className="flex h-screen bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden">
@@ -753,19 +764,19 @@ export default function EventDetails() {
 
         <main className="flex-1 overflow-y-auto p-4 md:p-6 relative">
           <motion.button
-  whileHover={{ scale: 1.05 }}
-  whileTap={{ scale: 0.95 }}
-  onClick={() => {
-    if (window.history.length > 2) {
-      window.history.back();
-    } else {
-      window.location.href = '/';
-    }
-  }}
-  className="flex items-center gap-2 mb-4 text-green-700 font-semibold hover:text-teal-700 transition"
->
-  <ArrowLeft size={20} /> Back
-</motion.button>
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => {
+              if (window.history.length > 2) {
+                window.history.back();
+              } else {
+                window.location.href = '/';
+              }
+            }}
+            className="flex items-center gap-2 mb-4 text-green-700 font-semibold hover:text-teal-700 transition"
+          >
+            <ArrowLeft size={20} /> Back
+          </motion.button>
 
           <motion.div
             layout
@@ -824,10 +835,18 @@ export default function EventDetails() {
                     }}
                   />
                   <div className="flex-1 min-w-0">
-                    <div className="font-semibold text-gray-800 text-base sm:text-lg truncate">
-                      {event.author
-                        ? `${event.author.firstName} ${event.author.lastName}`
-                        : "Unknown Author"}
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-semibold text-gray-800 text-base sm:text-lg truncate">
+                        {event.author
+                          ? `${event.author.firstName} ${event.author.lastName}`
+                          : "Unknown Author"}
+                      </span>
+                      {isEventAuthorAdmin && (
+                        <MdVerified 
+                          size={18} 
+                          className="sm:w-5 sm:h-5 text-blue-500 flex-shrink-0" 
+                        />
+                      )}
                     </div>
                     <div className="text-sm text-gray-500 flex items-center gap-1 flex-wrap">
                       <Calendar size={14} className="shrink-0" />
@@ -965,7 +984,7 @@ export default function EventDetails() {
             {/* Comments Section */}
             <div className="pt-6 border-t border-gray-200">
               <h2 className="text-xl md:text-2xl font-semibold text-gray-800 mb-4">
-                💬 Comments ({comments.length})
+                💬 Comments
               </h2>
 
               {/* Add Comment */}

@@ -10,6 +10,7 @@ import {
   Link as LinkIcon,
   X,
 } from "lucide-react";
+import { MdVerified } from "react-icons/md";
 import Sidebar from "../components/SideBar";
 import RightSidebar from "../components/RightSidebar";
 import SmallAdd from "../components/SmallAdd";
@@ -18,11 +19,13 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import Loader from "../components/Loader";
 
+
 // Helper: Get next index in circular manner
 function getNextIndex(current, total) {
   if (total === 0) return 0;
   return (current + 1) % total;
 }
+
 
 // Helper: Shuffle an array (for large ads order)
 function shuffle(array) {
@@ -34,12 +37,14 @@ function shuffle(array) {
   return arr;
 }
 
+
 const SLOT_KEYS = {
   TOP_RIGHT: "EVENTS_AD_INDEX_TOP_RIGHT",
   BOTTOM_RIGHT: "EVENTS_AD_INDEX_BOTTOM_RIGHT",
   LARGE_AD_1: "EVENTS_LARGE_AD_INDEX_1",
   LARGE_AD_2: "EVENTS_LARGE_AD_INDEX_2",
 };
+
 
 export default function Events() {
   const navigate = useNavigate();
@@ -48,17 +53,20 @@ export default function Events() {
   const [loading, setLoading] = useState(true);
   const [filterCity, setFilterCity] = useState("All");
 
+
   const [ads, setAds] = useState([]);
   const [topRightIndex, setTopRightIndex] = useState(0);
   const [bottomRightIndex, setBottomRightIndex] = useState(1);
   const [topRightClosed, setTopRightClosed] = useState(false);
   const [bottomRightClosed, setBottomRightClosed] = useState(false);
 
+
   const [largeAds, setLargeAds] = useState([]);
   const [largeAdIndexes, setLargeAdIndexes] = useState([0, 1]);
   const [largeAd1Closed, setLargeAd1Closed] = useState(false);
   const [largeAd2Closed, setLargeAd2Closed] = useState(false);
   const timerRef = useRef();
+
 
   // Fetch events
   const fetchEvents = async () => {
@@ -75,8 +83,10 @@ export default function Events() {
     }
   };
 
+
   useEffect(() => {
     fetchEvents();
+
 
     // Fetch small ads
     fetch("https://api.jharkhandbiharupdates.com/api/v1/banner-ads/active/small")
@@ -85,6 +95,7 @@ export default function Events() {
         if (data && data.data && Array.isArray(data.data) && data.data.length > 0) {
           const orderedAds = [...data.data];
           setAds(orderedAds);
+
 
           const total = orderedAds.length;
           let savedTop = parseInt(
@@ -95,6 +106,7 @@ export default function Events() {
             localStorage.getItem(SLOT_KEYS.BOTTOM_RIGHT) ?? "1",
             10
           );
+
 
           if (total === 1) {
             setTopRightIndex(0);
@@ -108,12 +120,14 @@ export default function Events() {
             if (savedTop === savedBottom && total > 1)
               savedBottom = getNextIndex(savedTop, total);
 
+
             setTopRightIndex(savedTop);
             setBottomRightIndex(savedBottom);
           }
         }
       })
       .catch((err) => console.error("Error fetching events small ads:", err));
+
 
     // Fetch large ads
     fetch("https://api.jharkhandbiharupdates.com/api/v1/banner-ads/active/large")
@@ -122,6 +136,7 @@ export default function Events() {
         if (data && Array.isArray(data.data)) {
           const shuffled = shuffle(data.data);
           setLargeAds(shuffled);
+
 
           let largeAdIdx1 = parseInt(
             localStorage.getItem(SLOT_KEYS.LARGE_AD_1) ?? "0",
@@ -132,6 +147,7 @@ export default function Events() {
             10
           );
           const total = shuffled.length;
+
 
           if (total === 1) {
             setLargeAdIndexes([0]);
@@ -145,6 +161,7 @@ export default function Events() {
             if (largeAdIdx1 === largeAdIdx2 && total > 1)
               largeAdIdx2 = getNextIndex(largeAdIdx1, total);
 
+
             setLargeAdIndexes([largeAdIdx1, largeAdIdx2]);
           }
         }
@@ -153,6 +170,7 @@ export default function Events() {
         console.error("Error fetching events large ads:", err);
       });
   }, []);
+
 
   useEffect(() => {
     if (!ads.length || ads.length === 1) return;
@@ -167,9 +185,11 @@ export default function Events() {
     }
   }, [topRightClosed, bottomRightClosed, topRightIndex, bottomRightIndex, ads]);
 
+
   useEffect(() => {
     if (largeAds.length === 0 || largeAds.length === 1) return;
     if (timerRef.current) clearInterval(timerRef.current);
+
 
     timerRef.current = setInterval(() => {
       setLargeAdIndexes(([idx1, idx2]) => {
@@ -179,16 +199,19 @@ export default function Events() {
         if (nextIdx1 === nextIdx2 && total > 1)
           nextIdx2 = getNextIndex(nextIdx1, total);
 
+
         localStorage.setItem(SLOT_KEYS.LARGE_AD_1, String(nextIdx1));
         localStorage.setItem(SLOT_KEYS.LARGE_AD_2, String(nextIdx2));
         return [nextIdx1, nextIdx2];
       });
     }, 10000); // 10 seconds
 
+
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
   }, [largeAds]);
+
 
   // Filter events – keep backend order intact
   const filteredEvents = events.filter((e) => {
@@ -203,6 +226,7 @@ export default function Events() {
     return matchesSearch && matchesFilter;
   });
 
+
   // Desktop: split into two event columns
   const leftEvents = [];
   const centerEvents = [];
@@ -210,6 +234,7 @@ export default function Events() {
     if (idx % 2 === 0) leftEvents.push(event);
     else centerEvents.push(event);
   });
+
 
   // Small ads
   const topRightAd =
@@ -219,11 +244,13 @@ export default function Events() {
       ? ads[bottomRightIndex % ads.length]
       : null;
 
+
   // Helper: build mobile sequence post–post–ad
   const buildMobileItems = () => {
     const items = [];
     if (!filteredEvents.length) return items;
     let adPtr = 0;
+
 
     if (filteredEvents.length === 1) {
       // Ad1, post, Ad2 (if exists)
@@ -235,6 +262,7 @@ export default function Events() {
       return items;
     }
 
+
     if (filteredEvents.length === 2) {
       // post, Ad1, post, Ad2
       items.push({ type: "event", event: filteredEvents[0] });
@@ -245,6 +273,7 @@ export default function Events() {
         items.push({ type: "ad", adIndex: largeAdIndexes[1] ?? 0 });
       return items;
     }
+
 
     // 3+
     for (let i = 0; i < filteredEvents.length; i++) {
@@ -263,7 +292,9 @@ export default function Events() {
     return items;
   };
 
+
   const mobileItems = buildMobileItems();
+
 
   return (
     <>
@@ -271,6 +302,7 @@ export default function Events() {
       <div className="w-full fixed top-0 left-0 z-50 bg-white shadow-md border-b border-gray-200">
         <RightSidebar refreshEvents={fetchEvents} />
       </div>
+
 
       {/* Small Ads - Close button for both desktop & mobile */}
       <AnimatePresence>
@@ -292,12 +324,14 @@ export default function Events() {
         )}
       </AnimatePresence>
 
+
       {/* Page Layout */}
       <div className="flex min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 pt-16">
         {/* Left Sidebar */}
         <div className="hidden lg:block w-64 bg-white shadow-md border-r border-gray-200">
           <Sidebar activePage="events" />
         </div>
+
 
         {/* Main Content */}
         <main className="flex-1 flex flex-col items-center px-2 pt-6 pb-10">
@@ -336,6 +370,7 @@ export default function Events() {
               </motion.button>
             </div>
           </motion.div>
+
 
           {/* Show loader while loading */}
           {loading ? (
@@ -430,10 +465,15 @@ export default function Events() {
                         </motion.div>
                       </div>
                       {item.event.author && (
-                        <p className="text-xs text-gray-400 mt-2">
-                          Posted by: {item.event.author.firstName}{" "}
-                          {item.event.author.lastName}
-                        </p>
+                        <div className="flex items-center gap-1 text-xs text-gray-400 mt-2">
+                          <span>Posted by: {item.event.author.firstName} {item.event.author.lastName}</span>
+                          {item.event.author.role === "ADMIN" && (
+                            <MdVerified 
+                              size={14} 
+                              className="text-blue-500 flex-shrink-0" 
+                            />
+                          )}
+                        </div>
                       )}
                     </motion.div>
                   ) : largeAds[item.adIndex] ? (
@@ -452,6 +492,7 @@ export default function Events() {
                   ) : null
                 )}
               </div>
+
 
               {/* DESKTOP/TABLET: events grid + sticky ads, aligned with header */}
               <div className="hidden md:grid md:grid-cols-3 gap-8 w-full max-w-7xl pb-10">
@@ -540,14 +581,20 @@ export default function Events() {
                         </motion.div>
                       </div>
                       {event.author && (
-                        <p className="text-xs text-gray-400 mt-2">
-                          Posted by: {event.author.firstName}{" "}
-                          {event.author.lastName}
-                        </p>
+                        <div className="flex items-center gap-1 text-xs text-gray-400 mt-2">
+                          <span>Posted by: {event.author.firstName} {event.author.lastName}</span>
+                          {event.author.role === "ADMIN" && (
+                            <MdVerified 
+                              size={14} 
+                              className="text-blue-500 flex-shrink-0" 
+                            />
+                          )}
+                        </div>
                       )}
                     </motion.div>
                   ))}
                 </div>
+
 
                 {/* Second Column: Events (odd indexes) */}
                 <div className="flex flex-col gap-6">
@@ -629,14 +676,20 @@ export default function Events() {
                         </motion.div>
                       </div>
                       {event.author && (
-                        <p className="text-xs text-gray-400 mt-2">
-                          Posted by: {event.author.firstName}{" "}
-                          {event.author.lastName}
-                        </p>
+                        <div className="flex items-center gap-1 text-xs text-gray-400 mt-2">
+                          <span>Posted by: {event.author.firstName} {event.author.lastName}</span>
+                          {event.author.role === "ADMIN" && (
+                            <MdVerified 
+                              size={14} 
+                              className="text-blue-500 flex-shrink-0" 
+                            />
+                          )}
+                        </div>
                       )}
                     </motion.div>
                   ))}
                 </div>
+
 
                 {/* Third Column: Sponsored Ads (sticky, wider, aligned) */}
                 <div className="flex">
@@ -646,6 +699,7 @@ export default function Events() {
                         if (i === 0 && largeAd1Closed) return null;
                         if (i === 1 && largeAd2Closed) return null;
                         if (!largeAds[idx]) return null;
+
 
                         return (
                           <motion.div
@@ -668,6 +722,7 @@ export default function Events() {
                             >
                               <X className="w-4 h-4 text-gray-700" />
                             </motion.button>
+
 
                             <LargeAd
                               ad={largeAds[idx]}

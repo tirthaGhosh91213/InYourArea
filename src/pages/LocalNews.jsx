@@ -7,14 +7,17 @@ import Sidebar from "../../src/components/SideBar";
 import RightSidebar from "../components/RightSidebar";
 import SmallAdd from "../components/SmallAdd";
 import LargeAd from "../components/LargeAd";
-import { Clock, Loader2, MessageSquare } from "lucide-react";
+import { Clock } from "lucide-react";
+import { MdVerified } from "react-icons/md";
 import Loader from '../components/Loader';
+
 
 // Helper: circular next index
 function getNextIndex(current, total) {
   if (total === 0) return 0;
   return (current + 1) % total;
 }
+
 
 // Helper: truncate text to specified length
 const truncateText = (text, maxLength) => {
@@ -24,37 +27,41 @@ const truncateText = (text, maxLength) => {
   return cleanText.slice(0, maxLength).trim() + '...';
 };
 
-// LocalStorage keys for StateNews ads ✅ FIXED name
+
+// LocalStorage keys for StateNews ads
 const SLOT_KEYS = {
-  TOP_RIGHT: "STATENEWS_AD_INDEX_TOP_RIGHT",  // ✅ FIXED
-  BOTTOM_RIGHT: "STATENEWS_AD_INDEX_BOTTOM_RIGHT",  // ✅ FIXED
+  TOP_RIGHT: "STATENEWS_AD_INDEX_TOP_RIGHT",
+  BOTTOM_RIGHT: "STATENEWS_AD_INDEX_BOTTOM_RIGHT",
 };
+
 
 export default function LocalNews() {
   const params = useParams();
   const navigate = useNavigate();
 
-  const states = [  // ✅ CORRECT - already changed
+
+  const states = [
     "----------- States -----------",
     "Bihar",
     "Jharkhand"
   ];
 
-  // ✅ FIXED: getInitialState function name & logic
-  const getInitialState = () => {  // ✅ CHANGED from getInitialDistrict
-    const paramState = params.state ? decodeURIComponent(params.state) : "";  // params.district rakha hai URL compatibility ke liye
+
+  const getInitialState = () => {
+    const paramState = params.state ? decodeURIComponent(params.state) : "";
     if (paramState && !paramState.startsWith("-")) return paramState;
-    const saved = localStorage.getItem("state");  // ✅ FIXED localStorage key
+    const saved = localStorage.getItem("state");
     if (saved && !saved.startsWith("-")) return saved;
-    return states.find((s) => !s.startsWith("-")) || "";  // ✅ FIXED states reference
+    return states.find((s) => !s.startsWith("-")) || "";
   };
 
-  // ✅ FIXED: state variable name
-  const [state, setState] = useState(getInitialState());  // ✅ CHANGED from district
+
+  const [state, setState] = useState(getInitialState());
   const [newsList, setNewsList] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const token = localStorage.getItem("accessToken");
+
 
   // Small ads state
   const [ads, setAds] = useState([]);
@@ -63,17 +70,19 @@ export default function LocalNews() {
   const [topRightClosed, setTopRightClosed] = useState(false);
   const [bottomRightClosed, setBottomRightClosed] = useState(false);
 
+
   // Large ads state for interleaving
   const [largeAds, setLargeAds] = useState([]);
 
-  // ✅ FIXED: Sync state with URL and localStorage
+
   useEffect(() => {
-    if (state && !state.startsWith("-") && params.state !== state) {  // params.district rakha hai URL compatibility
-      localStorage.setItem("state", state);  // ✅ FIXED localStorage key
-      navigate(`/statenews/${encodeURIComponent(state)}`, { replace: true });  // ✅ FIXED path
+    if (state && !state.startsWith("-") && params.state !== state) {
+      localStorage.setItem("state", state);
+      navigate(`/statenews/${encodeURIComponent(state)}`, { replace: true });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state]);
+
 
   const shuffleArray = (array) => {
     const shuffled = [...array];
@@ -84,15 +93,15 @@ export default function LocalNews() {
     return shuffled;
   };
 
-  // ✅ FIXED: Fetch state news comment
+
   useEffect(() => {
-    if (!state || state.startsWith("-")) return;  // ✅ FIXED variable
+    if (!state || state.startsWith("-")) return;
     const fetchNews = async () => {
       setLoading(true);
       setError("");
       try {
         const res = await axios.get(
-          `https://api.jharkhandbiharupdates.com/api/v1/state-news/${state}`,  // ✅ ALREADY CORRECT
+          `https://api.jharkhandbiharupdates.com/api/v1/state-news/${state}`,
           token ? { headers: { Authorization: `Bearer ${token}` } } : {}
         );
         if (res.data.success) {
@@ -100,15 +109,16 @@ export default function LocalNews() {
           setNewsList(shuffleArray(fetchedNews));
         } else setError("Failed to load news data");
       } catch (err) {
-        setError("Failed to load state news");  // ✅ FIXED error message
+        setError("Failed to load state news");
       } finally {
         setLoading(false);
       }
     };
     fetchNews();
-  }, [state, token]);  // ✅ FIXED dependency
+  }, [state, token]);
 
-  // Fetch small ads for State News ✅ FIXED comment
+
+  // Fetch small ads for State News
   useEffect(() => {
     fetch("https://api.jharkhandbiharupdates.com/api/v1/banner-ads/active/small")
       .then((res) => res.json())
@@ -117,22 +127,26 @@ export default function LocalNews() {
           const orderedAds = [...data.data];
           setAds(orderedAds);
 
+
           const total = orderedAds.length;
           let savedTop = parseInt(localStorage.getItem(SLOT_KEYS.TOP_RIGHT) ?? "0", 10);
           let savedBottom = parseInt(localStorage.getItem(SLOT_KEYS.BOTTOM_RIGHT) ?? "1", 10);
 
+
           if (isNaN(savedTop) || savedTop < 0 || savedTop >= total) savedTop = 0;
           if (isNaN(savedBottom) || savedBottom < 0 || savedBottom >= total) savedBottom = total > 1 ? 1 : 0;
           if (savedTop === savedBottom && total > 1) savedBottom = getNextIndex(savedTop, total);
+
 
           setTopRightIndex(savedTop);
           setBottomRightIndex(savedBottom);
         }
       })
       .catch((err) => {
-        console.error("Error fetching state news ads:", err);  // ✅ FIXED comment
+        console.error("Error fetching state news ads:", err);
       });
   }, []);
+
 
   // Fetch large ads for interleaving
   useEffect(() => {
@@ -144,25 +158,29 @@ export default function LocalNews() {
         }
       })
       .catch((err) => {
-        console.error("Error fetching state news large ads:", err);  // ✅ FIXED comment
+        console.error("Error fetching state news large ads:", err);
       });
   }, []);
+
 
   // Rotate ad index on next refresh after a close
   useEffect(() => {
     if (!ads.length) return;
     const total = ads.length;
 
+
     if (topRightClosed) {
       const nextTop = getNextIndex(topRightIndex, total);
       localStorage.setItem(SLOT_KEYS.TOP_RIGHT, String(nextTop));
     }
+
 
     if (bottomRightClosed) {
       const nextBottom = getNextIndex(bottomRightIndex, total);
       localStorage.setItem(SLOT_KEYS.BOTTOM_RIGHT, String(nextBottom));
     }
   }, [topRightClosed, bottomRightClosed, topRightIndex, bottomRightIndex, ads]);
+
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -172,9 +190,9 @@ export default function LocalNews() {
     });
   };
 
-  // ✅ FIXED: Navigation paths
+
   const handleNewsClick = (id) => navigate(`/statenews/details/${id}`);
-  const handleCommentClick = (id) => navigate(`/statenews/details/${id}`);
+
 
   // Desktop layout logic
   const getDesktopNewsLayout = () => {
@@ -184,6 +202,7 @@ export default function LocalNews() {
     return { bigTop, smallBoxes, bigMore };
   };
   const { bigTop, smallBoxes, bigMore } = getDesktopNewsLayout();
+
 
   const renderMedia = (url, alt, className) => {
     const isVideo =
@@ -196,8 +215,10 @@ export default function LocalNews() {
     return <img src={url} alt={alt} className={className} />;
   };
 
+
   const topRightAd = ads.length ? ads[topRightIndex % ads.length] : null;
   const bottomRightAd = ads.length ? ads[bottomRightIndex % ads.length] : null;
+
 
   // Mobile interleaved: news then ads
   function buildInterleavedList(newsArr, adsArr) {
@@ -220,9 +241,11 @@ export default function LocalNews() {
   }
   const mobileItems = buildInterleavedList(newsList, largeAds);
 
+
   // Choose ads for desktop columns
   const desktopLargeBoxAds = largeAds.slice(0, 2);
   const desktopSmallBoxAds = largeAds.slice(2, 4);
+
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -233,6 +256,7 @@ export default function LocalNews() {
         <div className="fixed top-0 w-full z-30">
           <RightSidebar />
         </div>
+
 
         {/* Small ads top/bottom right */}
         <AnimatePresence>
@@ -256,6 +280,7 @@ export default function LocalNews() {
           )}
         </AnimatePresence>
 
+
         <main className="flex-1 flex flex-col gap-6 p-6 pt-24 items-center">
           <motion.div
             className="bg-emerald-700 text-white rounded-xl p-5 shadow-lg w-full max-w-6xl flex flex-col sm:flex-row items-center justify-between gap-4"
@@ -264,13 +289,14 @@ export default function LocalNews() {
           >
             <div>
               <h2 className="text-xl sm:text-2xl font-bold">
-                State News  {/* ✅ ALREADY CORRECT */}
+                State News
               </h2>
               <p className="text-emerald-200 mt-1">
-                Latest updates from {state || "your state"}  {/* ✅ FIXED */}
+                Latest updates from {state || "your state"}
               </p>
             </div>
           </motion.div>
+
 
           {loading ? (
             <div className="flex justify-center items-center h-64">
@@ -279,14 +305,13 @@ export default function LocalNews() {
           ) : error ? (
             <div className="text-center text-red-500 font-semibold">{error}</div>
           ) : newsList.length === 0 ? (
-  state &&
-  !state.startsWith("-") && (
-    <div className="text-center text-gray-600 font-medium">
-      No state news found.
-    </div>
-  )
-) : (
-
+            state &&
+            !state.startsWith("-") && (
+              <div className="text-center text-gray-600 font-medium">
+                No state news found.
+              </div>
+            )
+          ) : (
             <>
               {/* Mobile: interleaved large ads + news (content first) */}
               <div className="w-full max-w-6xl lg:hidden flex flex-col gap-6">
@@ -329,25 +354,24 @@ export default function LocalNews() {
                             __html: item.data.content,
                           }}
                         />
-                        <div className="flex items-center justify-between text-gray-300 text-sm mb-3">
-                          <span>
-                            {item.data.author?.firstName}{" "}
-                            {item.data.author?.lastName}
-                          </span>
+                        <div className="flex items-center justify-between text-gray-300 text-sm">
+                          <div className="flex items-center gap-1.5">
+                            <span>
+                              {item.data.author?.firstName}{" "}
+                              {item.data.author?.lastName}
+                            </span>
+                            {item.data.author?.role === "ADMIN" && (
+                              <MdVerified 
+                                size={16} 
+                                className="text-blue-500 flex-shrink-0" 
+                              />
+                            )}
+                          </div>
                           <span className="flex items-center gap-1">
                             <Clock size={14} />{" "}
                             {formatDate(item.data.createdAt)}
                           </span>
                         </div>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleCommentClick(item.data.id);
-                          }}
-                          className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium px-4 py-2 rounded-lg shadow-md transition-all"
-                        >
-                          <MessageSquare size={16} /> Comment
-                        </button>
                       </div>
                     </motion.div>
                   )
@@ -386,23 +410,22 @@ export default function LocalNews() {
                           className="text-sm text-gray-200 mb-3 line-clamp-2"
                           dangerouslySetInnerHTML={{ __html: news.content }}
                         />
-                        <div className="flex items-center justify-between text-gray-300 text-sm mb-3">
-                          <span>
-                            {news.author?.firstName} {news.author?.lastName}
-                          </span>
+                        <div className="flex items-center justify-between text-gray-300 text-sm">
+                          <div className="flex items-center gap-1.5">
+                            <span>
+                              {news.author?.firstName} {news.author?.lastName}
+                            </span>
+                            {news.author?.role === "ADMIN" && (
+                              <MdVerified 
+                                size={18} 
+                                className="text-blue-500 flex-shrink-0" 
+                              />
+                            )}
+                          </div>
                           <span className="flex items-center gap-1">
                             <Clock size={14} /> {formatDate(news.createdAt)}
                           </span>
                         </div>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleCommentClick(news.id);
-                          }}
-                          className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium px-4 py-2 rounded-lg shadow-md transition-all"
-                        >
-                          <MessageSquare size={16} /> Comment
-                        </button>
                       </div>
                     </motion.div>
                   ))}
@@ -445,23 +468,22 @@ export default function LocalNews() {
                           className="text-sm text-gray-200 mb-3 line-clamp-2"
                           dangerouslySetInnerHTML={{ __html: news.content }}
                         />
-                        <div className="flex items-center justify-between text-gray-300 text-sm mb-3">
-                          <span>
-                            {news.author?.firstName} {news.author?.lastName}
-                          </span>
+                        <div className="flex items-center justify-between text-gray-300 text-sm">
+                          <div className="flex items-center gap-1.5">
+                            <span>
+                              {news.author?.firstName} {news.author?.lastName}
+                            </span>
+                            {news.author?.role === "ADMIN" && (
+                              <MdVerified 
+                                size={18} 
+                                className="text-blue-500 flex-shrink-0" 
+                              />
+                            )}
+                          </div>
                           <span className="flex items-center gap-1">
                             <Clock size={14} /> {formatDate(news.createdAt)}
                           </span>
                         </div>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleCommentClick(news.id);
-                          }}
-                          className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium px-4 py-2 rounded-lg shadow-md transition-all"
-                        >
-                          <MessageSquare size={16} /> Comment
-                        </button>
                       </div>
                     </motion.div>
                   ))}
@@ -499,24 +521,23 @@ export default function LocalNews() {
                           }}
                         />
                         <div className="flex items-center justify-between text-xs text-gray-300">
-                          <span>
-                            {news.author?.firstName}{" "}
-                            {news.author?.lastName}
-                          </span>
+                          <div className="flex items-center gap-1">
+                            <span>
+                              {news.author?.firstName}{" "}
+                              {news.author?.lastName}
+                            </span>
+                            {news.author?.role === "ADMIN" && (
+                              <MdVerified 
+                                size={14} 
+                                className="text-blue-500 flex-shrink-0" 
+                              />
+                            )}
+                          </div>
                           <span className="flex items-center gap-1">
                             <Clock size={12} />{" "}
                             {formatDate(news.createdAt)}
                           </span>
                         </div>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleCommentClick(news.id);
-                          }}
-                          className="mt-2 flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium px-3 py-1.5 rounded-md shadow-sm transition-all"
-                        >
-                          <MessageSquare size={14} /> Comment
-                        </button>
                       </div>
                     </motion.div>
                   ))}
