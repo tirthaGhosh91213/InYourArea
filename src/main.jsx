@@ -4,6 +4,8 @@ import "./index.css";
 import App from "./App.jsx";
 import OneSignal from "react-onesignal";
 import { syncPlayerIdToBackend } from "./utils/onesignalSync";
+import { HelmetProvider } from "react-helmet-async";
+
 
 async function initOneSignalReact() {
   try {
@@ -15,16 +17,19 @@ async function initOneSignalReact() {
     });
     console.log("✅ OneSignal initialized");
 
+
     // ✅ Use the global OneSignal object for events
     if (window.OneSignal && window.OneSignal.on) {
       window.OneSignal.on("subscriptionChange", async (isSubscribed) => {
         console.log("🔔 subscriptionChange:", isSubscribed);
         if (!isSubscribed) return;
 
+
         try {
           const subscriptionId =
             await window.OneSignal.User.PushSubscription.id();
           const accessToken = localStorage.getItem("accessToken");
+
 
           if (subscriptionId && accessToken) {
             await syncPlayerIdToBackend(subscriptionId, accessToken);
@@ -46,10 +51,14 @@ async function initOneSignalReact() {
   }
 }
 
+
 initOneSignalReact();
+
 
 createRoot(document.getElementById("root")).render(
   <React.StrictMode>
-    <App />
+    <HelmetProvider>
+      <App />
+    </HelmetProvider>
   </React.StrictMode>
 );
