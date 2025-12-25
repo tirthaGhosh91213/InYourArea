@@ -183,7 +183,7 @@ export default function InYourArea() {
           <select
             value={selectedState}
   onChange={(e) => setSelectedState(e.target.value)}
-            className="w-72 sm:w-80 px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-600 focus:outline-none text-gray-700 placeholder-gray-400 transition-all"
+            className="w-72 sm:w-80 px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-600 focus:outline-none text-gray-700 placeholder-gray-400 transition-all cursor-pointer"
           >
             <option value="">-- Select Your State --</option>
             {states.map((state) =>
@@ -197,12 +197,13 @@ export default function InYourArea() {
                     background: "#f1f5f9",
                     fontSize: "1rem",
                     letterSpacing: "2px",
+                    cursor: 'pointer'
                   }}
                 >
                   {state}
                 </option>
               ) : (
-                <option key={state} value={state}>
+                <option key={state} value={state} className="cursor-pointer">
                   {state}
                 </option>
               )
@@ -210,7 +211,7 @@ export default function InYourArea() {
           </select>
           <button
             onClick={onSubmit}
-            className="px-8 py-3 bg-green-700 text-white rounded-md font-semibold hover:bg-green-800 transition-all duration-300 hover:scale-105 w-72 sm:w-auto"
+            className="px-8 py-3 bg-green-700 text-white rounded-md font-semibold hover:bg-green-800 transition-all duration-300 hover:scale-105 w-72 sm:w-auto cursor-pointer"
           >
             Continue →
           </button>
