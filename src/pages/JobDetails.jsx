@@ -1,3 +1,4 @@
+// src/pages/JobDetails.jsx
 import React, { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -24,10 +25,10 @@ import {
 } from "lucide-react";
 import axios from "axios";
 import { toast } from "react-toastify";
+import { MdVerified } from "react-icons/md";
 import SmallAdd from "../components/SmallAdd";
 import Loader from '../components/Loader';
 
-// Helper: circular index
 // Helper: circular index
 const getNextIndex = (current, total) => {
   if (total === 0) return 0;
@@ -47,25 +48,24 @@ const formatDateTime = (dateString) => {
   return `${day} ${month} ${year} ${hours}:${minutes}`;
 };
 
-  const formatDate = (date) => {
-    const now = new Date();
-    const commentDate = new Date(date);
-    const diffInSeconds = Math.floor((now - commentDate) / 1000);
+const formatDate = (date) => {
+  const now = new Date();
+  const commentDate = new Date(date);
+  const diffInSeconds = Math.floor((now - commentDate) / 1000);
 
-    if (diffInSeconds < 60) return `${diffInSeconds}s`;
-    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m`;
-    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h`;
-    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d`;
-    if (diffInSeconds < 2592000)
-      return `${Math.floor(diffInSeconds / 604800)}w`;
+  if (diffInSeconds < 60) return `${diffInSeconds}s`;
+  if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m`;
+  if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h`;
+  if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d`;
+  if (diffInSeconds < 2592000)
+    return `${Math.floor(diffInSeconds / 604800)}w`;
 
-    return new Date(date).toLocaleDateString("en-GB", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    });
-  };
-
+  return new Date(date).toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+};
 
 // LocalStorage keys for JobDetails ads
 const SLOT_KEYS = {
@@ -200,7 +200,6 @@ export default function JobDetails() {
     }
   };
 
-
   // Close menu when clicking outside
   useEffect(() => {
     const handleClickOutside = () => {
@@ -291,7 +290,6 @@ export default function JobDetails() {
       toast.error("Failed to post comment");
     }
   };
-
 
   // Start Reply
   const handleStartReply = (commentId) => {
@@ -505,7 +503,7 @@ export default function JobDetails() {
   }, [topRightClosed, bottomRightClosed, topRightIndex, bottomRightIndex, ads]);
 
   
-  // 🔥 PERFECT HIERARCHY - Recursive Comment Renderer (EventDetails Style)
+  // 🔥 PERFECT HIERARCHY - Recursive Comment Renderer with Blue Tick
   const renderComment = (comment, level = 0) => {
     const isEditing = editingCommentId === comment.id;
     const isReplying = replyingToId === comment.id;
@@ -513,6 +511,7 @@ export default function JobDetails() {
     const repliesCount = countReplies(comment);
     const areRepliesCollapsed = collapsedReplies[comment.id] !== false;
     const isMenuOpen = openMenuId === comment.id;
+    const isCommentAuthorAdmin = comment.author?.role === "ADMIN";
 
     // MAX DEPTH LIMIT - Industry Standard (3 levels)
     const maxLevel = Math.min(level, 3);
@@ -523,7 +522,7 @@ export default function JobDetails() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.2 }}
-          className="flex gap-3 py-3"
+          className="flex gap-3 py-2"
         >
           {/* Avatar */}
           <div className="flex-shrink-0 relative z-10">
@@ -553,11 +552,19 @@ export default function JobDetails() {
             <div className="flex items-start justify-between gap-2">
               <div className="flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="font-semibold text-sm text-gray-900">
-                    {comment.author
-                      ? `${comment.author.firstName} ${comment.author.lastName}`
-                      : "Anonymous"}
-                  </span>
+                  <div className="flex items-center gap-1">
+                    <span className="font-semibold text-sm text-gray-900">
+                      {comment.author
+                        ? `${comment.author.firstName} ${comment.author.lastName}`
+                        : "Anonymous"}
+                    </span>
+                    {isCommentAuthorAdmin && (
+                      <MdVerified 
+                        size={16} 
+                        className="text-blue-500 flex-shrink-0" 
+                      />
+                    )}
+                  </div>
                   <span className="text-xs text-gray-500">
                     {formatDate(comment.createdAt)}
                   </span>
@@ -738,7 +745,6 @@ export default function JobDetails() {
     </div>
   );
 
-
   return (
     <>
       <div className="flex h-screen bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden">
@@ -762,19 +768,19 @@ export default function JobDetails() {
 
         <main className="flex-1 overflow-y-auto p-4 md:p-6 relative">
           <motion.button
-  whileHover={{ scale: 1.05 }}
-  whileTap={{ scale: 0.95 }}
-  onClick={() => {
-    if (window.history.length > 2) {
-      window.history.back();
-    } else {
-      window.location.href = '/';
-    }
-  }}
-  className="flex items-center gap-2 mb-4 text-green-700 font-semibold hover:text-teal-700 transition"
->
-  <ArrowLeft size={20} /> Back
-</motion.button>
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => {
+              if (window.history.length > 2) {
+                window.history.back();
+              } else {
+                window.location.href = '/';
+              }
+            }}
+            className="flex items-center gap-2 mb-4 text-green-700 font-semibold hover:text-teal-700 transition"
+          >
+            <ArrowLeft size={20} /> Back
+          </motion.button>
 
           <motion.div
             layout
@@ -819,13 +825,12 @@ export default function JobDetails() {
                       {job.company}
                     </div>
                     <div className="text-sm text-gray-500 flex items-center gap-1 flex-wrap">
-  <Calendar size={14} className="shrink-0" />
-  <span>Deadline:</span>
-  <span className="text-red-500">
-    {formatDateTime(job.applicationDeadline)}
-  </span>
-</div>
-
+                      <Calendar size={14} className="shrink-0" />
+                      <span>Deadline:</span>
+                      <span className="text-red-500">
+                        {formatDateTime(job.applicationDeadline)}
+                      </span>
+                    </div>
                   </div>
                 </div>
 
@@ -1032,7 +1037,7 @@ export default function JobDetails() {
               <AnimatePresence>
                 <motion.div
                   layout
-                  className="space-y-5"
+                  className="space-y-0"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ staggerChildren: 0.15 }}

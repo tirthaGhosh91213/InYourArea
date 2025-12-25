@@ -1,3 +1,4 @@
+// src/pages/LocalNewsDetails.jsx
 import React, { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -22,6 +23,7 @@ import {
 } from "lucide-react";
 import axios from "axios";
 import { toast } from "react-toastify";
+import { MdVerified } from "react-icons/md";
 import SmallAdd from "../components/SmallAdd";
 import Loader from '../components/Loader';
 
@@ -556,6 +558,7 @@ export default function LocalNewsDetails() {
     const repliesCount = countReplies(comment);
     const areRepliesCollapsed = collapsedReplies[comment.id] !== false;
     const isMenuOpen = openMenuId === comment.id;
+    const isCommentAuthorAdmin = comment.author?.role === "ADMIN";
 
     // MAX DEPTH LIMIT - Industry Standard (3 levels)
     const maxLevel = Math.min(level, 3);
@@ -566,7 +569,7 @@ export default function LocalNewsDetails() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.2 }}
-          className="flex gap-3 py-3"
+          className="flex gap-3 py-2"
         >
           {/* Avatar */}
           <div className="flex-shrink-0 relative z-10">
@@ -596,11 +599,19 @@ export default function LocalNewsDetails() {
             <div className="flex items-start justify-between gap-2">
               <div className="flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="font-semibold text-sm text-gray-900">
-                    {comment.author
-                      ? `${comment.author.firstName} ${comment.author.lastName}`
-                      : "Anonymous"}
-                  </span>
+                  <div className="flex items-center gap-1">
+                    <span className="font-semibold text-sm text-gray-900">
+                      {comment.author
+                        ? `${comment.author.firstName} ${comment.author.lastName}`
+                        : "Anonymous"}
+                    </span>
+                    {isCommentAuthorAdmin && (
+                      <MdVerified 
+                        size={16} 
+                        className="text-blue-500 flex-shrink-0" 
+                      />
+                    )}
+                  </div>
                   <span className="text-xs text-gray-500">
                     {formatDate(comment.createdAt)}
                   </span>
@@ -781,6 +792,8 @@ export default function LocalNewsDetails() {
       </div>
     );
 
+  const isNewsAuthorAdmin = news.author?.role === "ADMIN";
+
   return (
     <>
       <div className="flex h-screen bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden">
@@ -873,10 +886,18 @@ export default function LocalNewsDetails() {
                   }}
                 />
                 <div className="flex-1 min-w-0">
-                  <div className="font-semibold text-gray-800 text-base sm:text-lg truncate">
-                    {news.author
-                      ? `${news.author.firstName} ${news.author.lastName}`
-                      : "Unknown Author"}
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-semibold text-gray-800 text-base sm:text-lg truncate">
+                      {news.author
+                        ? `${news.author.firstName} ${news.author.lastName}`
+                        : "Unknown Author"}
+                    </span>
+                    {isNewsAuthorAdmin && (
+                      <MdVerified 
+                        size={18} 
+                        className="sm:w-5 sm:h-5 text-blue-500 flex-shrink-0" 
+                      />
+                    )}
                   </div>
                   <div className="text-sm text-gray-500 flex items-center gap-1">
                     <Calendar size={14} className="shrink-0" />
@@ -1038,7 +1059,7 @@ export default function LocalNewsDetails() {
             {/* Comments Section */}
             <div className="pt-6 border-t border-gray-200">
               <h2 className="text-xl md:text-2xl font-semibold text-gray-800 mb-4">
-                💬 Comments ({comments.length})
+                💬 Comments
               </h2>
 
               {/* Add Comment Input */}
