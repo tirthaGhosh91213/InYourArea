@@ -755,21 +755,21 @@ export default function RightSidebar() {
                     {isAdmin ? (
                       <button
                         onClick={() => handleNavigation("/dashboard")}
-                        className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition"
+                        className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition cursor-pointer"
                       >
                         Dashboard
                       </button>
                     ) : (
                       <button
                         onClick={() => handleNavigation("/user-dashboard")}
-                        className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition"
+                        className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition cursor-pointer"
                       >
                         Profile
                       </button>
                     )}
                     <button
                       onClick={handleLogout}
-                      className="w-full text-left px-4 py-2 text-sm hover:bg-red-50 text-red-600 transition"
+                      className="w-full text-left px-4 py-2 text-sm hover:bg-red-50 text-red-600 transition cursor-pointer"
                     >
                       Logout
                     </button>
@@ -782,7 +782,7 @@ export default function RightSidebar() {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => navigate("/login")}
-              className="hidden sm:block px-3 py-1.5 bg-green-600 text-white text-sm rounded-full hover:bg-green-700 transition"
+              className="hidden sm:block px-3 py-1.5 bg-green-600 text-white text-sm rounded-full hover:bg-green-700 transition cursor-pointer"
             >
               Login
             </motion.button>
@@ -794,7 +794,7 @@ export default function RightSidebar() {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setRightSidebarOpen(true)}
-                className="p-1.5 rounded-lg hover:bg-gray-100 transition"
+                className="p-1.5 rounded-lg hover:bg-gray-100 transition cursor-pointer"
               >
                 <User className="w-5 h-5 text-gray-700" />
               </motion.button>
@@ -803,7 +803,7 @@ export default function RightSidebar() {
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => navigate("/login")}
-                className="px-3 py-1.5 bg-green-600 text-white text-xs rounded-full hover:bg-green-700 transition"
+                className="px-3 py-1.5 bg-green-600 text-white text-xs rounded-full hover:bg-green-700 transition cursor-pointer"
               >
                 Login
               </motion.button>
@@ -859,7 +859,7 @@ export default function RightSidebar() {
                 {isAdmin ? (
                   <button
                     onClick={() => navigate("/dashboard")}
-                    className="flex items-center gap-2 p-3 text-left hover:bg-gray-50 rounded-lg text-sm"
+                    className="flex items-center gap-2 p-3 text-left hover:bg-gray-50 rounded-lg text-sm cursor-pointer"
                   >
                     <Settings className="w-4 h-4" />
                     Dashboard
@@ -867,7 +867,7 @@ export default function RightSidebar() {
                 ) : (
                   <button
                     onClick={() => navigate("/user-dashboard")}
-                    className="flex items-center gap-2 p-3 text-left hover:bg-gray-50 rounded-lg text-sm"
+                    className="flex items-center gap-2 p-3 text-left hover:bg-gray-50 rounded-lg text-sm cursor-pointer"
                   >
                     <User className="w-4 h-4" />
                     Profile
@@ -875,7 +875,7 @@ export default function RightSidebar() {
                 )}
                 <button
                   onClick={handleLogout}
-                  className="flex items-center gap-2 p-3 text-left hover:bg-red-50 rounded-lg text-red-600 text-sm"
+                  className="flex items-center gap-2 p-3 text-left hover:bg-red-50 rounded-lg text-red-600 text-sm cursor-pointer"
                 >
                   <LogOut className="w-4 h-4" />
                   Logout
