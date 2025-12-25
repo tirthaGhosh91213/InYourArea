@@ -28,7 +28,6 @@ import Loader from "../components/Loader";
 import { MdVerified } from "react-icons/md";
 import { Helmet } from 'react-helmet-async';
 
-
 // Helper: circular index for rotating ads
 const getNextIndex = (current, total) => {
   if (total === 0) return 0;
@@ -235,7 +234,7 @@ export default function CommunityDetails() {
     return () => document.removeEventListener('click', handleClickOutside);
   }, [openMenuId]);
 
-  // Fetch Current User
+  // Fetch Current User (only if logged in)
   useEffect(() => {
     const fetchCurrentUser = async () => {
       if (!token) return;
@@ -255,15 +254,14 @@ export default function CommunityDetails() {
     fetchCurrentUser();
   }, [token]);
 
+  // ✅ FIXED: Fetch Post WITHOUT login requirement
   useEffect(() => {
     const fetchPost = async () => {
       try {
         setLoading(true);
+        // ✅ NO Authorization header - public access
         const res = await axios.get(
-          `https://api.jharkhandbiharupdates.com/api/v1/community/${id}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
+          `https://api.jharkhandbiharupdates.com/api/v1/community/${id}`
         );
         if (res.data.success) setPost(res.data.data);
         else toast.error("Failed to fetch post");
@@ -273,10 +271,8 @@ export default function CommunityDetails() {
         setLoading(false);
       }
     };
-    if (!token) {
-      navigate("/login");
-      return;
-    }
+
+    // ✅ REMOVED: No login redirect for viewing
     fetchPost();
 
     // Fetch small ads for CommunityDetails
@@ -322,9 +318,12 @@ export default function CommunityDetails() {
       .catch((err) => {
         console.error("Error fetching community details ads:", err);
       });
-  }, [id, token, navigate]);
+  }, [id]); // ✅ Removed 'token' and 'navigate' dependencies
 
+  // ✅ Fetch Comments - ONLY if logged in
   const fetchComments = async () => {
+    if (!token) return; // Skip if not logged in
+
     try {
       const res = await axios.get(
         `https://api.jharkhandbiharupdates.com/api/v1/comments/community-posts/${id}`,
@@ -370,12 +369,15 @@ export default function CommunityDetails() {
     }
   }, [topRightClosed, bottomRightClosed, topRightIndex, bottomRightIndex, ads]);
 
+  // ✅ Post Comment - Requires Login
   const handlePostComment = async () => {
     if (!commentText.trim()) {
       toast.warning("Comment cannot be empty!");
       return;
     }
+    // ✅ Redirect to login if not authenticated
     if (!token) {
+      toast.info("Please login to comment");
       navigate("/login");
       return;
     }
@@ -400,6 +402,12 @@ export default function CommunityDetails() {
 
   // Start Reply
   const handleStartReply = (commentId) => {
+    // ✅ Check login before allowing reply
+    if (!token) {
+      toast.info("Please login to reply");
+      navigate("/login");
+      return;
+    }
     setReplyingToId(commentId);
     setReplyText("");
   };
@@ -417,6 +425,7 @@ export default function CommunityDetails() {
       return;
     }
     if (!token) {
+      toast.info("Please login to reply");
       navigate("/login");
       return;
     }
@@ -794,28 +803,26 @@ export default function CommunityDetails() {
 
   return (
     <>
-
-    {/* Dynamic Meta Tags for Social Media */}
-    {post && (
-      <Helmet>
-        <title>{post.title} - Jharkhand Bihar Updates</title>
-        <meta name="description" content={post.content.replace(/<[^>]*>/g, '').substring(0, 160)} />
-        
-        <meta property="og:type" content="article" />
-        <meta property="og:url" content={`https://jharkhandbiharupdates.com/community/${id}`} />
-        <meta property="og:title" content={post.title} />
-        <meta property="og:description" content={post.content.replace(/<[^>]*>/g, '').substring(0, 160)} />
-        <meta property="og:image" content={post.imageUrls?.[0] || 'https://jharkhandbiharupdates.com/banner.jpg'} />
-        <meta property="og:image:width" content="1200" />
-        <meta property="og:image:height" content="630" />
-        
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content={post.title} />
-        <meta name="twitter:description" content={post.content.replace(/<[^>]*>/g, '').substring(0, 160)} />
-        <meta name="twitter:image" content={post.imageUrls?.[0] || 'https://jharkhandbiharupdates.com/banner.jpg'} />
-      </Helmet>
-    )}
-
+      {/* Dynamic Meta Tags for Social Media */}
+      {post && (
+        <Helmet>
+          <title>{post.title} - Jharkhand Bihar Updates</title>
+          <meta name="description" content={post.content.replace(/<[^>]*>/g, '').substring(0, 160)} />
+          
+          <meta property="og:type" content="article" />
+          <meta property="og:url" content={`https://jharkhandbiharupdates.com/community/${id}`} />
+          <meta property="og:title" content={post.title} />
+          <meta property="og:description" content={post.content.replace(/<[^>]*>/g, '').substring(0, 160)} />
+          <meta property="og:image" content={post.imageUrls?.[0] || 'https://jharkhandbiharupdates.com/banner.jpg'} />
+          <meta property="og:image:width" content="1200" />
+          <meta property="og:image:height" content="630" />
+          
+          <meta name="twitter:card" content="summary_large_image" />
+          <meta name="twitter:title" content={post.title} />
+          <meta name="twitter:description" content={post.content.replace(/<[^>]*>/g, '').substring(0, 160)} />
+          <meta name="twitter:image" content={post.imageUrls?.[0] || 'https://jharkhandbiharupdates.com/banner.jpg'} />
+        </Helmet>
+      )}
 
       <div className="flex h-screen bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden">
         {/* Ads like other detail pages */}
@@ -1106,17 +1113,18 @@ export default function CommunityDetails() {
                   <textarea
                     value={commentText}
                     onChange={(e) => setCommentText(e.target.value)}
-                    placeholder="Add a comment..."
+                    placeholder={token ? "Add a comment..." : "Login to comment..."}
                     rows="2"
                     className="w-full border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-1 focus:ring-green-500 text-sm resize-none"
+                    disabled={!token}
                   />
                   <div className="flex justify-end">
                     <button
-                      disabled={posting}
+                      disabled={posting || !token}
                       onClick={handlePostComment}
                       className="px-4 py-1.5 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold rounded-md disabled:opacity-60 transition"
                     >
-                      {posting ? "Posting..." : "Post"}
+                      {posting ? "Posting..." : token ? "Post" : "Login to Post"}
                     </button>
                   </div>
                 </div>
@@ -1128,7 +1136,7 @@ export default function CommunityDetails() {
                   [...comments].reverse().map((comment) => renderComment(comment, 0))
                 ) : (
                   <p className="text-gray-500 text-sm text-center py-8">
-                    No comments yet. Be the first to comment!
+                    {token ? "No comments yet. Be the first to comment!" : "Login to view and add comments"}
                   </p>
                 )}
               </div>
