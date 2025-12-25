@@ -805,24 +805,31 @@ const postDescription = news.content?.substring(0, 200).replace(/<[^>]*>/g, '') 
 
 
     <Helmet>
-      <title>{news.title} - JHARKHAND BIHAR UPDATES</title>
-      <meta name="description" content={postDescription} />
-      
-      {/* Open Graph / Facebook / WhatsApp */}
-      <meta property="og:type" content="article" />
-      <meta property="og:url" content={window.location.href} />
-      <meta property="og:title" content={news.title} />
-      <meta property="og:description" content={postDescription} />
-      <meta property="og:image" content={postImage} />
-      <meta property="og:image:width" content="1200" />
-      <meta property="og:image:height" content="630" />
-      
-      {/* Twitter */}
-      <meta name="twitter:card" content="summary_large_image" />
-      <meta name="twitter:title" content={news.title} />
-      <meta name="twitter:description" content={postDescription} />
-      <meta name="twitter:image" content={postImage} />
-    </Helmet>
+  <title>{news.title} - JHARKHAND BIHAR UPDATES</title>
+  <meta name="description" content={postDescription} />
+  
+  {/* ✅ ADD: Canonical URL */}
+  <link rel="canonical" href={window.location.href} />
+  
+  {/* Facebook / Open Graph */}
+  <meta property="fb:app_id" content="1234567890" />
+  <meta property="og:type" content="article" />
+  <meta property="og:url" content={window.location.href} />
+  <meta property="og:title" content={news.title} />
+  <meta property="og:description" content={postDescription} />
+  <meta property="og:image" content={postImage} />
+  <meta property="og:image:secure_url" content={postImage} />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:site_name" content="JHARKHAND BIHAR UPDATES" />
+  
+  {/* Twitter */}
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content={news.title} />
+  <meta name="twitter:description" content={postDescription} />
+  <meta name="twitter:image" content={postImage} />
+</Helmet>
+
 
       <div className="flex h-screen bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden">
         {/* Ads */}
