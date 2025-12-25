@@ -2,6 +2,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import { Helmet } from 'react-helmet-async';
 import {
   ArrowLeft,
   ChevronLeft,
@@ -790,12 +791,39 @@ export default function LocalNewsDetails() {
       <div className="flex justify-center items-center h-screen">
         <Loader />
       </div>
-    );
+    );  
+
+
+    const postImage = news.imageUrls?.[0] || 'https://jharkhandbiharupdates.com/banner.jpg';
+const postDescription = news.content?.substring(0, 200).replace(/<[^>]*>/g, '') || 'Read the latest news from Jharkhand and Bihar';
+
 
   const isNewsAuthorAdmin = news.author?.role === "ADMIN";
 
   return (
     <>
+
+
+    <Helmet>
+      <title>{news.title} - JHARKHAND BIHAR UPDATES</title>
+      <meta name="description" content={postDescription} />
+      
+      {/* Open Graph / Facebook / WhatsApp */}
+      <meta property="og:type" content="article" />
+      <meta property="og:url" content={window.location.href} />
+      <meta property="og:title" content={news.title} />
+      <meta property="og:description" content={postDescription} />
+      <meta property="og:image" content={postImage} />
+      <meta property="og:image:width" content="1200" />
+      <meta property="og:image:height" content="630" />
+      
+      {/* Twitter */}
+      <meta name="twitter:card" content="summary_large_image" />
+      <meta name="twitter:title" content={news.title} />
+      <meta name="twitter:description" content={postDescription} />
+      <meta name="twitter:image" content={postImage} />
+    </Helmet>
+
       <div className="flex h-screen bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden">
         {/* Ads */}
         {topRightAd && !topRightClosed && (
