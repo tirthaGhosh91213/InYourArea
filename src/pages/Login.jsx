@@ -293,7 +293,7 @@ const handleSignin = async (e) => {
   {/* Sign In Button */}
   <button
     type="submit"
-    className="w-full py-2.5 rounded-lg text-white font-semibold text-sm bg-gradient-to-r from-emerald-500 to-emerald-700 hover:from-emerald-600 hover:to-emerald-800 transform hover:scale-[1.01] active:scale-95 transition duration-200 shadow-md"
+    className="w-full py-2.5 rounded-lg text-white font-semibold text-sm bg-gradient-to-r from-emerald-500 to-emerald-700 hover:from-emerald-600 hover:to-emerald-800 transform hover:scale-[1.01] active:scale-95 transition duration-200 shadow-md cursor-pointer"
   >
     Sign In
   </button>
@@ -309,7 +309,7 @@ const handleSignin = async (e) => {
   <button
     type="button"
     onClick={handleGoogleLogin}
-    className="w-full flex items-center justify-center gap-2 py-2 border border-gray-300 rounded-lg hover:bg-white hover:shadow-md text-gray-700 text-sm font-medium transition-all"
+    className="w-full flex items-center justify-center gap-2 py-2 border border-gray-300 rounded-lg hover:bg-white hover:shadow-md text-gray-700 text-sm font-medium transition-all cursor-pointer"
   >
     <FcGoogle size={20} /> Continue with Google
   </button>
@@ -838,14 +838,14 @@ const handleSignin = async (e) => {
                       className="w-full max-w-sm p-3 border border-gray-300 rounded focus:ring-2 focus:ring-emerald-400 transition"
                       required
                     />
-                    <button className="w-full max-w-sm py-3 rounded font-semibold text-white bg-emerald-700 hover:bg-emerald-800 transition">
+                    <button className="w-full max-w-sm py-3 rounded font-semibold text-white bg-emerald-700 hover:bg-emerald-800 transition cursor-pointer">
                       Sign In
                     </button>
 
                     <button
                       type="button"
                       onClick={handleGoogleLogin}
-                      className="w-full max-w-sm flex items-center justify-center gap-2 py-3 rounded border border-gray-300 hover:bg-white hover:shadow-md transition"
+                      className="w-full max-w-sm flex items-center justify-center gap-2 py-3 rounded border border-gray-300 hover:bg-white hover:shadow-md transition cursor-pointer"
                     >
                       <FcGoogle size={24} /> Sign in with Google
                     </button>
@@ -853,7 +853,7 @@ const handleSignin = async (e) => {
                     <button
                       type="button"
                       onClick={() => setIsForgot(true)}
-                      className="text-emerald-700 underline text-sm hover:text-emerald-800"
+                      className="text-emerald-700 underline text-sm hover:text-emerald-800 cursor-pointer"
                     >
                       Forgot Password?
                     </button>
@@ -881,7 +881,7 @@ const handleSignin = async (e) => {
                       />
                       <button
                         onClick={handleSendOtp}
-                        className="w-full max-w-sm py-3 rounded font-semibold text-white bg-emerald-700 hover:bg-emerald-800 transition"
+                        className="w-full max-w-sm py-3 rounded font-semibold text-white bg-emerald-700 hover:bg-emerald-800 transition cursor-pointer"
                       >
                         Send OTP
                       </button>
@@ -894,14 +894,14 @@ const handleSignin = async (e) => {
                       <button
                           type="button"
                           onClick={handleGoogleLogin}
-                          className="w-full max-w-sm flex items-center justify-center gap-2 py-3 rounded border border-gray-300 hover:bg-white hover:shadow-md transition">
+                          className="w-full max-w-sm flex items-center justify-center gap-2 py-3 rounded border border-gray-300 hover:bg-white hover:shadow-md transition cursor-pointer">
                           <FcGoogle size={24} /> Sign up with Google
                       </button>
 
                       <button
                         type="button"
                         onClick={() => setRightPanelActive(false)}
-                        className="text-emerald-700 underline text-sm hover:text-emerald-800"
+                        className="text-emerald-700 underline text-sm hover:text-emerald-800 cursor-pointer"
                       >
                         Back to Sign In
                       </button>
@@ -923,7 +923,7 @@ const handleSignin = async (e) => {
                       />
                       <button
                         onClick={handleVerifyOtp}
-                        className="w-full max-w-sm py-3 rounded font-semibold text-white bg-emerald-700 hover:bg-emerald-800 transition"
+                        className="w-full max-w-sm py-3 rounded font-semibold text-white bg-emerald-700 hover:bg-emerald-800 transition cursor-pointer"
                       >
                         Verify OTP
                       </button>
@@ -980,7 +980,7 @@ const handleSignin = async (e) => {
                       />
                       <button
                         onClick={handleSignup}
-                        className="w-full max-w-sm py-3 rounded font-semibold text-white bg-emerald-700 hover:bg-emerald-800 transition"
+                        className="w-full max-w-sm py-3 rounded font-semibold text-white bg-emerald-700 hover:bg-emerald-800 transition cursor-pointer"
                       >
                         Sign Up
                       </button>
@@ -1007,13 +1007,13 @@ const handleSignin = async (e) => {
                   />
                   <button
                     onClick={handleForgotPassword}
-                    className="w-full max-w-sm py-3 rounded font-semibold text-white bg-emerald-700 hover:bg-emerald-800 transition"
+                    className="w-full max-w-sm py-3 rounded font-semibold text-white bg-emerald-700 hover:bg-emerald-800 transition cursor-pointer"
                   >
                     Send Reset Token
                   </button>
                   <button
                     onClick={() => setIsForgot(false)}
-                    className="text-emerald-700 underline text-sm hover:text-emerald-800"
+                    className="text-emerald-700 underline text-sm hover:text-emerald-800 cursor-pointer"
                   >
                     Back to Sign In
                   </button>
@@ -1061,13 +1061,13 @@ const handleSignin = async (e) => {
                   />
                   <button
                     onClick={handleResetPassword}
-                    className="w-full max-w-sm py-3 rounded font-semibold text-white bg-emerald-700 hover:bg-emerald-800 transition"
+                    className="w-full max-w-sm py-3 rounded font-semibold text-white bg-emerald-700 hover:bg-emerald-800 transition cursor-pointer"
                   >
                     Reset Password
                   </button>
                   <button
                     onClick={() => setIsReset(false)}
-                    className="text-emerald-700 underline text-sm hover:text-emerald-800"
+                    className="text-emerald-700 underline text-sm hover:text-emerald-800 cursor-pointer"
                   >
                     Back to Sign In
                   </button>
@@ -1093,7 +1093,7 @@ const handleSignin = async (e) => {
                         <p>Login with your info to continue</p>
                         <button
                           onClick={() => setRightPanelActive(false)}
-                          className="border border-white py-2 px-4 rounded hover:bg-white hover:text-emerald-700 transition"
+                          className="border border-white py-2 px-4 rounded hover:bg-white hover:text-emerald-700 transition cursor-pointer"
                         >
                           Sign In
                         </button>
@@ -1106,7 +1106,7 @@ const handleSignin = async (e) => {
                         <p>Enter your details and start your journey with us</p>
                         <button
                           onClick={() => setRightPanelActive(true)}
-                          className="border border-white py-2 px-4 rounded hover:bg-white hover:text-emerald-700 transition"
+                          className="border border-white py-2 px-4 rounded hover:bg-white hover:text-emerald-700 transition cursor-pointer"
                         >
                           Sign Up
                         </button>
