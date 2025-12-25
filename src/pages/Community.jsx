@@ -392,7 +392,7 @@ export default function Community() {
           <div className="flex items-center justify-between px-3 sm:px-4 py-2 sm:py-3">
             <div className="flex-1" />
             <button
-              className="flex items-center gap-1 text-emerald-700 text-xs sm:text-sm font-semibold flex-shrink-0"
+              className="flex items-center gap-1 text-emerald-700 text-xs sm:text-sm font-semibold flex-shrink-0 cursor-pointer cursor-pointer"
               onClick={(e) => {
                 e.stopPropagation();
                 setShowCommentInput((prev) => ({
@@ -452,7 +452,7 @@ export default function Community() {
                     e.stopPropagation();
                     sendComment(post.id);
                   }}
-                  className="bg-emerald-600 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-full hover:bg-emerald-700 transition text-xs sm:text-sm whitespace-nowrap flex-shrink-0"
+                  className="bg-emerald-600 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-full hover:bg-emerald-700 transition text-xs sm:text-sm whitespace-nowrap flex-shrink-0 cursor-pointer"
                 >
                   Send
                 </button>
