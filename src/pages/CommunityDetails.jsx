@@ -26,6 +26,8 @@ import { toast } from "react-toastify";
 import SmallAdd from "../components/SmallAdd";
 import Loader from "../components/Loader";
 import { MdVerified } from "react-icons/md";
+import { Helmet } from 'react-helmet-async';
+
 
 // Helper: circular index for rotating ads
 const getNextIndex = (current, total) => {
@@ -792,6 +794,29 @@ export default function CommunityDetails() {
 
   return (
     <>
+
+    {/* Dynamic Meta Tags for Social Media */}
+    {post && (
+      <Helmet>
+        <title>{post.title} - Jharkhand Bihar Updates</title>
+        <meta name="description" content={post.content.replace(/<[^>]*>/g, '').substring(0, 160)} />
+        
+        <meta property="og:type" content="article" />
+        <meta property="og:url" content={`https://jharkhandbiharupdates.com/community/${id}`} />
+        <meta property="og:title" content={post.title} />
+        <meta property="og:description" content={post.content.replace(/<[^>]*>/g, '').substring(0, 160)} />
+        <meta property="og:image" content={post.imageUrls?.[0] || 'https://jharkhandbiharupdates.com/banner.jpg'} />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={post.title} />
+        <meta name="twitter:description" content={post.content.replace(/<[^>]*>/g, '').substring(0, 160)} />
+        <meta name="twitter:image" content={post.imageUrls?.[0] || 'https://jharkhandbiharupdates.com/banner.jpg'} />
+      </Helmet>
+    )}
+
+
       <div className="flex h-screen bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden">
         {/* Ads like other detail pages */}
         {topRightAd && !topRightClosed && (
