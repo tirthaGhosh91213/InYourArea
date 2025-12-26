@@ -212,7 +212,7 @@ export default function CreateEventPost() {
           <div className="flex gap-4">
             <div className="flex-1">
               <label className="block text-gray-700 font-medium mb-2">
-                Date <span className="text-gray-400 text-sm">(Optional)</span>
+                Date <span className="text-gray-300 text-sm">(Optional)</span>
               </label>
               <input
                 type="date"
@@ -224,7 +224,7 @@ export default function CreateEventPost() {
             </div>
             <div className="flex-1">
               <label className="block text-gray-700 font-medium mb-2">
-                Time <span className="text-gray-400 text-sm">(Optional)</span>
+                Time <span className="text-gray-300 text-sm">(If You Provide Date)</span>
               </label>
               <input
                 type="time"
