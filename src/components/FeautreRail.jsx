@@ -161,10 +161,10 @@ export default function FeatureRailSmall() {
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40">
           <div className="bg-white rounded-2xl shadow-xl px-6 py-5 md:px-8 md:py-6 max-w-sm w-[90%]">
             <h3 className="text-xl font-bold mb-3 text-[#193c3a] text-center">
-              select a district
+              select a State
             </h3>
             <p className="text-sm text-[#4b5a57] text-center mb-4">
-              Please select a district to see local news tailored to your area.
+              Please select a State to see news.
             </p>
             <button
               onClick={() => setShowDistrictPopup(false)}
