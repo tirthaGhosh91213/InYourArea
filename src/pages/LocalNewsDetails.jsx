@@ -79,34 +79,36 @@ export default function LocalNewsDetails() {
   const touchStartX = useRef(0);
   const touchEndX = useRef(0);
 
-  // Helper: Render either <img> or <video>
-  const renderMedia = (url, alt, className, isFullscreen = false) => {
+  // 🔥 FIXED: Helper renders media in ORIGINAL aspect ratio
+  const renderMedia = (url, alt, isFullscreen = false) => {
     const isVideo =
       url &&
       (url.endsWith(".mp4") ||
         url.endsWith(".webm") ||
         url.endsWith(".ogg") ||
         url.includes("video"));
+    
     if (isVideo) {
       return (
         <video
           src={url}
           controls
           autoPlay={isFullscreen}
-          className={className}
-          style={{ background: "#111" }}
+          className="w-full h-auto max-h-[70vh] object-contain bg-black rounded-2xl"
+          style={{ maxWidth: "100%" }}
         >
           Your browser does not support the video tag.
         </video>
       );
     }
+    
     return (
       <img
         src={url}
         alt={alt}
-        className={className}
-        onClick={() => setIsFullscreen(true)}
-        style={{ cursor: "pointer" }}
+        className="w-full h-auto max-h-[70vh] object-contain bg-black rounded-2xl cursor-pointer"
+        onClick={() => !isFullscreen && setIsFullscreen(true)}
+        style={{ maxWidth: "100%" }}
       />
     );
   };
@@ -830,7 +832,6 @@ const postDescription = news.content?.substring(0, 200).replace(/<[^>]*>/g, '') 
   <meta name="twitter:image" content={postImage} />
 </Helmet>
 
-
       <div className="flex h-screen bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden">
         {/* Ads */}
         {topRightAd && !topRightClosed && (
@@ -872,25 +873,31 @@ const postDescription = news.content?.substring(0, 200).replace(/<[^>]*>/g, '') 
             animate={{ opacity: 1, y: 0 }}
             className="max-w-3xl mx-auto bg-white rounded-3xl shadow-2xl p-4 md:p-6 space-y-6 border border-green-200"
           >
-            {/* Image/Video Carousel */}
+            {/* 🔥 FIXED: Image/Video Carousel with Dynamic Aspect Ratio */}
             {news.imageUrls?.length > 0 && (
-              <div className="relative w-full h-60 sm:h-72 md:h-80 rounded-2xl overflow-hidden shadow-lg">
-                {renderMedia(
-                  news.imageUrls[currentImage],
-                  news.title,
-                  "w-full h-full object-cover rounded-2xl transition-all duration-500 bg-black"
-                )}
+              <div 
+                className="relative w-full flex items-center justify-center bg-black rounded-2xl overflow-hidden shadow-lg"
+                onTouchStart={handleTouchStart}
+                onTouchEnd={handleTouchEnd}
+              >
+                <div className="w-full flex items-center justify-center min-h-[300px] max-h-[70vh]">
+                  {renderMedia(
+                    news.imageUrls[currentImage],
+                    news.title,
+                    false
+                  )}
+                </div>
                 {news.imageUrls.length > 1 && (
                   <>
                     <button
                       onClick={prevImage}
-                      className="absolute top-1/2 left-2 sm:left-3 transform -translate-y-1/2 bg-white/70 text-green-700 p-2 rounded-full hover:bg-white/90 transition"
+                      className="absolute top-1/2 left-2 sm:left-3 transform -translate-y-1/2 bg-white/70 text-green-700 p-2 rounded-full hover:bg-white/90 transition z-10"
                     >
                       <ChevronLeft size={24} />
                     </button>
                     <button
                       onClick={nextImage}
-                      className="absolute top-1/2 right-2 sm:right-3 transform -translate-y-1/2 bg-white/70 text-green-700 p-2 rounded-full hover:bg-white/90 transition"
+                      className="absolute top-1/2 right-2 sm:right-3 transform -translate-y-1/2 bg-white/70 text-green-700 p-2 rounded-full hover:bg-white/90 transition z-10"
                     >
                       <ChevronRight size={24} />
                     </button>
@@ -1153,13 +1160,13 @@ const postDescription = news.content?.substring(0, 200).replace(/<[^>]*>/g, '') 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/90 flex items-center justify-center z-50"
+              className="fixed inset-0 bg-black/95 flex items-center justify-center z-50 p-4"
               onTouchStart={handleTouchStart}
               onTouchEnd={handleTouchEnd}
             >
               <button
                 onClick={() => setIsFullscreen(false)}
-                className="absolute top-5 right-5 text-white bg-black/30 rounded-full p-2 hover:bg-black/50 transition"
+                className="absolute top-5 right-5 text-white bg-black/30 rounded-full p-2 hover:bg-black/50 transition z-20"
               >
                 <X size={24} />
               </button>
@@ -1167,24 +1174,25 @@ const postDescription = news.content?.substring(0, 200).replace(/<[^>]*>/g, '') 
                 <>
                   <button
                     onClick={prevImage}
-                    className="absolute left-5 text-white bg-black/30 rounded-full p-2 hover:bg-black/50 transition"
+                    className="absolute left-5 text-white bg-black/30 rounded-full p-2 hover:bg-black/50 transition z-20"
                   >
                     <ChevronLeft size={32} />
                   </button>
                   <button
                     onClick={nextImage}
-                    className="absolute right-5 text-white bg-black/30 rounded-full p-2 hover:bg-black/50 transition"
+                    className="absolute right-5 text-white bg-black/30 rounded-full p-2 hover:bg-black/50 transition z-20"
                   >
                     <ChevronRight size={32} />
                   </button>
                 </>
               )}
-              {renderMedia(
-                news.imageUrls[currentImage],
-                news.title,
-                "max-h-full max-w-full object-contain rounded-lg shadow-lg bg-black",
-                true
-              )}
+              <div className="w-full h-full flex items-center justify-center">
+                {renderMedia(
+                  news.imageUrls[currentImage],
+                  news.title,
+                  true
+                )}
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
