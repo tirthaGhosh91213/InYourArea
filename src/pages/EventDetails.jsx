@@ -24,6 +24,7 @@ import {
 import axios from "axios";
 import { toast } from "react-toastify";
 import { MdVerified } from "react-icons/md";
+import { Helmet } from "react-helmet-async";
 import SmallAdd from "../components/SmallAdd";
 import Loader from '../components/Loader';
 
@@ -146,11 +147,21 @@ export default function EventDetails() {
   };
 
   const handleShareWhatsApp = () => {
-    const text = `${getShareText()}\n\nEvent Date: ${
-      event.eventDate
-        ? new Date(event.eventDate).toLocaleDateString("en-GB")
-        : "-"
-    }\nLocation: ${event.location || "TBA"}\n\nRead more: ${getShareUrl()}`;
+    const parts = [getShareText()];
+
+    if (event?.eventDate) {
+      parts.push(
+        `Event Date: ${new Date(event.eventDate).toLocaleDateString("en-GB")}`
+      );
+    }
+
+    if (event?.location?.trim()) {
+      parts.push(`Location: ${event.location}`);
+    }
+
+    parts.push(`Read more: ${getShareUrl()}`);
+
+    const text = parts.join("\n\n");
     const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(text)}`;
     window.open(whatsappUrl, "_blank");
     setShowShareMenu(false);
@@ -544,7 +555,7 @@ export default function EventDetails() {
           {/* Comment Content */}
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2">
-              <div className="flex-1">
+              <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <div className="flex items-center gap-1">
                     <span className="font-semibold text-sm text-gray-900">
@@ -743,6 +754,55 @@ export default function EventDetails() {
 
   return (
     <>
+      {/* 🔥 HELMET FOR SEO & SHARE META */}
+      <Helmet>
+        <title>{event.title || "Event Details"} | Jharkhand Bihar Updates</title>
+
+        <meta
+          name="description"
+          content={
+            event.description
+              ? event.description.replace(/<[^>]*>/g, "").slice(0, 150)
+              : "Event details and updates."
+          }
+        />
+
+        <meta property="og:type" content="article" />
+        <meta
+          property="og:title"
+          content={event.title || "Event Details"}
+        />
+        <meta
+          property="og:description"
+          content={
+            event.description
+              ? event.description.replace(/<[^>]*>/g, "").slice(0, 150)
+              : "Event details and updates."
+          }
+        />
+        <meta property="og:url" content={window.location.href} />
+        {event.imageUrls?.[0] && (
+          <meta property="og:image" content={event.imageUrls[0]} />
+        )}
+
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta
+          name="twitter:title"
+          content={event.title || "Event Details"}
+        />
+        <meta
+          name="twitter:description"
+          content={
+            event.description
+              ? event.description.replace(/<[^>]*>/g, "").slice(0, 150)
+              : "Event details and updates."
+          }
+        />
+        {event.imageUrls?.[0] && (
+          <meta name="twitter:image" content={event.imageUrls[0]} />
+        )}
+      </Helmet>
+
       <div className="flex h-screen bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden">
         {/* Ads */}
         {topRightAd && !topRightClosed && (
@@ -815,7 +875,7 @@ export default function EventDetails() {
             {/* Author Info & Share */}
             <div className="flex flex-col gap-3">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                <div className="flex flex-row items-center gap-3 flex-1">
+                <div className="flex flex-row items-center gap-3 flex-1 min-w-0">
                   {event.author?.profileImageUrl ? (
                     <img
                       src={event.author.profileImageUrl}
@@ -835,8 +895,8 @@ export default function EventDetails() {
                     }}
                   />
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5">
-                      <span className="font-semibold text-gray-800 text-base sm:text-lg truncate">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="font-semibold text-gray-800 text-base sm:text-lg break-words">
                         {event.author
                           ? `${event.author.firstName} ${event.author.lastName}`
                           : "Unknown Author"}
@@ -848,40 +908,40 @@ export default function EventDetails() {
                         />
                       )}
                     </div>
-                    <div className="text-sm text-gray-500 flex items-center gap-1 flex-wrap">
-                      <Calendar size={14} className="shrink-0" />
-                      <span>
-                        {event.eventDate
-                          ? new Date(event.eventDate).toLocaleDateString(
-                              "en-GB",
-                              {
-                                day: "2-digit",
-                                month: "short",
-                                year: "numeric",
-                              }
-                            )
-                          : "-"}
-                      </span>
-                      <span>
-                        {event.eventDate
-                          ? new Date(event.eventDate).toLocaleTimeString([], {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })
-                          : ""}
-                      </span>
-                    </div>
+                    {event.eventDate && (
+                      <div className="text-sm text-gray-500 flex items-center gap-1 flex-wrap">
+                        <Calendar size={14} className="shrink-0" />
+                        <span>
+                          {new Date(event.eventDate).toLocaleDateString(
+                            "en-GB",
+                            {
+                              day: "2-digit",
+                              month: "short",
+                              year: "numeric",
+                            }
+                          )}
+                        </span>
+                        <span>
+                          {new Date(event.eventDate).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
 
                 {/* Share Button */}
                 <div className="relative flex items-center gap-3 justify-between sm:justify-end">
-                  <div className="flex items-center gap-1 text-sm text-gray-500">
-                    <MapPin size={16} className="text-green-600 flex-shrink-0" />
-                    <span className="truncate max-w-[200px]">
-                      {event.location || "Unknown Location"}
-                    </span>
-                  </div>
+                  {event.location?.trim() && (
+                    <div className="flex items-center gap-1 text-sm text-gray-500 min-w-0">
+                      <MapPin size={16} className="text-green-600 flex-shrink-0" />
+                      <span className="truncate max-w-[200px] sm:max-w-[260px] break-words">
+                        {event.location}
+                      </span>
+                    </div>
+                  )}
 
                   <motion.button
                     whileHover={{ scale: 1.05 }}
@@ -961,13 +1021,23 @@ export default function EventDetails() {
               </div>
             </div>
 
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-800" dangerouslySetInnerHTML={{ __html: event.title }} />
+            {/* 🔥 FIXED: Title with proper word breaking */}
+            <h1 
+              className="text-2xl md:text-3xl font-bold text-gray-800 break-words leading-snug" 
+              dangerouslySetInnerHTML={{ __html: event.title }} 
+            />
             
+            {/* 🔥 FIXED: Description with proper URL/long text wrapping */}
             <div className="relative">
               <div
-                className={`text-gray-700 whitespace-pre-line leading-relaxed text-base md:text-lg transition-all duration-500 ${
+                className={`text-gray-700 leading-relaxed text-base md:text-lg transition-all duration-500 break-words overflow-wrap-anywhere ${
                   isExpanded ? "" : "line-clamp-4"
                 }`}
+                style={{
+                  wordBreak: "break-word",
+                  overflowWrap: "anywhere",
+                  whiteSpace: "pre-wrap"
+                }}
                 dangerouslySetInnerHTML={{ __html: event.description }}
               />
               <button onClick={() => setIsExpanded(!isExpanded)} className="mt-2 text-green-700 font-semibold hover:underline">
@@ -976,7 +1046,7 @@ export default function EventDetails() {
             </div>
 
             {event.reglink && (
-              <button onClick={() => window.open(event.reglink, "_blank")} className="mt-4 w-full flex items-center justify-center gap-2 bg-blue-600 text-white py-3 rounded-xl font-semibold shadow-lg hover:bg-blue-700 transition">
+              <button onClick={() => window.open(event.reglink, "_blank")} className="mt-4 w-full flex items-center justify-center gap-2 bg-blue-600 text-white py-3 rounded-xl font-semibold shadow-lg hover:bg-blue-700 transition text-sm sm:text-base">
                 <Link2 size={20} /> Register
               </button>
             )}

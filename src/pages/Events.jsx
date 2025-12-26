@@ -6,9 +6,10 @@ import {
   Clock,
   PlusCircle,
   Search as SearchIcon,
-  MessageCircle,
-  Link as LinkIcon,
+  ExternalLink,
+  ArrowRight,
   X,
+  Users,
 } from "lucide-react";
 import { MdVerified } from "react-icons/md";
 import Sidebar from "../components/SideBar";
@@ -19,13 +20,11 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import Loader from "../components/Loader";
 
-
 // Helper: Get next index in circular manner
 function getNextIndex(current, total) {
   if (total === 0) return 0;
   return (current + 1) % total;
 }
-
 
 // Helper: Shuffle an array (for large ads order)
 function shuffle(array) {
@@ -37,7 +36,6 @@ function shuffle(array) {
   return arr;
 }
 
-
 const SLOT_KEYS = {
   TOP_RIGHT: "EVENTS_AD_INDEX_TOP_RIGHT",
   BOTTOM_RIGHT: "EVENTS_AD_INDEX_BOTTOM_RIGHT",
@@ -45,14 +43,276 @@ const SLOT_KEYS = {
   LARGE_AD_2: "EVENTS_LARGE_AD_INDEX_2",
 };
 
+// 🔥 NEW: Check if event is over
+const isEventOver = (eventDate) => {
+  if (!eventDate) return false;
+  const now = new Date();
+  const eventDateTime = new Date(eventDate);
+  
+  // Only consider event as "over" if we have time information
+  // Check if the time is default (00:00:00) - means no time was provided
+  const hours = eventDateTime.getHours();
+  const minutes = eventDateTime.getMinutes();
+  const seconds = eventDateTime.getSeconds();
+  
+  // If time is 00:00:00, we assume no specific time was set
+  if (hours === 0 && minutes === 0 && seconds === 0) {
+    return false; // Don't mark as over if no time specified
+  }
+  
+  return now > eventDateTime;
+};
+
+// Event Card Component - WITH EVENT OVER STAMP
+const EventCard = ({ event, index }) => {
+  const navigate = useNavigate();
+  
+  const hasLocation = event.location && event.location.trim();
+  const hasDate = event.eventDate;
+  const hasRegLink = event.reglink && event.reglink.trim();
+  const eventIsOver = isEventOver(event.eventDate);
+
+  const formatDate = (dateString) => {
+    if (!dateString) return null;
+    const date = new Date(dateString);
+    return {
+      day: date.getDate(),
+      month: date.toLocaleDateString("en-US", { month: "short" }).toUpperCase(),
+      fullDate: date.toLocaleDateString("en-US", { 
+        month: "short", 
+        day: "numeric", 
+        year: "numeric" 
+      }),
+      time: date.toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+    };
+  };
+
+  const dateInfo = hasDate ? formatDate(event.eventDate) : null;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 40 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.05, type: "spring", stiffness: 100 }}
+      className={`relative bg-white rounded-3xl p-4 shadow-2xl transition-all duration-300 ${
+        eventIsOver 
+          ? "opacity-75 hover:shadow-[0_20px_40px_-12px_rgba(100,100,100,0.3)]" 
+          : "hover:shadow-[0_25px_50px_-12px_rgba(147,51,234,0.4)]"
+      }`}
+      style={{ 
+        boxShadow: eventIsOver 
+          ? "0 15px 20px -5px rgba(0, 0, 0, 0.15), 0 8px 8px -5px rgba(0, 0, 0, 0.08)"
+          : "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)"
+      }}
+    >
+      {/* 🔥 EVENT OVER STAMP - Top Right Corner */}
+      {eventIsOver && (
+        <motion.div
+          initial={{ scale: 0, rotate: -45 }}
+          animate={{ scale: 1, rotate: 0 }}
+          transition={{ 
+            type: "spring", 
+            stiffness: 200, 
+            delay: index * 0.05 + 0.2 
+          }}
+          className="absolute -top-2 -right-2 z-20"
+        >
+          <div className="relative">
+            {/* Stamp Background */}
+            <div className="bg-gradient-to-br from-red-500 to-red-600 text-white px-4 py-2 rounded-xl shadow-2xl border-2 border-red-300 transform rotate-12">
+              <div className="flex flex-col items-center">
+                <span className="text-xs font-black tracking-wider">EVENT</span>
+                <span className="text-lg font-black leading-none">OVER</span>
+              </div>
+            </div>
+            {/* Stamp Border Effect */}
+            <div className="absolute inset-0 border-4 border-red-500/30 rounded-xl transform rotate-12 -z-10"></div>
+          </div>
+        </motion.div>
+      )}
+
+      {/* INNER CARD */}
+      <div className={`relative bg-white rounded-2xl overflow-hidden transition-all duration-300 ${
+        eventIsOver ? "grayscale-[50%]" : ""
+      }`}>
+        {/* Image Container with Date Badge */}
+        <div className="relative h-56 overflow-hidden group">
+          {Array.isArray(event.imageUrls) && event.imageUrls.length > 0 ? (
+            <img
+              src={event.imageUrls[0]}
+              alt={event.title}
+              className={`w-full h-full object-cover transition-all duration-500 ${
+                eventIsOver 
+                  ? "group-hover:scale-105 filter brightness-75" 
+                  : "group-hover:scale-110"
+              }`}
+            />
+          ) : (
+            <div className={`w-full h-full flex items-center justify-center ${
+              eventIsOver 
+                ? "bg-gradient-to-br from-gray-400 to-gray-500" 
+                : "bg-gradient-to-br from-purple-400 to-blue-500"
+            }`}>
+              <Calendar size={48} className="text-white opacity-50" />
+            </div>
+          )}
+
+          {/* Semi-transparent overlay for past events */}
+          {eventIsOver && (
+            <div className="absolute inset-0 bg-black/20"></div>
+          )}
+
+          {/* Date Badge - Top Left */}
+          {dateInfo && (
+            <div className={`absolute top-4 left-4 rounded-xl shadow-lg overflow-hidden ${
+              eventIsOver ? "opacity-80" : ""
+            }`}>
+              <div className={`text-white text-center py-1 px-4 ${
+                eventIsOver 
+                  ? "bg-gradient-to-r from-gray-500 to-gray-600" 
+                  : "bg-gradient-to-r from-purple-600 to-blue-600"
+              }`}>
+                <div className="text-xs font-semibold">{dateInfo.month}</div>
+              </div>
+              <div className="bg-white text-center py-2 px-4">
+                <div className={`text-2xl font-bold ${
+                  eventIsOver ? "text-gray-500" : "text-gray-800"
+                }`}>
+                  {dateInfo.day}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Content Section */}
+        <div className="p-5 bg-white">
+          {/* Title */}
+          <h3 className={`text-xl font-bold mb-3 line-clamp-2 transition ${
+            eventIsOver 
+              ? "text-gray-500 hover:text-gray-700" 
+              : "text-gray-800 hover:text-purple-600"
+          }`}>
+            {event.title}
+          </h3>
+
+          {/* Event Details */}
+          <div className="space-y-2 mb-4">
+            {hasLocation && (
+              <div className={`flex items-center gap-2 ${
+                eventIsOver ? "text-gray-400" : "text-gray-600"
+              }`}>
+                <MapPin size={16} className={`flex-shrink-0 ${
+                  eventIsOver ? "text-gray-400" : "text-purple-600"
+                }`} />
+                <span className="text-sm line-clamp-1">{event.location}</span>
+              </div>
+            )}
+
+            {dateInfo && (
+              <div className={`flex items-center gap-2 ${
+                eventIsOver ? "text-gray-400" : "text-gray-600"
+              }`}>
+                <Calendar size={16} className={`flex-shrink-0 ${
+                  eventIsOver ? "text-gray-400" : "text-blue-600"
+                }`} />
+                <span className="text-sm">{dateInfo.fullDate}</span>
+              </div>
+            )}
+
+            {dateInfo && (
+              <div className={`flex items-center gap-2 ${
+                eventIsOver ? "text-gray-400" : "text-gray-600"
+              }`}>
+                <Clock size={16} className={`flex-shrink-0 ${
+                  eventIsOver ? "text-gray-400" : "text-indigo-600"
+                }`} />
+                <span className="text-sm">{dateInfo.time}</span>
+              </div>
+            )}
+          </div>
+
+          {/* Author Info */}
+          {event.author && (
+            <div className={`flex items-center gap-2 text-xs mb-4 pb-4 border-b border-gray-100 ${
+              eventIsOver ? "text-gray-400" : "text-gray-500"
+            }`}>
+              <span className="font-medium">
+                By {event.author.firstName} {event.author.lastName}
+              </span>
+              {event.author.role === "ADMIN" && (
+                <MdVerified size={14} className={`flex-shrink-0 ${
+                  eventIsOver ? "text-gray-400" : "text-blue-500"
+                }`} />
+              )}
+            </div>
+          )}
+
+          {/* Action Buttons */}
+          <div className="flex gap-3">
+            {hasRegLink && !eventIsOver && (
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  window.open(event.reglink, "_blank");
+                }}
+                className="flex-1 bg-gradient-to-r from-purple-600 to-blue-600 text-white py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center gap-2"
+              >
+                <ExternalLink size={18} />
+                Registration
+              </motion.button>
+            )}
+
+            {/* View Details Button - Always visible */}
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => navigate(`/events/${event.id}`)}
+              className={`${
+                hasRegLink && !eventIsOver ? "flex-none px-6" : "flex-1"
+              } py-3 rounded-xl font-semibold transition-all duration-300 flex items-center justify-center gap-2 ${
+                eventIsOver 
+                  ? "bg-gray-200 text-gray-600 hover:bg-gray-300 hover:text-gray-700" 
+                  : "text-gray-700 hover:text-purple-600"
+              }`}
+            >
+              View Details
+              <ArrowRight size={18} />
+            </motion.button>
+          </div>
+
+          {/* 🔥 Event Over Notice (below buttons) */}
+          {eventIsOver && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="mt-4 bg-red-50 border border-red-200 rounded-lg p-3 text-center"
+            >
+              <p className="text-sm text-red-700 font-medium">
+                🕐 This event has ended
+              </p>
+              <p className="text-xs text-red-600 mt-1">
+                You can still view event details for reference
+              </p>
+            </motion.div>
+          )}
+        </div>
+      </div>
+    </motion.div>
+  );
+};
 
 export default function Events() {
   const navigate = useNavigate();
   const [events, setEvents] = useState([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
-  const [filterCity, setFilterCity] = useState("All");
-
 
   const [ads, setAds] = useState([]);
   const [topRightIndex, setTopRightIndex] = useState(0);
@@ -60,13 +320,11 @@ export default function Events() {
   const [topRightClosed, setTopRightClosed] = useState(false);
   const [bottomRightClosed, setBottomRightClosed] = useState(false);
 
-
   const [largeAds, setLargeAds] = useState([]);
   const [largeAdIndexes, setLargeAdIndexes] = useState([0, 1]);
   const [largeAd1Closed, setLargeAd1Closed] = useState(false);
   const [largeAd2Closed, setLargeAd2Closed] = useState(false);
   const timerRef = useRef();
-
 
   // Fetch events
   const fetchEvents = async () => {
@@ -83,10 +341,8 @@ export default function Events() {
     }
   };
 
-
   useEffect(() => {
     fetchEvents();
-
 
     // Fetch small ads
     fetch("https://api.jharkhandbiharupdates.com/api/v1/banner-ads/active/small")
@@ -95,7 +351,6 @@ export default function Events() {
         if (data && data.data && Array.isArray(data.data) && data.data.length > 0) {
           const orderedAds = [...data.data];
           setAds(orderedAds);
-
 
           const total = orderedAds.length;
           let savedTop = parseInt(
@@ -106,7 +361,6 @@ export default function Events() {
             localStorage.getItem(SLOT_KEYS.BOTTOM_RIGHT) ?? "1",
             10
           );
-
 
           if (total === 1) {
             setTopRightIndex(0);
@@ -120,14 +374,12 @@ export default function Events() {
             if (savedTop === savedBottom && total > 1)
               savedBottom = getNextIndex(savedTop, total);
 
-
             setTopRightIndex(savedTop);
             setBottomRightIndex(savedBottom);
           }
         }
       })
       .catch((err) => console.error("Error fetching events small ads:", err));
-
 
     // Fetch large ads
     fetch("https://api.jharkhandbiharupdates.com/api/v1/banner-ads/active/large")
@@ -136,7 +388,6 @@ export default function Events() {
         if (data && Array.isArray(data.data)) {
           const shuffled = shuffle(data.data);
           setLargeAds(shuffled);
-
 
           let largeAdIdx1 = parseInt(
             localStorage.getItem(SLOT_KEYS.LARGE_AD_1) ?? "0",
@@ -147,7 +398,6 @@ export default function Events() {
             10
           );
           const total = shuffled.length;
-
 
           if (total === 1) {
             setLargeAdIndexes([0]);
@@ -161,7 +411,6 @@ export default function Events() {
             if (largeAdIdx1 === largeAdIdx2 && total > 1)
               largeAdIdx2 = getNextIndex(largeAdIdx1, total);
 
-
             setLargeAdIndexes([largeAdIdx1, largeAdIdx2]);
           }
         }
@@ -170,7 +419,6 @@ export default function Events() {
         console.error("Error fetching events large ads:", err);
       });
   }, []);
-
 
   useEffect(() => {
     if (!ads.length || ads.length === 1) return;
@@ -185,11 +433,9 @@ export default function Events() {
     }
   }, [topRightClosed, bottomRightClosed, topRightIndex, bottomRightIndex, ads]);
 
-
   useEffect(() => {
     if (largeAds.length === 0 || largeAds.length === 1) return;
     if (timerRef.current) clearInterval(timerRef.current);
-
 
     timerRef.current = setInterval(() => {
       setLargeAdIndexes(([idx1, idx2]) => {
@@ -199,33 +445,24 @@ export default function Events() {
         if (nextIdx1 === nextIdx2 && total > 1)
           nextIdx2 = getNextIndex(nextIdx1, total);
 
-
         localStorage.setItem(SLOT_KEYS.LARGE_AD_1, String(nextIdx1));
         localStorage.setItem(SLOT_KEYS.LARGE_AD_2, String(nextIdx2));
         return [nextIdx1, nextIdx2];
       });
-    }, 10000); // 10 seconds
-
+    }, 10000);
 
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
   }, [largeAds]);
 
-
-  // Filter events – keep backend order intact
+  // Filter events
   const filteredEvents = events.filter((e) => {
     const title = (e.title || "").toLowerCase();
     const location = (e.location || "").toLowerCase();
     const q = search.toLowerCase();
-    const matchesSearch = title.includes(q) || location.includes(q);
-    const matchesFilter =
-      filterCity === "All"
-        ? true
-        : location.includes(filterCity.toLowerCase());
-    return matchesSearch && matchesFilter;
+    return title.includes(q) || location.includes(q);
   });
-
 
   // Desktop: split into two event columns
   const leftEvents = [];
@@ -235,7 +472,6 @@ export default function Events() {
     else centerEvents.push(event);
   });
 
-
   // Small ads
   const topRightAd =
     ads.length === 1 ? ads[0] : ads.length ? ads[topRightIndex % ads.length] : null;
@@ -244,16 +480,13 @@ export default function Events() {
       ? ads[bottomRightIndex % ads.length]
       : null;
 
-
-  // Helper: build mobile sequence post–post–ad
+  // Helper: build mobile sequence
   const buildMobileItems = () => {
     const items = [];
     if (!filteredEvents.length) return items;
     let adPtr = 0;
 
-
     if (filteredEvents.length === 1) {
-      // Ad1, post, Ad2 (if exists)
       if (largeAds.length > 0)
         items.push({ type: "ad", adIndex: largeAdIndexes[0] ?? 0 });
       items.push({ type: "event", event: filteredEvents[0] });
@@ -262,9 +495,7 @@ export default function Events() {
       return items;
     }
 
-
     if (filteredEvents.length === 2) {
-      // post, Ad1, post, Ad2
       items.push({ type: "event", event: filteredEvents[0] });
       if (largeAds.length > 0)
         items.push({ type: "ad", adIndex: largeAdIndexes[0] ?? 0 });
@@ -274,8 +505,6 @@ export default function Events() {
       return items;
     }
 
-
-    // 3+
     for (let i = 0; i < filteredEvents.length; i++) {
       items.push({ type: "event", event: filteredEvents[i] });
       const isEndOfPair = (i + 1) % 2 === 0;
@@ -292,9 +521,7 @@ export default function Events() {
     return items;
   };
 
-
   const mobileItems = buildMobileItems();
-
 
   return (
     <>
@@ -303,8 +530,7 @@ export default function Events() {
         <RightSidebar refreshEvents={fetchEvents} />
       </div>
 
-
-      {/* Small Ads - Close button for both desktop & mobile */}
+      {/* Small Ads */}
       <AnimatePresence>
         {topRightAd && !topRightClosed && (
           <SmallAdd
@@ -324,39 +550,37 @@ export default function Events() {
         )}
       </AnimatePresence>
 
-
       {/* Page Layout */}
-      <div className="flex min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 pt-16">
+      <div className="flex min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-white pt-16">
         {/* Left Sidebar */}
         <div className="hidden lg:block w-64 bg-white shadow-md border-r border-gray-200">
           <Sidebar activePage="events" />
         </div>
 
-
         {/* Main Content */}
-        <main className="flex-1 flex flex-col items-center px-2 pt-6 pb-10">
-          {/* Top Blue Heading + Search */}
+        <main className="flex-1 flex flex-col items-center px-4 pt-6 pb-10">
+          {/* Top Header + Search */}
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ type: "spring", stiffness: 80 }}
-            className="bg-emerald-700 top-0 z-20 text-white rounded-xl p-6 mb-6 shadow-lg w-full max-w-5xl md:max-w-7xl"
+            className="bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-2xl p-6 mb-8 shadow-2xl w-full max-w-5xl md:max-w-7xl"
           >
-            <h2 className="text-2xl font-semibold text-center mb-4">
-              Upcoming Events
+            <h2 className="text-3xl font-bold text-center mb-4">
+              ✨ Discover Amazing Events
             </h2>
-            <div className="flex justify-between items-center flex-wrap gap-3">
+            <div className="flex justify-between items-center flex-wrap gap-4">
               <div className="flex-1 min-w-0">
                 <div className="relative w-full sm:w-96">
-                  <div className="absolute inset-y-0 left-2 flex items-center justify-center pointer-events-none">
-                    <SearchIcon size={18} className="text-blue-300" />
+                  <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                    <SearchIcon size={20} className="text-purple-300" />
                   </div>
                   <input
                     type="text"
-                    placeholder="Search events..."
+                    placeholder="Search events by title or location..."
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 rounded-full border border-blue-300 text-gray-700 focus:ring-2 focus:ring-blue-500 outline-none transition placeholder-gray-300"
+                    className="w-full pl-11 pr-4 py-3 rounded-full border-2 border-white/30 bg-white/10 backdrop-blur-sm text-white placeholder-white/70 focus:ring-2 focus:ring-white focus:border-white outline-none transition"
                   />
                 </div>
               </div>
@@ -364,125 +588,39 @@ export default function Events() {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => navigate("/create/events")}
-                className="flex items-center gap-2 bg-white text-blue-700 px-4 py-2 rounded-xl shadow-lg hover:bg-blue-50 transition font-semibold"
+                className="flex items-center gap-2 bg-white text-purple-600 px-6 py-3 rounded-full shadow-lg hover:shadow-xl transition font-bold"
               >
-                <PlusCircle size={18} /> Add Event
+                <PlusCircle size={20} /> Create Event
               </motion.button>
             </div>
           </motion.div>
 
-
-          {/* Show loader while loading */}
+          {/* Loading State */}
           {loading ? (
             <div className="flex justify-center items-center py-20">
               <Loader />
             </div>
           ) : (
             <>
-              {/* MOBILE: events + ads interleaved, aligned with header width */}
+              {/* MOBILE: events + ads interleaved */}
               <div className="flex flex-col gap-6 w-full max-w-5xl md:hidden pb-6">
+                {mobileItems.length === 0 && (
+                  <div className="text-center text-gray-500 mt-12">
+                    <Calendar size={64} className="mx-auto mb-4 text-gray-300" />
+                    <p className="text-xl font-semibold">No events found</p>
+                    <p className="text-sm mt-2">Try searching with different keywords</p>
+                  </div>
+                )}
                 {mobileItems.map((item, idx) =>
                   item.type === "event" ? (
-                    <motion.div
-                      key={`m-event-${item.event.id}-${idx}`}
-                      layout
-                      initial={{ opacity: 0, y: 40 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -20 }}
-                      transition={{
-                        delay: idx * 0.03,
-                        type: "spring",
-                        stiffness: 100,
-                      }}
-                      whileHover={{
-                        scale: 1.03,
-                        boxShadow: "0 25px 40px rgba(59,130,246,0.25)",
-                      }}
-                      className="relative rounded-2xl overflow-hidden p-5 flex flex-col justify-between bg-gray-200 shadow-md border border-blue-100 cursor-pointer hover:bg-gradient-to-r hover:from-blue-100"
-                      onClick={() => navigate(`/events/${item.event.id}`)}
-                    >
-                      {Array.isArray(item.event.imageUrls) &&
-                      item.event.imageUrls.length > 0 ? (
-                        <div className="relative w-full h-48 mb-4 rounded-xl overflow-hidden">
-                          <img
-                            src={item.event.imageUrls[0]}
-                            alt={item.event.title}
-                            className="w-full h-full object-cover rounded-xl"
-                          />
-                        </div>
-                      ) : (
-                        <div className="w-full h-48 bg-gray-100 flex items-center justify-center rounded-xl mb-4 text-gray-400">
-                          No image
-                        </div>
-                      )}
-                      <div className="mb-3">
-                        <h2 className="pb-5 font-semibold text-gray-800 text-lg">
-                          {item.event.title}
-                        </h2>
-                      </div>
-                      <div className="space-y-2 text-gray-700 mb-3">
-                        <p className="flex items-center gap-2">
-                          <MapPin size={16} className="text-blue-700" />{" "}
-                          {item.event.location}
-                        </p>
-                        <p className="flex items-center gap-2">
-                          <Calendar size={16} className="text-blue-600" />
-                          {item.event.eventDate
-                            ? new Date(
-                                item.event.eventDate
-                              ).toLocaleDateString()
-                            : "-"}
-                        </p>
-                        <p className="flex items-center gap-2">
-                          <Clock size={16} className="text-indigo-600" />
-                          {item.event.eventDate
-                            ? new Date(item.event.eventDate).toLocaleTimeString(
-                                [],
-                                {
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                                }
-                              )
-                            : "-"}
-                        </p>
-                      </div>
-                      <div className="mt-4 flex justify-between items-center border-t pt-3 border-blue-200">
-                        <motion.button
-                          whileHover={{ scale: 1.1 }}
-                          whileTap={{ scale: 0.95 }}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (item.event.reglink) {
-                              window.open(item.event.reglink, "_blank");
-                            }
-                          }}
-                          className="flex items-center gap-2 text-blue-700 font-semibold hover:text-blue-900 transition"
-                        >
-                          <LinkIcon size={18} /> Register
-                        </motion.button>
-                        <motion.div className="flex items-center gap-2 text-gray-500 hover:text-blue-600 transition">
-                          <MessageCircle size={18} /> Comment
-                        </motion.div>
-                      </div>
-                      {item.event.author && (
-                        <div className="flex items-center gap-1 text-xs text-gray-400 mt-2">
-                          <span>Posted by: {item.event.author.firstName} {item.event.author.lastName}</span>
-                          {item.event.author.role === "ADMIN" && (
-                            <MdVerified 
-                              size={14} 
-                              className="text-blue-500 flex-shrink-0" 
-                            />
-                          )}
-                        </div>
-                      )}
-                    </motion.div>
+                    <EventCard key={`m-event-${item.event.id}`} event={item.event} index={idx} />
                   ) : largeAds[item.adIndex] ? (
                     <motion.div
                       key={`m-ad-${idx}`}
                       initial={{ opacity: 0, scale: 0.95 }}
                       animate={{ opacity: 1, scale: 1 }}
                       exit={{ opacity: 0, scale: 0.95 }}
-                      className="rounded-2xl shadow-md border border-blue-100 overflow-hidden h-52"
+                      className="rounded-2xl shadow-lg border-2 border-purple-100 overflow-hidden h-52"
                     >
                       <LargeAd
                         ad={largeAds[item.adIndex]}
@@ -493,205 +631,30 @@ export default function Events() {
                 )}
               </div>
 
-
-              {/* DESKTOP/TABLET: events grid + sticky ads, aligned with header */}
-              <div className="hidden md:grid md:grid-cols-3 gap-8 w-full max-w-7xl pb-10">
+              {/* DESKTOP: events grid + sticky ads */}
+              <div className="hidden md:grid md:grid-cols-3 gap-6 w-full max-w-7xl pb-10">
                 {/* First Column: Events (even indexes) */}
                 <div className="flex flex-col gap-6">
-                  {leftEvents.length === 0 && !loading && (
+                  {leftEvents.length === 0 && !loading && filteredEvents.length === 0 && (
                     <div className="text-center text-gray-500 mt-12 col-span-full">
-                      No events scheduled yet. Create the first one!
+                      <Calendar size={64} className="mx-auto mb-4 text-gray-300" />
+                      <p className="text-xl font-semibold">No events found</p>
+                      <p className="text-sm mt-2">Try searching with different keywords</p>
                     </div>
                   )}
                   {leftEvents.map((event, idx) => (
-                    <motion.div
-                      key={event.id}
-                      layout
-                      initial={{ opacity: 0, y: 40 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -20 }}
-                      transition={{
-                        delay: idx * 0.05,
-                        type: "spring",
-                        stiffness: 100,
-                      }}
-                      whileHover={{
-                        scale: 1.03,
-                        boxShadow: "0 25px 40px rgba(59,130,246,0.25)",
-                      }}
-                      className="relative rounded-2xl overflow-hidden p-5 flex flex-col justify-between bg-gray-200 shadow-md border border-blue-100 cursor-pointer hover:bg-gradient-to-r hover:from-blue-100"
-                      onClick={() => navigate(`/events/${event.id}`)}
-                    >
-                      {Array.isArray(event.imageUrls) &&
-                      event.imageUrls.length > 0 ? (
-                        <div className="relative w-full h-48 mb-4 rounded-xl overflow-hidden">
-                          <img
-                            src={event.imageUrls[0]}
-                            alt={event.title}
-                            className="w-full h-full object-cover rounded-xl"
-                          />
-                        </div>
-                      ) : (
-                        <div className="w-full h-48 bg-gray-100 flex items-center justify-center rounded-xl mb-4 text-gray-400">
-                          No image
-                        </div>
-                      )}
-                      <div className="mb-3">
-                        <h2 className="pb-5 font-semibold text-gray-800 text-lg">
-                          {event.title}
-                        </h2>
-                      </div>
-                      <div className="space-y-2 text-gray-700 mb-3">
-                        <p className="flex items-center gap-2">
-                          <MapPin size={16} className="text-blue-700" />{" "}
-                          {event.location}
-                        </p>
-                        <p className="flex items-center gap-2">
-                          <Calendar size={16} className="text-blue-600" />
-                          {event.eventDate
-                            ? new Date(event.eventDate).toLocaleDateString()
-                            : "-"}
-                        </p>
-                        <p className="flex items-center gap-2">
-                          <Clock size={16} className="text-indigo-600" />
-                          {event.eventDate
-                            ? new Date(event.eventDate).toLocaleTimeString([], {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })
-                            : "-"}
-                        </p>
-                      </div>
-                      <div className="mt-4 flex justify-between items-center border-t pt-3 border-blue-200">
-                        <motion.button
-                          whileHover={{ scale: 1.1 }}
-                          whileTap={{ scale: 0.95 }}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (event.reglink) {
-                              window.open(event.reglink, "_blank");
-                            }
-                          }}
-                          className="flex items-center gap-2 text-blue-700 font-semibold hover:text-blue-900 transition"
-                        >
-                          <LinkIcon size={18} /> Register
-                        </motion.button>
-                        <motion.div className="flex items-center gap-2 text-gray-500 hover:text-blue-600 transition">
-                          <MessageCircle size={18} /> Comment
-                        </motion.div>
-                      </div>
-                      {event.author && (
-                        <div className="flex items-center gap-1 text-xs text-gray-400 mt-2">
-                          <span>Posted by: {event.author.firstName} {event.author.lastName}</span>
-                          {event.author.role === "ADMIN" && (
-                            <MdVerified 
-                              size={14} 
-                              className="text-blue-500 flex-shrink-0" 
-                            />
-                          )}
-                        </div>
-                      )}
-                    </motion.div>
+                    <EventCard key={`left-${event.id}`} event={event} index={idx * 2} />
                   ))}
                 </div>
-
 
                 {/* Second Column: Events (odd indexes) */}
                 <div className="flex flex-col gap-6">
                   {centerEvents.map((event, idx) => (
-                    <motion.div
-                      key={event.id}
-                      layout
-                      initial={{ opacity: 0, y: 40 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -20 }}
-                      transition={{
-                        delay: idx * 0.05,
-                        type: "spring",
-                        stiffness: 100,
-                      }}
-                      whileHover={{
-                        scale: 1.03,
-                        boxShadow: "0 25px 40px rgba(59,130,246,0.25)",
-                      }}
-                      className="relative rounded-2xl overflow-hidden p-5 flex flex-col justify-between bg-gray-200 shadow-md border border-blue-100 cursor-pointer hover:bg-gradient-to-r hover:from-blue-100"
-                      onClick={() => navigate(`/events/${event.id}`)}
-                    >
-                      {Array.isArray(event.imageUrls) &&
-                      event.imageUrls.length > 0 ? (
-                        <div className="relative w-full h-48 mb-4 rounded-xl overflow-hidden">
-                          <img
-                            src={event.imageUrls[0]}
-                            alt={event.title}
-                            className="w-full h-full object-cover rounded-xl"
-                          />
-                        </div>
-                      ) : (
-                        <div className="w-full h-48 bg-gray-100 flex items-center justify-center rounded-xl mb-4 text-gray-400">
-                          No image
-                        </div>
-                      )}
-                      <div className="mb-3">
-                        <h2 className="pb-5 font-semibold text-gray-800 text-lg">
-                          {event.title}
-                        </h2>
-                      </div>
-                      <div className="space-y-2 text-gray-700 mb-3">
-                        <p className="flex items-center gap-2">
-                          <MapPin size={16} className="text-blue-700" />{" "}
-                          {event.location}
-                        </p>
-                        <p className="flex items-center gap-2">
-                          <Calendar size={16} className="text-blue-600" />
-                          {event.eventDate
-                            ? new Date(event.eventDate).toLocaleDateString()
-                            : "-"}
-                        </p>
-                        <p className="flex items-center gap-2">
-                          <Clock size={16} className="text-indigo-600" />
-                          {event.eventDate
-                            ? new Date(event.eventDate).toLocaleTimeString([], {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })
-                            : "-"}
-                        </p>
-                      </div>
-                      <div className="mt-4 flex justify-between items-center border-t pt-3 border-blue-200">
-                        <motion.button
-                          whileHover={{ scale: 1.1 }}
-                          whileTap={{ scale: 0.95 }}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (event.reglink) {
-                              window.open(event.reglink, "_blank");
-                            }
-                          }}
-                          className="flex items-center gap-2 text-blue-700 font-semibold hover:text-blue-900 transition"
-                        >
-                          <LinkIcon size={18} /> Register
-                        </motion.button>
-                        <motion.div className="flex items-center gap-2 text-gray-500 hover:text-blue-600 transition">
-                          <MessageCircle size={18} /> Comment
-                        </motion.div>
-                      </div>
-                      {event.author && (
-                        <div className="flex items-center gap-1 text-xs text-gray-400 mt-2">
-                          <span>Posted by: {event.author.firstName} {event.author.lastName}</span>
-                          {event.author.role === "ADMIN" && (
-                            <MdVerified 
-                              size={14} 
-                              className="text-blue-500 flex-shrink-0" 
-                            />
-                          )}
-                        </div>
-                      )}
-                    </motion.div>
+                    <EventCard key={`center-${event.id}`} event={event} index={idx * 2 + 1} />
                   ))}
                 </div>
 
-
-                {/* Third Column: Sponsored Ads (sticky, wider, aligned) */}
+                {/* Third Column: Sponsored Ads (sticky) */}
                 <div className="flex">
                   <div className="sticky top-28 w-full flex flex-col gap-6 max-h-[80vh]">
                     {largeAds.length > 0 &&
@@ -700,17 +663,15 @@ export default function Events() {
                         if (i === 1 && largeAd2Closed) return null;
                         if (!largeAds[idx]) return null;
 
-
                         return (
                           <motion.div
                             key={"large-ad-wrapper-" + i}
                             initial={{ opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}
                             exit={{ opacity: 0, scale: 0.95 }}
-                            className="relative rounded-2xl shadow-md border border-blue-100 overflow-hidden"
+                            className="relative rounded-2xl shadow-lg border-2 border-purple-100 overflow-hidden"
                             style={{ height: "260px", minHeight: "260px" }}
                           >
-                            {/* Close button for mobile only (desktop sticky but button hidden via lg) */}
                             <motion.button
                               className="absolute -top-0 -right-0 z-20 lg:hidden bg-white rounded-full p-1.5 shadow-lg border-2 border-gray-200 hover:bg-gray-100 transition-all duration-200"
                               whileHover={{ scale: 1.1 }}
@@ -722,7 +683,6 @@ export default function Events() {
                             >
                               <X className="w-4 h-4 text-gray-700" />
                             </motion.button>
-
 
                             <LargeAd
                               ad={largeAds[idx]}
