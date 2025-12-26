@@ -5,6 +5,7 @@ import { ArrowLeft, XCircle, Plus, CheckCircle } from "lucide-react";
 import { toast } from "react-toastify";
 import axios from "axios";
 
+
 export default function CreateEventPost() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
@@ -18,6 +19,7 @@ export default function CreateEventPost() {
   });
   const [loading, setLoading] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
+
 
   const handleChange = (e) => {
     const { name, value, files } = e.target;
@@ -35,6 +37,7 @@ export default function CreateEventPost() {
     }
   };
 
+
   const removeImage = (index) => {
     setFormData((prev) => ({
       ...prev,
@@ -42,57 +45,73 @@ export default function CreateEventPost() {
     }));
   };
 
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // ✅ ONLY 3 REQUIRED VALIDATIONS
+
+    // ✅ REQUIRED VALIDATIONS
     if (!formData.title.trim()) {
       toast.error("Please add an event title!");
       return;
     }
+
 
     if (!formData.description.trim()) {
       toast.error("Please add event description!");
       return;
     }
 
+
     if (formData.images.length === 0) {
       toast.error("Please upload at least one image!");
       return;
     }
 
+
+    // 🔥 NEW VALIDATION: If date provided, time is also required
+    if (formData.date && !formData.time) {
+      toast.error("Please provide event time along with the date!");
+      return;
+    }
+
+
     setLoading(true);
     try {
-      // ✅ Build event object with optional fields
+      // ✅ Build event object with required fields
       const eventData = {
         title: formData.title,
         description: formData.description,
       };
+
 
       // ⚠️ Add optional fields only if they have values
       if (formData.location?.trim()) {
         eventData.location = formData.location;
       }
 
+
       if (formData.reglink?.trim()) {
         eventData.reglink = formData.reglink;
       }
 
-      // ⚠️ Combine date and time only if both provided
+
+      // ✅ Add eventDate only if BOTH date AND time provided
       if (formData.date && formData.time) {
         eventData.eventDate = `${formData.date}T${formData.time}:00`;
-      } else if (formData.date) {
-        // If only date provided, use default time (00:00)
-        eventData.eventDate = `${formData.date}T00:00:00`;
       }
+
 
       const data = new FormData();
       data.append("event", JSON.stringify(eventData));
 
+
       // ✅ Add images
       formData.images.forEach((img) => data.append("images", img.file));
 
+
       const accessToken = localStorage.getItem("accessToken");
+
 
       const res = await axios.post(
         "https://api.jharkhandbiharupdates.com/api/v1/events",
@@ -104,6 +123,7 @@ export default function CreateEventPost() {
           },
         }
       );
+
 
       if (res.data.success) {
         setShowPopup(true);
@@ -125,6 +145,7 @@ export default function CreateEventPost() {
     }
   };
 
+
   return (
     <motion.div className="min-h-screen bg-gradient-to-b from-green-50 to-white flex flex-col items-center py-10 px-6">
       <button
@@ -133,6 +154,7 @@ export default function CreateEventPost() {
       >
         <ArrowLeft size={20} /> Back
       </button>
+
 
       <motion.div className="w-full max-w-lg bg-white p-8 rounded-2xl shadow-2xl border border-gray-100">
         <h1 className="text-3xl font-bold text-green-600 text-center mb-6">
@@ -155,6 +177,7 @@ export default function CreateEventPost() {
             />
           </div>
 
+
           {/* ⚠️ OPTIONAL: Location */}
           <div>
             <label className="block text-gray-700 font-medium mb-2">
@@ -169,6 +192,7 @@ export default function CreateEventPost() {
             />
           </div>
 
+
           {/* ⚠️ OPTIONAL: Registration Link */}
           <div>
             <label className="block text-gray-700 font-medium mb-2">
@@ -182,6 +206,7 @@ export default function CreateEventPost() {
               className="w-full border px-4 py-2 rounded-lg focus:ring-2 focus:ring-green-400"
             />
           </div>
+
 
           {/* ⚠️ OPTIONAL: Date & Time */}
           <div className="flex gap-4">
@@ -211,6 +236,7 @@ export default function CreateEventPost() {
             </div>
           </div>
 
+
           {/* ✅ REQUIRED: Description */}
           <div>
             <label className="block text-gray-700 font-medium mb-2">
@@ -226,6 +252,7 @@ export default function CreateEventPost() {
               required
             />
           </div>
+
 
           {/* ✅ REQUIRED: Images */}
           <div>
@@ -268,6 +295,7 @@ export default function CreateEventPost() {
             </p>
           </div>
 
+
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
@@ -279,6 +307,7 @@ export default function CreateEventPost() {
           </motion.button>
         </form>
       </motion.div>
+
 
       {/* Success Popup */}
       <AnimatePresence>

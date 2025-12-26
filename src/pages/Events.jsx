@@ -43,25 +43,22 @@ const SLOT_KEYS = {
   LARGE_AD_2: "EVENTS_LARGE_AD_INDEX_2",
 };
 
-// 🔥 NEW: Check if event is over
+// 🔥 FIXED: Check if event is over
+// 🔥 FIXED: Check if event is over - DATE ONLY (ignoring time)
 const isEventOver = (eventDate) => {
   if (!eventDate) return false;
+  
   const now = new Date();
   const eventDateTime = new Date(eventDate);
   
-  // Only consider event as "over" if we have time information
-  // Check if the time is default (00:00:00) - means no time was provided
-  const hours = eventDateTime.getHours();
-  const minutes = eventDateTime.getMinutes();
-  const seconds = eventDateTime.getSeconds();
+  // Set time to midnight (00:00:00) for both dates to compare only dates
+  const todayDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const eventOnlyDate = new Date(eventDateTime.getFullYear(), eventDateTime.getMonth(), eventDateTime.getDate());
   
-  // If time is 00:00:00, we assume no specific time was set
-  if (hours === 0 && minutes === 0 && seconds === 0) {
-    return false; // Don't mark as over if no time specified
-  }
-  
-  return now > eventDateTime;
+  // Event is over if the event date is before today's date
+  return eventOnlyDate < todayDate;
 };
+
 
 // Event Card Component - WITH EVENT OVER STAMP
 const EventCard = ({ event, index }) => {
