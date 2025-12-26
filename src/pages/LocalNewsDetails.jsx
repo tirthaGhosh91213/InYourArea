@@ -21,6 +21,8 @@ import {
   Share2,
   Link2,
   MoreVertical,
+  Play,
+  Pause,
 } from "lucide-react";
 import axios from "axios";
 import { toast } from "react-toastify";
@@ -38,6 +40,106 @@ const getNextIndex = (current, total) => {
 const SLOT_KEYS = {
   TOP_RIGHT: "LOCALNEWSDETAILS_AD_INDEX_TOP_RIGHT",
   BOTTOM_RIGHT: "LOCALNEWSDETAILS_AD_INDEX_BOTTOM_RIGHT",
+};
+
+// 🔥 NEW: Instagram-Style Video Player Component
+const InstagramVideoPlayer = ({ src, isFullscreen = false }) => {
+  const videoRef = useRef(null);
+  const progressBarRef = useRef(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [showPlayIcon, setShowPlayIcon] = useState(false);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const updateProgress = () => {
+      const progress = (video.currentTime / video.duration) * 100;
+      setProgress(progress);
+    };
+
+    video.addEventListener('timeupdate', updateProgress);
+    return () => video.removeEventListener('timeupdate', updateProgress);
+  }, []);
+
+  const togglePlayPause = (e) => {
+    e.stopPropagation();
+    const video = videoRef.current;
+    if (!video) return;
+
+    if (video.paused) {
+      video.play();
+      setIsPlaying(true);
+      setShowPlayIcon(true);
+      setTimeout(() => setShowPlayIcon(false), 500);
+    } else {
+      video.pause();
+      setIsPlaying(false);
+      setShowPlayIcon(true);
+      setTimeout(() => setShowPlayIcon(false), 500);
+    }
+  };
+
+  const handleProgressClick = (e) => {
+    e.stopPropagation();
+    const video = videoRef.current;
+    const progressBar = progressBarRef.current;
+    if (!video || !progressBar) return;
+
+    const rect = progressBar.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    const percentage = clickX / rect.width;
+    video.currentTime = percentage * video.duration;
+  };
+
+  return (
+    <div className="relative w-full h-full flex items-center justify-center bg-black group">
+      <video
+        ref={videoRef}
+        src={src}
+        className="w-full h-auto max-h-[70vh] object-contain cursor-pointer"
+        style={{ maxWidth: "100%" }}
+        playsInline
+        onClick={togglePlayPause}
+      >
+        Your browser does not support the video tag.
+      </video>
+
+      {/* Instagram-Style Play/Pause Icon Feedback */}
+      <AnimatePresence>
+        {showPlayIcon && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.5 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.5 }}
+            transition={{ duration: 0.3 }}
+            className="absolute inset-0 flex items-center justify-center pointer-events-none"
+          >
+            <div className="bg-black/50 rounded-full p-4">
+              {isPlaying ? (
+                <Play size={48} className="text-white" fill="white" />
+              ) : (
+                <Pause size={48} className="text-white" fill="white" />
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Instagram-Style Progress Bar */}
+      <div 
+        ref={progressBarRef}
+        onClick={handleProgressClick}
+        className="absolute bottom-0 left-0 right-0 h-1 bg-gray-600/50 cursor-pointer group-hover:h-1.5 transition-all"
+      >
+        <div 
+          className="h-full bg-white transition-all"
+          style={{ width: `${progress}%` }}
+        />
+      </div>
+    </div>
+  );
 };
 
 export default function LocalNewsDetails() {
@@ -79,7 +181,7 @@ export default function LocalNewsDetails() {
   const touchStartX = useRef(0);
   const touchEndX = useRef(0);
 
-  // 🔥 FIXED: Helper renders media in ORIGINAL aspect ratio
+  // 🔥 UPDATED: Helper renders media with Instagram-style video player
   const renderMedia = (url, alt, isFullscreen = false) => {
     const isVideo =
       url &&
@@ -89,17 +191,7 @@ export default function LocalNewsDetails() {
         url.includes("video"));
     
     if (isVideo) {
-      return (
-        <video
-          src={url}
-          controls
-          autoPlay={isFullscreen}
-          className="w-full h-auto max-h-[70vh] object-contain bg-black rounded-2xl"
-          style={{ maxWidth: "100%" }}
-        >
-          Your browser does not support the video tag.
-        </video>
-      );
+      return <InstagramVideoPlayer src={url} isFullscreen={isFullscreen} />;
     }
     
     return (
@@ -800,37 +892,74 @@ export default function LocalNewsDetails() {
 const postDescription = news.content?.substring(0, 200).replace(/<[^>]*>/g, '') || 'Read the latest news from Jharkhand and Bihar';
 
 
+// 🔥 NEW: Check if first media is video
+const isFirstMediaVideo = postImage && (
+  postImage.endsWith(".mp4") ||
+  postImage.endsWith(".webm") ||
+  postImage.endsWith(".ogg") ||
+  postImage.includes("video")
+);
+
+
   const isNewsAuthorAdmin = news.author?.role === "ADMIN";
 
   return (
     <>
 
 
-    <Helmet>
-  <title>{news.title} - JHARKHAND BIHAR UPDATES</title>
-  <meta name="description" content={postDescription} />
-  
-  {/* ✅ ADD: Canonical URL */}
-  <link rel="canonical" href={window.location.href} />
-  
-  {/* Facebook / Open Graph */}
-  <meta property="fb:app_id" content="1234567890" />
-  <meta property="og:type" content="article" />
-  <meta property="og:url" content={window.location.href} />
-  <meta property="og:title" content={news.title} />
-  <meta property="og:description" content={postDescription} />
-  <meta property="og:image" content={postImage} />
-  <meta property="og:image:secure_url" content={postImage} />
-  <meta property="og:image:width" content="1200" />
-  <meta property="og:image:height" content="630" />
-  <meta property="og:site_name" content="JHARKHAND BIHAR UPDATES" />
-  
-  {/* Twitter */}
-  <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content={news.title} />
-  <meta name="twitter:description" content={postDescription} />
-  <meta name="twitter:image" content={postImage} />
-</Helmet>
+     <Helmet>
+      <title>{news.title} - JHARKHAND BIHAR UPDATES</title>
+      <meta name="description" content={postDescription} />
+      
+      {/* ✅ ADD: Canonical URL */}
+      <link rel="canonical" href={window.location.href} />
+      
+      {/* Facebook / Open Graph */}
+      <meta property="fb:app_id" content="1234567890" />
+      <meta property="og:type" content="article" />
+      <meta property="og:url" content={window.location.href} />
+      <meta property="og:title" content={news.title} />
+      <meta property="og:description" content={postDescription} />
+      <meta property="og:site_name" content="JHARKHAND BIHAR UPDATES" />
+      
+      {/* 🔥 VIDEO SUPPORT: Different meta tags for video vs image */}
+      {isFirstMediaVideo ? (
+        <>
+          {/* Video Meta Tags */}
+          <meta property="og:type" content="video.other" />
+          <meta property="og:video" content={postImage} />
+          <meta property="og:video:secure_url" content={postImage} />
+          <meta property="og:video:type" content="video/mp4" />
+          <meta property="og:video:width" content="1280" />
+          <meta property="og:video:height" content="720" />
+          {/* Fallback image (thumbnail) - you can generate thumbnail or use banner */}
+          <meta property="og:image" content="https://jharkhandbiharupdates.com/banner.jpg" />
+        </>
+      ) : (
+        <>
+          {/* Image Meta Tags */}
+          <meta property="og:image" content={postImage} />
+          <meta property="og:image:secure_url" content={postImage} />
+          <meta property="og:image:width" content="1200" />
+          <meta property="og:image:height" content="630" />
+        </>
+      )}
+      
+      {/* Twitter */}
+      <meta name="twitter:card" content={isFirstMediaVideo ? "player" : "summary_large_image"} />
+      <meta name="twitter:title" content={news.title} />
+      <meta name="twitter:description" content={postDescription} />
+      {isFirstMediaVideo ? (
+        <>
+          <meta name="twitter:player" content={postImage} />
+          <meta name="twitter:player:width" content="1280" />
+          <meta name="twitter:player:height" content="720" />
+          <meta name="twitter:image" content="https://jharkhandbiharupdates.com/banner.jpg" />
+        </>
+      ) : (
+        <meta name="twitter:image" content={postImage} />
+      )}
+    </Helmet>
 
       <div className="flex h-screen bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden">
         {/* Ads */}
@@ -873,7 +1002,7 @@ const postDescription = news.content?.substring(0, 200).replace(/<[^>]*>/g, '') 
             animate={{ opacity: 1, y: 0 }}
             className="max-w-3xl mx-auto bg-white rounded-3xl shadow-2xl p-4 md:p-6 space-y-6 border border-green-200"
           >
-            {/* 🔥 FIXED: Image/Video Carousel with Dynamic Aspect Ratio */}
+            {/* 🔥 UPDATED: Image/Video Carousel with Instagram-Style Video Player */}
             {news.imageUrls?.length > 0 && (
               <div 
                 className="relative w-full flex items-center justify-center bg-black rounded-2xl overflow-hidden shadow-lg"
