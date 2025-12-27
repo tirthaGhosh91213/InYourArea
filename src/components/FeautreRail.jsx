@@ -3,19 +3,20 @@
 import React, { useState, useRef } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import { HeroVideoDialog } from "@/components/ui/hero-video-dialog";
 import img1 from "../assets/locanewsPost.png";
 import img2 from "../assets/img2.png";
 import img3 from "../assets/jobPostmain.png";
 import img4 from "../assets/communityPost.png";
 
 const ACCENT = {
-  soft: "#f6f8fa", // updated to match bg
+  soft: "#f6f8fa",
   deep: "#0ea77a",
   text: "#193c3a",
   shadow: "0 8px 32px rgba(14,167,122,0.12)",
   border: "#e4e7ea",
   gradient: "linear-gradient(95deg, #ffffff 75%, #f4f6f8 100%)",
-  grayBg: "#f4f6f8", // use as main background
+  grayBg: "#f4f6f8",
 };
 
 const features = [
@@ -48,25 +49,20 @@ const features = [
 function FeatureCard({ icon, title, text, img, flip, onClick }) {
   return (
     <motion.section
-  initial={{ opacity: 0, y: 50 }}
-  whileInView={{ opacity: 1, y: 0 }}
-  viewport={{ once: true, amount: 0.8 }}
-  transition={{ duration: 0.8, ease: "easeOut" }}
-  className={`flex flex-col md:flex-row ${
-    flip ? "md:flex-row-reverse" : ""
-  } items-center gap-8 md:gap-16 rounded-3xl p-6 md:p-12 cursor-pointer
-  bg-transparent shadow-none`}   // no bg, no shadow
-  style={{
-    // remove these two completely
-    // boxShadow: ACCENT.shadow,
-    // background: ACCENT.gradient,
-    // optionally also remove border if you want zero card feel:
-    // border: `1.5px solid ${ACCENT.border}`,
-    marginTop: "0.5rem",
-    marginBottom: "2.6rem",
-  }}
-  onClick={onClick}
->
+      initial={{ opacity: 0, y: 50 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.8 }}
+      transition={{ duration: 0.8, ease: "easeOut" }}
+      className={`flex flex-col md:flex-row ${
+        flip ? "md:flex-row-reverse" : ""
+      } items-center gap-8 md:gap-16 rounded-3xl p-6 md:p-12 cursor-pointer
+      bg-transparent shadow-none`}
+      style={{
+        marginTop: "0.5rem",
+        marginBottom: "2.6rem",
+      }}
+      onClick={onClick}
+    >
       <motion.div
         className="w-full md:w-2/5 flex justify-center items-center"
         initial={{ scale: 0.97, opacity: 0.75 }}
@@ -139,13 +135,11 @@ export default function FeatureRailSmall() {
       return;
     }
     if (title === "Local News") {
-      // Scroll to top
       if (topRef.current) {
         topRef.current.scrollIntoView({ behavior: "smooth" });
       } else {
         window.scrollTo({ top: 0, behavior: "smooth" });
       }
-      // Show popup
       setShowDistrictPopup(true);
     }
   };
@@ -156,7 +150,7 @@ export default function FeatureRailSmall() {
       className="w-full min-h-screen flex flex-col items-center justify-center py-6 px-3 md:px-0 relative"
       style={{ background: ACCENT.grayBg }}
     >
-      {/* Simple popup / modal */}
+      {/* District popup */}
       {showDistrictPopup && (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40">
           <div className="bg-white rounded-2xl shadow-xl px-6 py-5 md:px-8 md:py-6 max-w-sm w-[90%]">
@@ -176,6 +170,17 @@ export default function FeatureRailSmall() {
         </div>
       )}
 
+      {/* Hero Video Dialog Section */}
+      <div className="w-full max-w-5xl mb-12 px-4">
+        <HeroVideoDialog
+          animationStyle="from-center"
+          videoSrc="https://www.youtube.com/embed/Qq0W1d0ERws?si=qfVnNqYJmNO5Cilm"
+          thumbnailSrc="/ytpage.png"
+          thumbnailAlt="JhUpdate Channel Preview"
+        />
+      </div>
+
+      {/* Header Section */}
       <header className="mb-8 md:mt-7 flex flex-col items-center">
         <motion.h1
           className="text-4xl md:text-5xl font-extrabold mb-2 tracking-tight"
@@ -199,6 +204,7 @@ export default function FeatureRailSmall() {
         </motion.p>
       </header>
 
+      {/* Features Section */}
       <section className="w-full max-w-4xl">
         {features.map((f, i) => (
           <FeatureCard

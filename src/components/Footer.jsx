@@ -1,7 +1,8 @@
-import React, { useState, useRef } from "react";
+import React, { useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import logo from "../assets/logo.png";
 import {
-  FaInstagram, FaFacebookF, FaTwitter, FaYoutube, FaLinkedin, FaGlobe, FaStar
+  FaInstagram, FaFacebookF, FaTwitter, FaYoutube, FaLinkedin, FaGlobe
 } from "react-icons/fa";
 
 const jharkhandAreas = [
@@ -22,46 +23,37 @@ const biharAreas = [
 ];
 
 const adminLinks = {
-  instagram: "https://instagram.com/admin_username",
-  facebook: "https://facebook.com/admin_username",
-  twitter: "https://twitter.com/admin_username",
-  youtube: "https://youtube.com/channel/admin_id"
+  instagram: "https://www.instagram.com/jhupdate/",
+  facebook: "https://www.facebook.com/share/17g8oV6XmJ/",
+  twitter: "https://x.com/JhUpdate",
+  youtube: "https://www.youtube.com/@JhUpdate",
+  linkedin: "https://www.linkedin.com/company/jhupdate"
 };
 
 const companyLinks = {
-  linkedin: "https://www.linkedin.com/company/ulmind/",
-  
-  instagram: "https://www.instagram.com/ulmind__official",
+  linkedin: "https://www.linkedin.com/company/ulmind",
+  twitter: "https://x.com/ULMINDOfficial/",
+  instagram: "https://www.instagram.com/ulmind__official/",
+  facebook: "https://www.facebook.com/share/1DTdokxiHC/",
   website: "https://www.ulmind.com"
 };
 
 const quickLinks = [
-  { label: "Advertise with us", anchor: "advertise" },
-  { label: "FAQ", anchor: "faq" },
-  { label: "Contact Us", anchor: "contact" },
-  { label: "Community Terms", anchor: "community" },
-  { label: "Privacy Policy", anchor: "privacy" },
-  { label: "Cookie Policy", anchor: "cookie" },
-  { label: "How to Complain", anchor: "complain" }
+  { label: "About Us", path: "/about-us" },
+  { label: "Code of Ethics", path: "/code-of-ethics" },
+  { label: "Privacy Policy", path: "/privacy-policy" },
+  { label: "Terms & Conditions", path: "/terms-conditions" }
 ];
 
 export default function Footer() {
-  const [rating, setRating] = useState(0);
-  const [hover, setHover] = useState(null);
-  const [sent, setSent] = useState(false);
-  const [form, setForm] = useState({ email: "", name: "", message: "" });
+  const navigate = useNavigate();
   const merakiRef = useRef(null);
 
-  // Scroll to top and highlight "Powered by Meraki"
-  const handleQuickLinkClick = e => {
-    e.preventDefault();
+  const handleQuickLinkClick = (path) => {
     window.scrollTo({ top: 0, behavior: "smooth" });
     setTimeout(() => {
-      if (merakiRef.current) {
-        merakiRef.current.classList.add("highlight-meraki");
-        setTimeout(() => merakiRef.current.classList.remove("highlight-meraki"), 1200);
-      }
-    }, 350);
+      navigate(path);
+    }, 300);
   };
 
   const handleMerakiClick = e => {
@@ -69,18 +61,9 @@ export default function Footer() {
     window.open(companyLinks.website, "_blank", "noopener");
   };
 
-  const handleConnectChange = e => setForm({ ...form, [e.target.name]: e.target.value });
-
-  const handleConnectSubmit = e => {
-    e.preventDefault();
-    setSent(true);
-    setTimeout(() => setSent(false), 1300);
-    setForm({ email: "", name: "", message: "" });
-  };
-
   return (
     <footer className="relative bg-gray-50 text-gray-800 pt-4 pb-2 overflow-hidden w-full">
-      {/* Powered by Meraki top right */}
+      {/* Powered by ULMiND top right */}
       <div className="w-full max-w-7xl mx-auto flex justify-end px-4">
         <div className="flex flex-col items-end">
           <span className="text-xs font-bold text-green-700 mb-2 drop-shadow">
@@ -100,13 +83,14 @@ export default function Footer() {
           <img src={logo} alt="Local News Logo" className="h-16 mb-1 drop-shadow" draggable={false} />
           <span className="text-green-600 text-base font-bold tracking-tight">Jharkhand & Bihar Local News</span>
           <ul className="space-y-[2px] mt-3 text-sm w-fit">
-            {quickLinks.map((link, i) => (
+            {quickLinks.map((link) => (
               <li key={link.label}>
-                <a
-                  href={`#${link.anchor}`}
-                  onClick={handleQuickLinkClick}
-                  className="transition px-1 py-[2px] rounded underline-offset-2 hover:font-bold hover:underline focus:font-bold focus:underline"
-                >{link.label}</a>
+                <button
+                  onClick={() => handleQuickLinkClick(link.path)}
+                  className="transition px-1 py-[2px] rounded underline-offset-2 hover:font-bold hover:underline focus:font-bold focus:underline text-left"
+                >
+                  {link.label}
+                </button>
               </li>
             ))}
           </ul>
@@ -132,90 +116,34 @@ export default function Footer() {
           </div>
         </div>
 
-        {/* Admin/Company Socials, Rate Us, Contact */}
+        {/* Social Media Links */}
         <div className="flex flex-col justify-start items-center lg:items-end gap-4 h-full w-full">
-          {/* Admin Socials */}
+          {/* Jharkhand Bihar Updates Media Links */}
           <div className="w-full">
             <h2 className="font-semibold text-green-700 mb-2 text-base text-center lg:text-right animate-fade-in">
-              Admin Media Links
+              Jharkhand Bihar Updates Media Links
             </h2>
             <div className="flex justify-center lg:justify-end gap-3 mb-2 animate-pop-in">
               <a href={adminLinks.instagram} aria-label="Instagram" target="_blank" rel="noopener" className="hover:scale-110 transition"><FaInstagram size={20} /></a>
               <a href={adminLinks.facebook} aria-label="Facebook" target="_blank" rel="noopener" className="hover:scale-110 transition"><FaFacebookF size={20} /></a>
               <a href={adminLinks.twitter} aria-label="Twitter" target="_blank" rel="noopener" className="hover:scale-110 transition"><FaTwitter size={20} /></a>
               <a href={adminLinks.youtube} aria-label="YouTube" target="_blank" rel="noopener" className="hover:scale-110 transition"><FaYoutube size={20} /></a>
+              <a href={adminLinks.linkedin} aria-label="LinkedIn" target="_blank" rel="noopener" className="hover:scale-110 transition"><FaLinkedin size={20} /></a>
             </div>
           </div>
-          {/* Company Socials */}
+          {/* ULMiND Media Links */}
           <div className="w-full">
             <h2 className="font-semibold text-green-700 mb-2 text-base text-center lg:text-right animate-fade-in">
               ULMiND Media Links
             </h2>
             <div className="flex justify-center lg:justify-end gap-3 mb-2 animate-pop-in">
               <a href={companyLinks.linkedin} target="_blank" rel="noopener" title="LinkedIn" className="hover:scale-110 transition"><FaLinkedin size={20} /></a>
-              <a href={companyLinks.website} target="_blank" rel="noopener" title="Website" className="hover:scale-110 transition"><FaGlobe size={20} /></a>
               <a href={companyLinks.twitter} target="_blank" rel="noopener" title="Twitter" className="hover:scale-110 transition"><FaTwitter size={20} /></a>
               <a href={companyLinks.instagram} target="_blank" rel="noopener" title="Instagram" className="hover:scale-110 transition"><FaInstagram size={20} /></a>
+              <a href={companyLinks.facebook} target="_blank" rel="noopener" title="Facebook" className="hover:scale-110 transition"><FaFacebookF size={20} /></a>
+              <a href={companyLinks.website} target="_blank" rel="noopener" title="Website" className="hover:scale-110 transition"><FaGlobe size={20} /></a>
             </div>
           </div>
-          {/* Rate Us */}
-          <div className="w-full flex flex-col items-center lg:items-end p-2 rounded-lg bg-white/70 shadow-sm animate-fade-in">
-            <span className="font-semibold text-gray-700 mb-1">Rate Us</span>
-            <div className="flex gap-1 mb-1">
-              {[1,2,3,4,5].map(star => (
-                <FaStar
-                  key={star}
-                  size={20}
-                  className="cursor-pointer hover:scale-110 transition"
-                  color={(hover || rating) >= star ? "#34d399" : "#cccccc"}
-                  onMouseEnter={()=>setHover(star)}
-                  onMouseLeave={()=>setHover(null)}
-                  onClick={()=>setRating(star)}
-                  title={`${star} Star${star>1?"s":""}`}
-                />
-              ))}
-            </div>
-            <span className="text-green-600 text-xs">
-              {rating > 0 ? `Thanks for rating us ${rating} star${rating > 1 ? "s" : ""}!` : "Click to rate"}
-            </span>
-          </div>
-          {/* Contact Form */}
-          <form onSubmit={handleConnectSubmit} className="w-full max-w-xs mt-1 p-2 bg-white/70 rounded-lg shadow-md animate-pop-in">
-            <span className="text-gray-800 font-semibold mb-2 block text-center">Contact Us</span>
-            <input
-              type="email"
-              name="email"
-              value={form.email}
-              onChange={handleConnectChange}
-              required
-              placeholder="Email"
-              className="w-full mb-2 px-3 py-2 rounded border border-gray-300 focus:border-green-400 outline-none text-sm transition"
-            />
-            <input
-              type="text"
-              name="name"
-              value={form.name}
-              onChange={handleConnectChange}
-              required
-              placeholder="Name"
-              className="w-full mb-2 px-3 py-2 rounded border border-gray-300 focus:border-green-400 outline-none text-sm transition"
-            />
-            <textarea
-              name="message"
-              value={form.message}
-              onChange={handleConnectChange}
-              required
-              placeholder="Message"
-              rows={2}
-              className="w-full mb-2 px-3 py-2 rounded border border-gray-300 focus:border-green-400 outline-none text-sm resize-none transition"
-            />
-            <button
-              type="submit"
-              disabled={sent}
-              className={`w-full py-2 rounded bg-gradient-to-r from-green-400 via-blue-400 to-purple-400 text-white font-semibold transition transform hover:brightness-110 ${sent?"opacity-70":"hover:scale-105"}`}>
-              {sent ? "Sent!" : "Send"}
-            </button>
-          </form>
         </div>
       </div>
 
@@ -227,7 +155,6 @@ export default function Footer() {
         <div className="mt-2 md:mt-0 text-xs">
           Powered by <span
             className="font-semibold underline text-green-700 cursor-pointer"
-            ref={merakiRef}
             onClick={handleMerakiClick}
             tabIndex={0}
           >
