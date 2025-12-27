@@ -756,52 +756,63 @@ export default function EventDetails() {
     <>
       {/* 🔥 HELMET FOR SEO & SHARE META */}
       <Helmet>
-        <title>{event.title || "Event Details"} | Jharkhand Bihar Updates</title>
+  <title>{event.title || "Event Details"} | {window.location.hostname === 'jharkhandupdates.com' ? 'Jharkhand Updates' : 'Jharkhand Bihar Updates'}</title>
 
-        <meta
-          name="description"
-          content={
-            event.description
-              ? event.description.replace(/<[^>]*>/g, "").slice(0, 150)
-              : "Event details and updates."
-          }
-        />
+  <meta
+    name="description"
+    content={
+      event.description
+        ? event.description.replace(/<[^>]*>/g, "").slice(0, 150)
+        : "Event details and updates."
+    }
+  />
 
-        <meta property="og:type" content="article" />
-        <meta
-          property="og:title"
-          content={event.title || "Event Details"}
-        />
-        <meta
-          property="og:description"
-          content={
-            event.description
-              ? event.description.replace(/<[^>]*>/g, "").slice(0, 150)
-              : "Event details and updates."
-          }
-        />
-        <meta property="og:url" content={window.location.href} />
-        {event.imageUrls?.[0] && (
-          <meta property="og:image" content={event.imageUrls[0]} />
-        )}
+  <link rel="canonical" href={window.location.href} />
 
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta
-          name="twitter:title"
-          content={event.title || "Event Details"}
-        />
-        <meta
-          name="twitter:description"
-          content={
-            event.description
-              ? event.description.replace(/<[^>]*>/g, "").slice(0, 150)
-              : "Event details and updates."
-          }
-        />
-        {event.imageUrls?.[0] && (
-          <meta name="twitter:image" content={event.imageUrls[0]} />
-        )}
-      </Helmet>
+  <meta property="og:type" content="article" />
+  <meta
+    property="og:title"
+    content={event.title || "Event Details"}
+  />
+  <meta
+    property="og:description"
+    content={
+      event.description
+        ? event.description.replace(/<[^>]*>/g, "").slice(0, 150)
+        : "Event details and updates."
+    }
+  />
+  <meta property="og:url" content={window.location.href} />
+  <meta property="og:site_name" content={window.location.hostname === 'jharkhandupdates.com' ? 'Jharkhand Updates' : 'Jharkhand Bihar Updates'} />
+  {event.imageUrls?.[0] ? (
+    <>
+      <meta property="og:image" content={event.imageUrls[0]} />
+      <meta property="og:image:secure_url" content={event.imageUrls[0]} />
+    </>
+  ) : (
+    <meta property="og:image" content={`${window.location.origin}/banner.jpg`} />
+  )}
+
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta
+    name="twitter:title"
+    content={event.title || "Event Details"}
+  />
+  <meta
+    name="twitter:description"
+    content={
+      event.description
+        ? event.description.replace(/<[^>]*>/g, "").slice(0, 150)
+        : "Event details and updates."
+    }
+  />
+  {event.imageUrls?.[0] ? (
+    <meta name="twitter:image" content={event.imageUrls[0]} />
+  ) : (
+    <meta name="twitter:image" content={`${window.location.origin}/banner.jpg`} />
+  )}
+</Helmet>
+
 
       <div className="flex h-screen bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden">
         {/* Ads */}
