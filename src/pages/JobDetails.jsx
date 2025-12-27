@@ -138,6 +138,23 @@ export default function JobDetails() {
     );
   };
 
+  // Check if optional fields exist
+  const showCompany = job?.company && job.company.trim();
+  const showLocation = job?.location && job.location.trim();
+  const showSalary = job?.salaryRange && job.salaryRange.trim();
+  const showDeadline = job?.applicationDeadline;
+  const showRegisterButton = job?.reglink && job.reglink.trim();
+
+  // 🔥 Check if job deadline has expired
+  const isJobExpired = (deadline) => {
+    if (!deadline) return false;
+    const now = new Date();
+    const deadlineDate = new Date(deadline);
+    return now > deadlineDate;
+  };
+
+  const jobExpired = isJobExpired(job?.applicationDeadline);
+
   // Share Functions
   const getShareUrl = () => {
     return window.location.href;
@@ -153,11 +170,15 @@ export default function JobDetails() {
   };
 
   const handleShareWhatsApp = () => {
-    const text = `🔔 Job Opportunity: ${job.title}\n\n🏢 Company: ${
-      job.company
-    }\n📍 Location: ${job.location || "Not specified"}\n${
-      job.salary ? `💰 Salary: ${job.salary}\n` : ""
-    }📅 Deadline: ${job.applicationDeadline}\n\nRead more: ${getShareUrl()}`;
+    const text = `🔔 Job Opportunity: ${job.title}${
+      showCompany ? `\n\n🏢 Company: ${job.company}` : ""
+    }${
+      showLocation ? `\n📍 Location: ${job.location}` : ""
+    }${
+      showSalary ? `\n💰 Salary: ${job.salaryRange}` : ""
+    }${
+      showDeadline ? `\n📅 Deadline: ${formatDateTime(job.applicationDeadline)}` : ""
+    }\n\nRead more: ${getShareUrl()}`;
     const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(text)}`;
     window.open(whatsappUrl, "_blank");
     setShowShareMenu(false);
@@ -180,9 +201,13 @@ export default function JobDetails() {
   };
 
   const handleShareTwitter = () => {
-    const text = `Job Opportunity: ${job.title} at ${job.company}\nLocation: ${
-      job.location || "Not specified"
-    }\nDeadline: ${job.applicationDeadline}`;
+    const text = `Job Opportunity: ${job.title}${
+      showCompany ? ` at ${job.company}` : ""
+    }${
+      showLocation ? `\nLocation: ${job.location}` : ""
+    }${
+      showDeadline ? `\nDeadline: ${formatDateTime(job.applicationDeadline)}` : ""
+    }`;
     const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(
       text
     )}&url=${encodeURIComponent(getShareUrl())}`;
@@ -818,31 +843,44 @@ export default function JobDetails() {
             {/* Responsive Job Info and Share Button */}
             <div className="flex flex-col gap-3">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                <div className="flex flex-row items-center gap-3 flex-1">
-                  <Building2 size={24} className="text-green-600 flex-shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <div className="font-semibold text-gray-800 text-base sm:text-lg truncate">
-                      {job.company}
+                <div className="flex flex-col gap-3 flex-1">
+                  {/* Company - Only if provided */}
+                  {showCompany && (
+                    <div className="flex flex-row items-center gap-3">
+                      <Building2 size={24} className="text-green-600 flex-shrink-0" />
+                      <div className="font-semibold text-gray-800 text-base sm:text-lg">
+                        {job.company}
+                      </div>
                     </div>
-                    <div className="text-sm text-gray-500 flex items-center gap-1 flex-wrap">
-                      <Calendar size={14} className="shrink-0" />
+                  )}
+
+                  {/* Location - Only if provided */}
+                  {showLocation && (
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <MapPin size={16} className="text-green-600 flex-shrink-0" />
+                      <span className="truncate">{job.location}</span>
+                    </div>
+                  )}
+
+                  {/* Deadline - Only if provided */}
+                  {showDeadline && (
+                    <div className={`flex items-center gap-2 text-sm ${
+                      jobExpired ? "text-red-600" : "text-gray-600"
+                    }`}>
+                      <Calendar size={16} className={`shrink-0 ${
+                        jobExpired ? "text-red-600" : "text-blue-600"
+                      }`} />
                       <span>Deadline:</span>
-                      <span className="text-red-500">
+                      <span className={jobExpired ? "text-red-600 font-semibold" : "text-red-500"}>
                         {formatDateTime(job.applicationDeadline)}
+                        {jobExpired && " (Expired)"}
                       </span>
                     </div>
-                  </div>
+                  )}
                 </div>
 
                 {/* Share Button */}
-                <div className="relative flex items-center gap-3 justify-between sm:justify-end">
-                  <div className="flex items-center gap-1 text-sm text-gray-500">
-                    <MapPin size={16} className="text-green-600 flex-shrink-0" />
-                    <span className="truncate max-w-[200px]">
-                      {job.location || "Unknown Location"}
-                    </span>
-                  </div>
-
+                <div className="relative flex items-center gap-3 justify-end">
                   <motion.button
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
@@ -976,10 +1014,11 @@ export default function JobDetails() {
               </div>
             </div>
 
-            {job.salary && (
+            {/* Salary - Only if provided */}
+            {showSalary && (
               <div className="flex items-center gap-2 text-sm text-emerald-700 font-semibold">
                 <DollarSign size={16} className="text-green-600" />
-                {job.salary}
+                {job.salaryRange}
               </div>
             )}
 
@@ -1002,11 +1041,29 @@ export default function JobDetails() {
               </button>
             </div>
 
-            {job.reglink && (
+            {/* 🔥 Job Expired Message */}
+            {jobExpired && showDeadline && (
+              <div className="p-4 bg-red-50 border-l-4 border-red-500 rounded-lg">
+                <div className="flex items-center gap-3">
+                  <Calendar size={20} className="text-red-600 flex-shrink-0" />
+                  <div>
+                    <p className="text-sm font-semibold text-red-800">
+                      Application Deadline Has Passed
+                    </p>
+                    <p className="text-xs text-red-600 mt-1">
+                      This job posting expired on {formatDateTime(job.applicationDeadline)}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Apply Now Button - Only if reglink provided AND NOT expired */}
+            {showRegisterButton && !jobExpired && (
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                onClick={() => window.open(job.reglink || "", "_blank")}
+                onClick={() => window.open(job.reglink, "_blank")}
                 className="inline-block bg-emerald-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-emerald-700 transition shadow-md mb-4 md:mb-6 w-full md:w-auto"
               >
                 Apply Now

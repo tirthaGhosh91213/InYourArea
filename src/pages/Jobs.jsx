@@ -6,11 +6,11 @@ import {
   Search as SearchIcon,
   DollarSign,
   Calendar,
-  MessageCircle,
-  Send,
-  UserCircle,
+  ExternalLink,
+  ArrowRight,
   X,
 } from "lucide-react";
+
 import Sidebar from "../components/SideBar";
 import RightSidebar from "../components/RightSidebar";
 import SmallAdd from "../components/SmallAdd";
@@ -219,6 +219,22 @@ export default function Jobs() {
       year: "numeric",
     });
 
+  // Check if job is new (created within last 2 days)
+  const isJobNew = (createdAt) => {
+    const now = new Date();
+    const created = new Date(createdAt);
+    const diffInDays = (now - created) / (1000 * 60 * 60 * 24);
+    return diffInDays < 2;
+  };
+
+  // Check if job deadline has passed
+  const isJobExpired = (deadline) => {
+    if (!deadline) return false;
+    const now = new Date();
+    const deadlineDate = new Date(deadline);
+    return now > deadlineDate;
+  };
+
   // Small ads
   const topRightAd =
     ads.length === 1 ? ads[0] : ads.length ? ads[topRightIndex % ads.length] : null;
@@ -270,73 +286,173 @@ export default function Jobs() {
 
   const mobileItems = buildMobileItems();
 
-  const JobCard = ({ job }) => (
-    <motion.div
-      layout
-      initial={{ opacity: 0, y: 40 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      transition={{
-        type: "spring",
-        stiffness: 100,
-      }}
-      whileHover={{
-        scale: 1.03,
-        boxShadow: "0 25px 40px rgba(52,211,153,0.25)",
-      }}
-      className="relative rounded-2xl overflow-hidden p-5 flex flex-col justify-between bg-white shadow-md border border-green-100 cursor-pointer hover:bg-gradient-to-r hover:from-emerald-100"
-      onClick={() => navigate(`/jobs/${job.id}`)}
-    >
-      {job.imageUrls?.length > 0 && (
-        <div className="relative w-full h-48 mb-4 rounded-xl overflow-hidden">
-          <img
-            src={job.imageUrls[job.currentImageIndex || 0]}
-            alt={job.title}
-            className="w-full h-full object-cover rounded-xl"
-          />
+  const JobCard = ({ job }) => {
+    const showCompany = job.company && job.company.trim();
+    const showLocation = job.location && job.location.trim();
+    const showSalary = job.salaryRange && job.salaryRange.trim();
+    const showDeadline = job.applicationDeadline;
+    const showRegisterButton = job.reglink && job.reglink.trim();
+    const isNew = isJobNew(job.createdAt);
+    const isExpired = isJobExpired(job.applicationDeadline);
+
+    return (
+      <motion.div
+        layout
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -20 }}
+        transition={{
+          duration: 0.3,
+          ease: "easeOut"
+        }}
+        whileHover={{
+          scale: isExpired ? 1 : 1.02,
+          boxShadow: isExpired ? "0 10px 20px rgba(0,0,0,0.1)" : "0 20px 40px rgba(16,185,129,0.15)",
+        }}
+        className={`relative rounded-2xl overflow-hidden bg-white shadow-lg border-2 hover:border-emerald-300 transition-all duration-300 ${
+          isExpired ? "opacity-75 border-gray-300" : "border-white"
+        }`}
+        style={{
+          boxShadow: isExpired 
+            ? "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)" 
+            : "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)"
+        }}
+      >
+        {/* JOB EXPIRED Badge - Top Right Corner */}
+        {isExpired && (
+          <div className="absolute -top-0 -right-0 z-20">
+            <div className="bg-red-600 text-white px-4 py-2 text-xs font-bold shadow-lg transform rotate-0 rounded-bl-lg">
+              JOB EXPIRED
+            </div>
+          </div>
+        )}
+
+        {/* NEW Badge - Only show if NOT expired */}
+        {isNew && !isExpired && (
+          <div className="absolute top-3 left-3 z-10 bg-gradient-to-r from-green-400 to-emerald-500 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg">
+            NEW
+          </div>
+        )}
+
+        {/* Company Badge - Top Right if company exists and NOT expired */}
+        {showCompany && !isExpired && (
+          <div className="absolute top-3 right-3 z-10 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-medium text-gray-700 shadow-md border border-gray-200">
+            {job.company}
+          </div>
+        )}
+
+        {/* Image Section with inner white border */}
+        {job.imageUrls?.length > 0 && (
+          <div className="relative w-full overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 p-2">
+            <div className={`relative w-full overflow-hidden rounded-lg ${isExpired ? "opacity-60" : ""}`}>
+              <img
+                src={job.imageUrls[job.currentImageIndex || 0]}
+                alt={job.title}
+                className="w-full h-auto object-contain"
+                style={{ maxHeight: "280px" }}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Content Section with padding for inner border effect */}
+        <div className="p-5">
+          {/* Job Title */}
+          <h2 className={`text-xl font-bold mb-4 line-clamp-2 transition ${
+            isExpired ? "text-gray-500" : "text-gray-800 hover:text-emerald-600"
+          }`}>
+            {job.title}
+          </h2>
+
+          {/* Optional Fields */}
+          <div className="space-y-2.5 mb-4">
+            {showLocation && (
+              <div className={`flex items-center gap-2 ${isExpired ? "text-gray-400" : "text-gray-600"}`}>
+                <div className={`flex items-center justify-center w-8 h-8 rounded-lg ${
+                  isExpired ? "bg-gray-100" : "bg-emerald-50"
+                }`}>
+                  <MapPin size={16} className={isExpired ? "text-gray-400" : "text-emerald-600"} />
+                </div>
+                <span className="text-sm font-medium">{job.location}</span>
+              </div>
+            )}
+
+            {showSalary && (
+              <div className={`flex items-center gap-2 ${isExpired ? "text-gray-400" : "text-gray-600"}`}>
+                <div className={`flex items-center justify-center w-8 h-8 rounded-lg ${
+                  isExpired ? "bg-gray-100" : "bg-yellow-50"
+                }`}>
+                  <DollarSign size={16} className={isExpired ? "text-gray-400" : "text-yellow-600"} />
+                </div>
+                <span className="text-sm font-medium">{job.salaryRange}</span>
+              </div>
+            )}
+
+            {showDeadline && (
+              <div className={`flex items-center gap-2 ${
+                isExpired ? "text-red-500" : "text-gray-600"
+              }`}>
+                <div className={`flex items-center justify-center w-8 h-8 rounded-lg ${
+                  isExpired ? "bg-red-50" : "bg-blue-50"
+                }`}>
+                  <Calendar size={16} className={isExpired ? "text-red-500" : "text-blue-600"} />
+                </div>
+                <span className="text-sm font-medium">
+                  Deadline: {formatDate(job.applicationDeadline)}
+                  {isExpired && <span className="ml-2 text-xs">(Expired)</span>}
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Expired Message */}
+          {isExpired && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-sm text-red-600 text-center font-medium">
+                ⚠️ This job application deadline has passed
+              </p>
+            </div>
+          )}
+
+          {/* Action Buttons */}
+          <div className={`flex gap-3 mt-5 pt-4 border-t ${
+            isExpired ? "border-gray-200" : "border-gray-100"
+          } ${showRegisterButton && !isExpired ? 'flex-row' : 'flex-col'}`}>
+            {/* View Job Button */}
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => navigate(`/jobs/${job.id}`)}
+              className={`flex items-center justify-center gap-2 font-semibold py-2.5 px-5 rounded-xl shadow-md hover:shadow-lg transition-all ${
+                isExpired
+                  ? "bg-gray-400 text-white w-full"
+                  : `bg-gradient-to-r from-emerald-500 to-green-600 text-white ${showRegisterButton ? 'flex-1' : 'w-full'}`
+              }`}
+            >
+              View Details
+              <ArrowRight size={18} />
+            </motion.button>
+
+            {/* Register Button (if application link exists and NOT expired) */}
+            {showRegisterButton && !isExpired && (
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  window.open(job.reglink, "_blank");
+                }}
+                className="flex-1 flex items-center justify-center gap-2 bg-white border-2 border-emerald-500 text-emerald-600 font-semibold py-2.5 px-5 rounded-xl hover:bg-emerald-50 transition-all shadow-sm"
+              >
+                Apply Now
+                <ExternalLink size={16} />
+              </motion.button>
+            )}
+          </div>
         </div>
-      )}
-      <div className="mb-3">
-        <h2 className="pb-3 font-semibold text-gray-800">{job.title}</h2>
-      </div>
-      <div className="space-y-2 text-gray-700">
-        <p className="flex items-center gap-2">
-          <Building2 size={16} className="text-green-700" /> {job.company}
-        </p>
-        <p className="flex items-center gap-2">
-          <MapPin size={16} className="text-green-700" /> {job.location}
-        </p>
-        <p className="flex items-center gap-2">
-          <DollarSign size={16} className="text-yellow-600" /> {job.salaryRange}
-        </p>
-        <p className="flex items-center gap-2">
-          <Calendar size={16} className="text-blue-600" />{" "}
-          {formatDate(job.applicationDeadline)}
-        </p>
-      </div>
-      <div className="mt-4 flex justify-between items-center border-t pt-3 border-emerald-200">
-        <motion.button
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={(e) => {
-            e.stopPropagation();
-            window.open(job.reglink || "", "_blank");
-          }}
-          className="flex items-center gap-2 text-green-700 font-semibold hover:text-teal-700 transition"
-        >
-          <Send size={18} /> Apply Now
-        </motion.button>
-        <motion.div className="flex items-center gap-2 text-gray-500 hover:text-emerald-600 transition">
-          <MessageCircle size={18} /> Comment
-        </motion.div>
-      </div>
-      {job.postedBy && (
-        <p className="text-xs text-gray-400 mt-2 flex items-center gap-1">
-          <UserCircle size={14} /> Posted by: {job.postedBy}
-        </p>
-      )}
-    </motion.div>
-  );
+      </motion.div>
+    );
+  };
 
   return (
     <>
@@ -366,7 +482,7 @@ export default function Jobs() {
       </AnimatePresence>
 
       {/* Page Layout */}
-      <div className="flex min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 pt-16">
+      <div className="flex min-h-screen bg-gradient-to-br from-gray-50 to-white pt-16">
         {/* Left Sidebar */}
         <div className="hidden lg:block w-64 bg-white shadow-md border-r border-gray-200">
           <Sidebar />
