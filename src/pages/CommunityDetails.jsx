@@ -176,15 +176,15 @@ export default function CommunityDetails() {
     if (!post) return "";
     const plainText = post.content.replace(/<[^>]*>/g, "");
     const truncatedText = plainText.substring(0, 100);
-    return `${post.title}\n\n${truncatedText}${
+    const titlePart = post.title ? `${post.title}\n\n` : "";
+    return `${titlePart}${truncatedText}${
       plainText.length > 100 ? "..." : ""
     }`;
   };
 
   const handleShareWhatsApp = () => {
-    const text = `${getShareText()}\n\nLocation: ${
-      post.location || "Not specified"
-    }\n\nRead more: ${getShareUrl()}`;
+    const locationPart = post.location ? `\n\nLocation: ${post.location}` : "";
+    const text = `${getShareText()}${locationPart}\n\nRead more: ${getShareUrl()}`;
     const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(text)}`;
     window.open(whatsappUrl, "_blank");
     setShowShareMenu(false);
@@ -254,12 +254,11 @@ export default function CommunityDetails() {
     fetchCurrentUser();
   }, [token]);
 
-  // ✅ FIXED: Fetch Post WITHOUT login requirement
+  // Fetch Post WITHOUT login requirement
   useEffect(() => {
     const fetchPost = async () => {
       try {
         setLoading(true);
-        // ✅ NO Authorization header - public access
         const res = await axios.get(
           `https://api.jharkhandbiharupdates.com/api/v1/community/${id}`
         );
@@ -272,7 +271,6 @@ export default function CommunityDetails() {
       }
     };
 
-    // ✅ REMOVED: No login redirect for viewing
     fetchPost();
 
     // Fetch small ads for CommunityDetails
@@ -318,11 +316,11 @@ export default function CommunityDetails() {
       .catch((err) => {
         console.error("Error fetching community details ads:", err);
       });
-  }, [id]); // ✅ Removed 'token' and 'navigate' dependencies
+  }, [id]);
 
-  // ✅ Fetch Comments - ONLY if logged in
+  // Fetch Comments - ONLY if logged in
   const fetchComments = async () => {
-    if (!token) return; // Skip if not logged in
+    if (!token) return;
 
     try {
       const res = await axios.get(
@@ -331,7 +329,6 @@ export default function CommunityDetails() {
       );
       if (res.data.success) {
         setComments(res.data.data);
-        // Initialize all replies as collapsed by default
         const allCollapsed = {};
         const markAsCollapsed = (comments) => {
           comments.forEach(comment => {
@@ -369,13 +366,12 @@ export default function CommunityDetails() {
     }
   }, [topRightClosed, bottomRightClosed, topRightIndex, bottomRightIndex, ads]);
 
-  // ✅ Post Comment - Requires Login
+  // Post Comment - Requires Login
   const handlePostComment = async () => {
     if (!commentText.trim()) {
       toast.warning("Comment cannot be empty!");
       return;
     }
-    // ✅ Redirect to login if not authenticated
     if (!token) {
       toast.info("Please login to comment");
       navigate("/login");
@@ -402,7 +398,6 @@ export default function CommunityDetails() {
 
   // Start Reply
   const handleStartReply = (commentId) => {
-    // ✅ Check login before allowing reply
     if (!token) {
       toast.info("Please login to reply");
       navigate("/login");
@@ -557,7 +552,7 @@ export default function CommunityDetails() {
     return isCommentOwner || isPostOwner;
   };
 
-  // 🔥 PERFECT HIERARCHY - Recursive Comment Renderer (EventDetails Style)
+  // Recursive Comment Renderer
   const renderComment = (comment, level = 0) => {
     const isEditing = editingCommentId === comment.id;
     const isReplying = replyingToId === comment.id;
@@ -567,7 +562,6 @@ export default function CommunityDetails() {
     const isMenuOpen = openMenuId === comment.id;
     const isCommentAuthorAdmin = comment.author?.role === "ADMIN";
 
-    // MAX DEPTH LIMIT - Industry Standard (3 levels)
     const maxLevel = Math.min(level, 3);
 
     return (
@@ -655,7 +649,7 @@ export default function CommunityDetails() {
                   </p>
                 )}
 
-                {/* 🔥 Reply Button + View Replies on SAME LINE */}
+                {/* Reply Button + View Replies on SAME LINE */}
                 {!isEditing && (
                   <div className="flex items-center gap-4 mt-2 flex-wrap">
                     <button
@@ -721,7 +715,7 @@ export default function CommunityDetails() {
                   </motion.div>
                 )}
 
-                {/* 🔥 CORRECT: Nested Replies INSIDE parent's content, maintaining hierarchy */}
+                {/* Nested Replies */}
                 {hasReplies && !areRepliesCollapsed && (
                   <div className="mt-2 ml-0">
                     {[...comment.replies].reverse().map((reply) => 
@@ -800,42 +794,42 @@ export default function CommunityDetails() {
     );
 
   const isPostAuthorAdmin = post.author?.role === "ADMIN";
+  const hasTitle = post.title && post.title.trim() !== "";
+  const hasImages = post.imageUrls && post.imageUrls.length > 0;
+  const hasLocation = post.location && post.location.trim() !== "";
 
   return (
     <>
       {/* Dynamic Meta Tags for Social Media */}
-{post && (
-  <Helmet>
-    <title>{post.title} - {window.location.hostname === 'jharkhandupdates.com' ? 'Jharkhand Updates' : 'Jharkhand Bihar Updates'}</title>
-    <meta name="description" content={post.content.replace(/<[^>]*>/g, '').substring(0, 160)} />
-    
-    {/* ✅ FIXED: Use window.location.href instead of hardcoded URL */}
-    <link rel="canonical" href={window.location.href} />
-    
-    {/* Facebook / Open Graph */}
-    <meta property="fb:app_id" content="1234567890" />
-    <meta property="og:type" content="article" />
-    <meta property="og:url" content={window.location.href} />
-    <meta property="og:title" content={post.title} />
-    <meta property="og:description" content={post.content.replace(/<[^>]*>/g, '').substring(0, 160)} />
-    <meta property="og:image" content={post.imageUrls?.[0] || `${window.location.origin}/banner.jpg`} />
-    <meta property="og:image:secure_url" content={post.imageUrls?.[0] || `${window.location.origin}/banner.jpg`} />
-    <meta property="og:image:width" content="1200" />
-    <meta property="og:image:height" content="630" />
-    <meta property="og:site_name" content={window.location.hostname === 'jharkhandupdates.com' ? 'Jharkhand Updates' : 'Jharkhand Bihar Updates'} />
-    
-    {/* Twitter */}
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content={post.title} />
-    <meta name="twitter:description" content={post.content.replace(/<[^>]*>/g, '').substring(0, 160)} />
-    <meta name="twitter:image" content={post.imageUrls?.[0] || `${window.location.origin}/banner.jpg`} />
-  </Helmet>
-)}
-
-
+      {post && (
+        <Helmet>
+          <title>{hasTitle ? post.title : post.content.substring(0, 60)} - {window.location.hostname === 'jharkhandupdates.com' ? 'Jharkhand Updates' : 'Jharkhand Bihar Updates'}</title>
+          <meta name="description" content={post.content.replace(/<[^>]*>/g, '').substring(0, 160)} />
+          
+          <link rel="canonical" href={window.location.href} />
+          
+          {/* Facebook / Open Graph */}
+          <meta property="fb:app_id" content="1234567890" />
+          <meta property="og:type" content="article" />
+          <meta property="og:url" content={window.location.href} />
+          <meta property="og:title" content={hasTitle ? post.title : post.content.substring(0, 60)} />
+          <meta property="og:description" content={post.content.replace(/<[^>]*>/g, '').substring(0, 160)} />
+          <meta property="og:image" content={hasImages ? post.imageUrls[0] : `${window.location.origin}/banner.jpg`} />
+          <meta property="og:image:secure_url" content={hasImages ? post.imageUrls[0] : `${window.location.origin}/banner.jpg`} />
+          <meta property="og:image:width" content="1200" />
+          <meta property="og:image:height" content="630" />
+          <meta property="og:site_name" content={window.location.hostname === 'jharkhandupdates.com' ? 'Jharkhand Updates' : 'Jharkhand Bihar Updates'} />
+          
+          {/* Twitter */}
+          <meta name="twitter:card" content="summary_large_image" />
+          <meta name="twitter:title" content={hasTitle ? post.title : post.content.substring(0, 60)} />
+          <meta name="twitter:description" content={post.content.replace(/<[^>]*>/g, '').substring(0, 160)} />
+          <meta property="twitter:image" content={hasImages ? post.imageUrls[0] : `${window.location.origin}/banner.jpg`} />
+        </Helmet>
+      )}
 
       <div className="flex h-screen bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden">
-        {/* Ads like other detail pages */}
+        {/* Ads */}
         {topRightAd && !topRightClosed && (
           <SmallAdd
             ad={topRightAd}
@@ -875,11 +869,12 @@ export default function CommunityDetails() {
             animate={{ opacity: 1, y: 0 }}
             className="max-w-3xl mx-auto bg-white rounded-3xl shadow-2xl p-4 md:p-6 space-y-6 border border-green-200"
           >
-            {post.imageUrls?.length > 0 && (
+            {/* Image Section - Only if images exist */}
+            {hasImages && (
               <div className="relative w-full h-60 sm:h-72 md:h-80 rounded-2xl overflow-hidden shadow-lg">
                 {renderMedia(
                   post.imageUrls[currentImage],
-                  post.title,
+                  hasTitle ? post.title : "Post image",
                   "w-full h-full object-cover rounded-2xl transition-all duration-500 bg-black"
                 )}
                 {post.imageUrls.length > 1 && (
@@ -946,14 +941,17 @@ export default function CommunityDetails() {
                   </div>
                 </div>
 
-                {/* Share Button */}
+                {/* Share Button and Location */}
                 <div className="relative flex items-center gap-3 justify-between sm:justify-end">
-                  <div className="flex items-center gap-1 text-sm text-gray-500">
-                    <MapPin size={16} className="text-green-600 flex-shrink-0" />
-                    <span className="truncate max-w-[200px]">
-                      {post.location || "Unknown Location"}
-                    </span>
-                  </div>
+                  {/* Only show location if it exists */}
+                  {hasLocation && (
+                    <div className="flex items-center gap-1 text-sm text-gray-500">
+                      <MapPin size={16} className="text-green-600 flex-shrink-0" />
+                      <span className="truncate max-w-[200px]">
+                        {post.location}
+                      </span>
+                    </div>
+                  )}
 
                   <motion.button
                     whileHover={{ scale: 1.05 }}
@@ -1079,10 +1077,15 @@ export default function CommunityDetails() {
               </div>
             </div>
 
-            <h1
-              className="text-2xl md:text-3xl font-bold text-gray-800"
-              dangerouslySetInnerHTML={{ __html: post.title }}
-            />
+            {/* Title - Only if title exists */}
+            {hasTitle && (
+              <h1
+                className="text-2xl md:text-3xl font-bold text-gray-800"
+                dangerouslySetInnerHTML={{ __html: post.title }}
+              />
+            )}
+
+            {/* Description */}
             <div className="relative">
               <div
                 className={`text-gray-700 whitespace-pre-line leading-relaxed text-base md:text-lg transition-all duration-500 ${
@@ -1156,7 +1159,7 @@ export default function CommunityDetails() {
 
         {/* Fullscreen Image Modal */}
         <AnimatePresence>
-          {isFullscreen && post.imageUrls?.length > 0 && (
+          {isFullscreen && hasImages && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -1189,7 +1192,7 @@ export default function CommunityDetails() {
               )}
               {renderMedia(
                 post.imageUrls[currentImage],
-                post.title,
+                hasTitle ? post.title : "Post image",
                 "max-h-full max-w-full object-contain rounded-lg shadow-lg bg-black",
                 true
               )}

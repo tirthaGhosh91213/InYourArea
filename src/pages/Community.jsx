@@ -13,13 +13,11 @@ import { IoPersonCircleOutline } from "react-icons/io5";
 import { MdVerified } from "react-icons/md";
 import Loader from "../components/Loader";
 
-
 // Helper: Get next index in circular manner
 function getNextIndex(current, total) {
   if (total === 0) return 0;
   return (current + 1) % total;
 }
-
 
 // Helper: shuffle array (for large ads)
 function shuffle(array) {
@@ -31,23 +29,19 @@ function shuffle(array) {
   return arr;
 }
 
-
 // LocalStorage keys for Community ads
 const SLOT_KEYS = {
   TOP_RIGHT: "COMMUNITY_AD_INDEX_TOP_RIGHT",
   BOTTOM_RIGHT: "COMMUNITY_AD_INDEX_BOTTOM_RIGHT",
 };
 
-
 export default function Community() {
   const navigate = useNavigate();
   const token = localStorage.getItem("accessToken");
 
-
   useEffect(() => {
     if (!token) navigate("/login");
   }, [token, navigate]);
-
 
   const [searchTerm, setSearchTerm] = useState("");
   const [posts, setPosts] = useState([]);
@@ -58,7 +52,6 @@ export default function Community() {
   const [commentText, setCommentText] = useState({});
   const [loading, setLoading] = useState(true);
 
-
   // Small ads
   const [ads, setAds] = useState([]);
   const [topRightIndex, setTopRightIndex] = useState(0);
@@ -66,13 +59,11 @@ export default function Community() {
   const [topRightClosed, setTopRightClosed] = useState(false);
   const [bottomRightClosed, setBottomRightClosed] = useState(false);
 
-
   // Large ads
   const [largeAds, setLargeAds] = useState([]);
   const [largeAdIndexes, setLargeAdIndexes] = useState([0, 1]);
   const [largeAd1Closed, setLargeAd1Closed] = useState(false);
   const [largeAd2Closed, setLargeAd2Closed] = useState(false);
-
 
   const fetchComments = async (postId) => {
     try {
@@ -83,12 +74,10 @@ export default function Community() {
       if (res.data.success) {
         setCommentsMap((prev) => ({ ...prev, [postId]: res.data.data }));
 
-
         const newAvatars = res.data.data.reduce((acc, comment) => {
           acc[comment.author.id] = comment.author.profileImageUrl || null;
           return acc;
         }, {});
-
 
         setCommentAvatars((prev) => ({
           ...prev,
@@ -100,24 +89,20 @@ export default function Community() {
     }
   };
 
-
   const fetchPosts = async () => {
     try {
       setLoading(true);
-
 
       const res = await axios.get(
         `https://api.jharkhandbiharupdates.com/api/v1/community`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-
       if (res.data.success) {
         const allPosts = res.data.data;
         console.log(`✅ Loaded ALL posts: ${allPosts.length} total`);
         
         setPosts(allPosts);
-
 
         // Randomly select 2-3 posts to show comments automatically
         if (allPosts.length > 0) {
@@ -126,12 +111,10 @@ export default function Community() {
             allPosts.length
           );
 
-
           const shuffledPosts = [...allPosts].sort(
             () => Math.random() - 0.5
           );
           const selectedPosts = shuffledPosts.slice(0, numberOfPostsToShow);
-
 
           const autoShowComments = {};
           selectedPosts.forEach((post) => {
@@ -139,10 +122,8 @@ export default function Community() {
             fetchComments(post.id);
           });
 
-
           setShowCommentInput(autoShowComments);
         }
-
 
         // Update avatars
         const avatarMap = allPosts.reduce((acc, post) => {
@@ -159,10 +140,8 @@ export default function Community() {
     }
   };
 
-
   useEffect(() => {
     fetchPosts();
-
 
     // Small ads
     fetch(
@@ -179,7 +158,6 @@ export default function Community() {
           const orderedAds = [...data.data];
           setAds(orderedAds);
 
-
           const total = orderedAds.length;
           let savedTop = parseInt(
             localStorage.getItem(SLOT_KEYS.TOP_RIGHT) ?? "0",
@@ -189,7 +167,6 @@ export default function Community() {
             localStorage.getItem(SLOT_KEYS.BOTTOM_RIGHT) ?? "1",
             10
           );
-
 
           if (isNaN(savedTop) || savedTop < 0 || savedTop >= total) {
             savedTop = 0;
@@ -201,7 +178,6 @@ export default function Community() {
             savedBottom = getNextIndex(savedTop, total);
           }
 
-
           setTopRightIndex(savedTop);
           setBottomRightIndex(savedBottom);
         }
@@ -209,7 +185,6 @@ export default function Community() {
       .catch((err) => {
         console.error("Error fetching community small ads:", err);
       });
-
 
     // Large ads
     fetch("https://api.jharkhandbiharupdates.com/api/v1/banner-ads/active/large")
@@ -230,25 +205,21 @@ export default function Community() {
       });
   }, []);
 
-
   // Rotate small ads index on next refresh after a close
   useEffect(() => {
     if (!ads.length) return;
     const total = ads.length;
-
 
     if (topRightClosed) {
       const nextTop = getNextIndex(topRightIndex, total);
       localStorage.setItem(SLOT_KEYS.TOP_RIGHT, String(nextTop));
     }
 
-
     if (bottomRightClosed) {
       const nextBottom = getNextIndex(bottomRightIndex, total);
       localStorage.setItem(SLOT_KEYS.BOTTOM_RIGHT, String(nextBottom));
     }
   }, [topRightClosed, bottomRightClosed, topRightIndex, bottomRightIndex, ads]);
-
 
   const sendComment = async (postId) => {
     if (!commentText[postId]) return toast.error("Comment cannot be empty");
@@ -268,17 +239,15 @@ export default function Community() {
     }
   };
 
-
   const filteredPosts = posts.filter(
     (post) =>
-      post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (post.title || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
       post.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      post.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (post.location || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
       `${post.author.firstName} ${post.author.lastName}`
         .toLowerCase()
         .includes(searchTerm.toLowerCase())
   );
-
 
   const formatDate = (date) =>
     new Date(date).toLocaleString("en-GB", {
@@ -288,7 +257,6 @@ export default function Community() {
       hour: "2-digit",
       minute: "2-digit",
     });
-
 
   const ProfileImage = ({ src, alt, size, className = "" }) =>
     src ? (
@@ -306,22 +274,18 @@ export default function Community() {
       />
     );
 
-
   const handlePostClick = (postId) => {
     navigate(`/community/${postId}`);
   };
 
-
   const topRightAd = ads.length ? ads[topRightIndex % ads.length] : null;
   const bottomRightAd = ads.length ? ads[bottomRightIndex % ads.length] : null;
-
 
   // Mobile: interleave ads after every 2 posts (single post per row)
   const buildMobileItems = () => {
     const items = [];
     if (!filteredPosts.length) return items;
     let adPtr = 0;
-
 
     if (filteredPosts.length === 1) {
       if (largeAds.length > 0)
@@ -332,7 +296,6 @@ export default function Community() {
       return items;
     }
 
-
     if (filteredPosts.length === 2) {
       items.push({ type: "post", post: filteredPosts[0] });
       if (largeAds.length > 0)
@@ -342,7 +305,6 @@ export default function Community() {
         items.push({ type: "ad", adIndex: largeAdIndexes[1] ?? 0 });
       return items;
     }
-
 
     for (let i = 0; i < filteredPosts.length; i++) {
       items.push({ type: "post", post: filteredPosts[i] });
@@ -360,9 +322,7 @@ export default function Community() {
     return items;
   };
 
-
   const mobileItems = buildMobileItems();
-
 
   const truncateText = (text, maxLength) => {
     if (!text) return "";
@@ -370,16 +330,29 @@ export default function Community() {
     return text.substring(0, maxLength) + "...";
   };
 
-
   const CommunityCard = ({ post }) => {
-    const truncatedContentMobile = truncateText(post.content, 200);
-    const truncatedContentDesktop = truncateText(post.content, 300);
+    const hasTitle = post.title && post.title.trim() !== "";
+    const hasImage = post.imageUrls && post.imageUrls.length > 0;
+    const hasLocation = post.location && post.location.trim() !== "";
+    
+    // Check if it's description-only post (no title, no image)
+    const isDescriptionOnly = !hasTitle && !hasImage;
+    
     const isAdmin = post.author.role === "ADMIN";
     
     const postComments = commentsMap[post.id] || [];
     const displayedComments = postComments.slice(0, 3);
     const remainingCount = postComments.length - 3;
 
+    // For description-only posts: show up to 500 chars with proper line breaks
+    const contentPreview500 = post.content.length > 500 
+      ? post.content.substring(0, 500) 
+      : post.content;
+    const needsReadMore = post.content.length > 500;
+
+    // For posts with all fields: use existing truncation
+    const truncatedContentMobile = truncateText(post.content, 200);
+    const truncatedContentDesktop = truncateText(post.content, 300);
 
     return (
       <div
@@ -416,43 +389,64 @@ export default function Community() {
             </div>
           </div>
 
-
-          {/* Title */}
-          <div className="px-3 sm:px-4 pt-2 sm:pt-3">
-            <h3 className="text-sm sm:text-base md:text-lg font-semibold text-gray-900 leading-snug break-words overflow-wrap-anywhere">
-              {post.title}
-            </h3>
-          </div>
-
-
-          {/* Image */}
-          {post.imageUrls && post.imageUrls.length > 0 ? (
-            <div className="mt-2 sm:mt-3 w-full h-52 sm:h-60 md:h-80 overflow-hidden">
-              <img
-                src={post.imageUrls[post.currentImageIndex || 0]}
-                alt={post.title}
-                className="w-full h-full object-cover"
-              />
+          {/* Content area - different layouts based on what user provided */}
+          {isDescriptionOnly ? (
+            /* Twitter-style description-only post */
+            <div className="px-3 sm:px-4 pt-2 sm:pt-3">
+              <p className="text-sm sm:text-base text-gray-800 leading-relaxed break-words overflow-wrap-anywhere whitespace-pre-line">
+                {contentPreview500}
+              </p>
+              {needsReadMore && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handlePostClick(post.id);
+                  }}
+                  className="text-emerald-600 hover:text-emerald-700 font-medium text-sm mt-1 inline-block"
+                >
+                  Read more
+                </button>
+              )}
             </div>
-          ) : null}
+          ) : (
+            <>
+              {/* Title (if provided) */}
+              {hasTitle && (
+                <div className="px-3 sm:px-4 pt-2 sm:pt-3">
+                  <h3 className="text-sm sm:text-base md:text-lg font-semibold text-gray-900 leading-snug break-words overflow-wrap-anywhere">
+                    {post.title}
+                  </h3>
+                </div>
+              )}
 
+              {/* Image (if provided) */}
+              {hasImage && (
+                <div className={`${hasTitle ? 'mt-2 sm:mt-3' : 'mt-2 sm:mt-3'} w-full h-52 sm:h-60 md:h-80 overflow-hidden`}>
+                  <img
+                    src={post.imageUrls[post.currentImageIndex || 0]}
+                    alt={post.title || "post image"}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              )}
 
-          {/* Description */}
-          <div className="px-3 sm:px-4 pt-2 sm:pt-3">
-            <p className="block md:hidden text-base sm:text-[17px] text-gray-700 leading-relaxed break-words overflow-wrap-anywhere">
-              {truncatedContentMobile}
-            </p>
-            <p className="hidden md:block text-lg text-gray-700 leading-relaxed break-words overflow-wrap-anywhere">
-              {truncatedContentDesktop}
-            </p>
-          </div>
-
+              {/* Description (truncated for posts with title/image) */}
+              <div className="px-3 sm:px-4 pt-2 sm:pt-3">
+                <p className="block md:hidden text-base sm:text-[17px] text-gray-700 leading-relaxed break-words overflow-wrap-anywhere">
+                  {truncatedContentMobile}
+                </p>
+                <p className="hidden md:block text-lg text-gray-700 leading-relaxed break-words overflow-wrap-anywhere">
+                  {truncatedContentDesktop}
+                </p>
+              </div>
+            </>
+          )}
 
           {/* Footer: comment button */}
           <div className="flex items-center justify-between px-3 sm:px-4 py-2 sm:py-3">
             <div className="flex-1" />
             <button
-              className="flex items-center gap-1 text-emerald-700 text-xs sm:text-sm font-semibold flex-shrink-0 cursor-pointer cursor-pointer"
+              className="flex items-center gap-1 text-emerald-700 text-xs sm:text-sm font-semibold flex-shrink-0 cursor-pointer"
               onClick={(e) => {
                 e.stopPropagation();
                 setShowCommentInput((prev) => ({
@@ -466,7 +460,6 @@ export default function Community() {
             </button>
           </div>
         </div>
-
 
         {/* Comments - Only show 3 */}
         {showCommentInput[post.id] && (
@@ -519,6 +512,7 @@ export default function Community() {
                       [post.id]: e.target.value,
                     }))
                   }
+                  onClick={(e) => e.stopPropagation()}
                   className="flex-1 min-w-0 px-3 py-1.5 sm:py-2 border rounded-full focus:outline-none focus:ring-2 focus:ring-emerald-400 text-xs sm:text-sm"
                 />
                 <button
@@ -538,14 +532,12 @@ export default function Community() {
     );
   };
 
-
   return (
     <>
       {/* Top Navbar */}
       <div className="w-full fixed top-0 left-0 z-50 bg-white shadow-md border-b border-gray-200">
         <RightSidebar />
       </div>
-
 
       {/* Small Ads */}
       <AnimatePresence>
@@ -567,14 +559,12 @@ export default function Community() {
         )}
       </AnimatePresence>
 
-
       {/* Layout */}
       <div className="flex min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 pt-16">
         {/* Left Sidebar */}
         <div className="hidden lg:block w-64 bg-white shadow-md border-r border-gray-200 flex-shrink-0">
           <Sidebar />
         </div>
-
 
         {/* Main Content */}
         <main className="flex-1 flex flex-col items-center px-2 pt-4 sm:pt-6 pb-6 min-w-0">
@@ -607,7 +597,6 @@ export default function Community() {
             </div>
           </motion.div>
 
-
           {loading ? (
             <div className="flex justify-center py-20">
               <Loader />
@@ -619,7 +608,6 @@ export default function Community() {
               className="text-center text-gray-500 mt-10 text-lg sm:text-xl px-4"
             >
               No community posts yet. Start the conversation!
-              <span className="font-semibold">{searchTerm}</span>
             </motion.p>
           ) : (
             <>
@@ -645,7 +633,6 @@ export default function Community() {
                 )}
               </div>
 
-
               {/* DESKTOP/TABLET: post list + sticky ads */}
               <div className="hidden md:grid md:grid-cols-3 gap-8 w-full max-w-7xl pb-10">
                 {/* Posts column */}
@@ -658,7 +645,6 @@ export default function Community() {
                   ))}
                 </div>
 
-
                 {/* Sticky ads column */}
                 <div className="flex flex-shrink-0">
                   <div className="sticky top-28 w-full flex flex-col gap-6 max-h-[80vh]">
@@ -667,7 +653,6 @@ export default function Community() {
                         if (i === 0 && largeAd1Closed) return null;
                         if (i === 1 && largeAd2Closed) return null;
                         if (!largeAds[idx]) return null;
-
 
                         return (
                           <div
