@@ -908,58 +908,59 @@ const isFirstMediaVideo = postImage && (
 
 
      <Helmet>
-      <title>{news.title} - JHARKHAND BIHAR UPDATES</title>
-      <meta name="description" content={postDescription} />
-      
-      {/* ✅ ADD: Canonical URL */}
-      <link rel="canonical" href={window.location.href} />
-      
-      {/* Facebook / Open Graph */}
-      <meta property="fb:app_id" content="1234567890" />
-      <meta property="og:type" content="article" />
-      <meta property="og:url" content={window.location.href} />
-      <meta property="og:title" content={news.title} />
-      <meta property="og:description" content={postDescription} />
-      <meta property="og:site_name" content="JHARKHAND BIHAR UPDATES" />
-      
-      {/* 🔥 VIDEO SUPPORT: Different meta tags for video vs image */}
-      {isFirstMediaVideo ? (
-        <>
-          {/* Video Meta Tags */}
-          <meta property="og:type" content="video.other" />
-          <meta property="og:video" content={postImage} />
-          <meta property="og:video:secure_url" content={postImage} />
-          <meta property="og:video:type" content="video/mp4" />
-          <meta property="og:video:width" content="1280" />
-          <meta property="og:video:height" content="720" />
-          {/* Fallback image (thumbnail) - you can generate thumbnail or use banner */}
-          <meta property="og:image" content="https://jharkhandbiharupdates.com/banner.jpg" />
-        </>
-      ) : (
-        <>
-          {/* Image Meta Tags */}
-          <meta property="og:image" content={postImage} />
-          <meta property="og:image:secure_url" content={postImage} />
-          <meta property="og:image:width" content="1200" />
-          <meta property="og:image:height" content="630" />
-        </>
-      )}
-      
-      {/* Twitter */}
-      <meta name="twitter:card" content={isFirstMediaVideo ? "player" : "summary_large_image"} />
-      <meta name="twitter:title" content={news.title} />
-      <meta name="twitter:description" content={postDescription} />
-      {isFirstMediaVideo ? (
-        <>
-          <meta name="twitter:player" content={postImage} />
-          <meta name="twitter:player:width" content="1280" />
-          <meta name="twitter:player:height" content="720" />
-          <meta name="twitter:image" content="https://jharkhandbiharupdates.com/banner.jpg" />
-        </>
-      ) : (
-        <meta name="twitter:image" content={postImage} />
-      )}
-    </Helmet>
+  <title>{news.title} - {window.location.hostname === 'jharkhandupdates.com' ? 'JHARKHAND UPDATES' : 'JHARKHAND BIHAR UPDATES'}</title>
+  <meta name="description" content={postDescription} />
+  
+  {/* ✅ ADD: Canonical URL */}
+  <link rel="canonical" href={window.location.href} />
+  
+  {/* Facebook / Open Graph */}
+  <meta property="fb:app_id" content="1234567890" />
+  <meta property="og:type" content="article" />
+  <meta property="og:url" content={window.location.href} />
+  <meta property="og:title" content={news.title} />
+  <meta property="og:description" content={postDescription} />
+  <meta property="og:site_name" content={window.location.hostname === 'jharkhandupdates.com' ? 'JHARKHAND UPDATES' : 'JHARKHAND BIHAR UPDATES'} />
+  
+  {/* 🔥 VIDEO SUPPORT: Different meta tags for video vs image */}
+  {isFirstMediaVideo ? (
+    <>
+      {/* Video Meta Tags */}
+      <meta property="og:type" content="video.other" />
+      <meta property="og:video" content={postImage} />
+      <meta property="og:video:secure_url" content={postImage} />
+      <meta property="og:video:type" content="video/mp4" />
+      <meta property="og:video:width" content="1280" />
+      <meta property="og:video:height" content="720" />
+      {/* Fallback image (thumbnail) - you can generate thumbnail or use banner */}
+      <meta property="og:image" content={`${window.location.origin}/banner.jpg`} />
+    </>
+  ) : (
+    <>
+      {/* Image Meta Tags */}
+      <meta property="og:image" content={postImage} />
+      <meta property="og:image:secure_url" content={postImage} />
+      <meta property="og:image:width" content="1200" />
+      <meta property="og:image:height" content="630" />
+    </>
+  )}
+  
+  {/* Twitter */}
+  <meta name="twitter:card" content={isFirstMediaVideo ? "player" : "summary_large_image"} />
+  <meta name="twitter:title" content={news.title} />
+  <meta name="twitter:description" content={postDescription} />
+  {isFirstMediaVideo ? (
+    <>
+      <meta name="twitter:player" content={postImage} />
+      <meta name="twitter:player:width" content="1280" />
+      <meta name="twitter:player:height" content="720" />
+      <meta name="twitter:image" content={`${window.location.origin}/banner.jpg`} />
+    </>
+  ) : (
+    <meta name="twitter:image" content={postImage} />
+  )}
+</Helmet>
+
 
       <div className="flex h-screen bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden">
         {/* Ads */}
