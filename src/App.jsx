@@ -26,9 +26,10 @@ import Properties from "./pages/Properties";
 import CreatePropertyPost from "./pages/CreatePropertyPost";
 import AdminAddPost from "./pages/AdminAddPost";
 import AdminAddSection from "./pages/AdminAddSection";
-
-// ✅ Snowfall import
-import Snowfall from "react-snowfall"; // [web:17][web:8]
+import AboutUs from "./pages/AboutUs";
+import CodeOfEthics from "./pages/CodeOfEthics";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import TermsConditions from "./pages/TermsConditions";
 
 // ✅ Home component
 function Home() {
@@ -39,7 +40,7 @@ function Home() {
       alert("Please enter a valid postcode.");
       return;
     }
-    window.location.href = "/statenews"; // Navigate to localnews
+    window.location.href = "/statenews";
   };
 
   return (
@@ -57,20 +58,6 @@ function Home() {
 export default function App() {
   return (
     <Router>
-      {/* Snow overlay */}
-      <Snowfall
-        style={{
-          position: "fixed",
-          width: "100vw",
-          height: "100vh",
-          top: 0,
-          left: 0,
-          pointerEvents: "none",
-          zIndex: 500,
-        }}
-      />
-
-      {/* Routes */}
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/statenews/:state" element={<LocalNews />} />
@@ -90,12 +77,19 @@ export default function App() {
         <Route path="/community/:id" element={<CommunityDetails />} />
         <Route path="/jobs/:id" element={<JobDetails />} />
         <Route path="/events/:id" element={<EventDetails />} />
-      <Route path="/statenews/details/:id" element={<LocalNewsDetails />} />
+        <Route path="/statenews/details/:id" element={<LocalNewsDetails />} />
         <Route path="/user-dashboard" element={<UserDashboard />} />
         <Route path="/properties" element={<Properties />} />
         <Route path="/createPropertyPost" element={<CreatePropertyPost />} />
         <Route path="/add-post" element={<AdminAddPost />} />
         <Route path="/add" element={<AdminAddSection />} />
+        
+        {/* Footer Pages */}
+        <Route path="/about-us" element={<AboutUs />} />
+        <Route path="/code-of-ethics" element={<CodeOfEthics />} />
+        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+        <Route path="/terms-conditions" element={<TermsConditions />} />
+        
         <Route path="*" element={<NotFound />} />
       </Routes>
     </Router>
