@@ -43,13 +43,15 @@ const SLOT_KEYS = {
   LARGE_AD_2: "EVENTS_LARGE_AD_INDEX_2",
 };
 
-// 🔥 FIXED: Check if event is over
-// 🔥 FIXED: Check if event is over - DATE ONLY (ignoring time)
-const isEventOver = (eventDate) => {
-  if (!eventDate) return false;
+// 🔥 Check if event is over - using END DATE if available, otherwise START DATE
+const isEventOver = (eventDate, endDate) => {
+  // Use endDate if available, otherwise use eventDate
+  const dateToCheck = endDate || eventDate;
+  
+  if (!dateToCheck) return false;
   
   const now = new Date();
-  const eventDateTime = new Date(eventDate);
+  const eventDateTime = new Date(dateToCheck);
   
   // Set time to midnight (00:00:00) for both dates to compare only dates
   const todayDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -59,15 +61,15 @@ const isEventOver = (eventDate) => {
   return eventOnlyDate < todayDate;
 };
 
-
 // Event Card Component - WITH EVENT OVER STAMP
 const EventCard = ({ event, index }) => {
   const navigate = useNavigate();
   
   const hasLocation = event.location && event.location.trim();
   const hasDate = event.eventDate;
+  const hasEndDate = event.endDate; // 🆕 Check for end date
   const hasRegLink = event.reglink && event.reglink.trim();
-  const eventIsOver = isEventOver(event.eventDate);
+  const eventIsOver = isEventOver(event.eventDate, event.endDate); // 🆕 Pass both dates
 
   const formatDate = (dateString) => {
     if (!dateString) return null;
@@ -87,7 +89,19 @@ const EventCard = ({ event, index }) => {
     };
   };
 
+  // 🆕 Format date without time (for end date)
+  const formatDateOnly = (dateString) => {
+    if (!dateString) return null;
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", { 
+      month: "short", 
+      day: "numeric", 
+      year: "numeric" 
+    });
+  };
+
   const dateInfo = hasDate ? formatDate(event.eventDate) : null;
+  const endDateInfo = hasEndDate ? formatDateOnly(event.endDate) : null; // 🆕
 
   return (
     <motion.div
@@ -209,7 +223,22 @@ const EventCard = ({ event, index }) => {
               </div>
             )}
 
-            {dateInfo && (
+            {/* 🆕 Date Range Display (if both start and end dates exist) */}
+            {dateInfo && endDateInfo && (
+              <div className={`flex items-center gap-2 ${
+                eventIsOver ? "text-gray-400" : "text-gray-600"
+              }`}>
+                <Calendar size={16} className={`flex-shrink-0 ${
+                  eventIsOver ? "text-gray-400" : "text-blue-600"
+                }`} />
+                <span className="text-sm">
+                  {dateInfo.fullDate} - {endDateInfo}
+                </span>
+              </div>
+            )}
+
+            {/* Single Date Display (if only start date exists) */}
+            {dateInfo && !endDateInfo && (
               <div className={`flex items-center gap-2 ${
                 eventIsOver ? "text-gray-400" : "text-gray-600"
               }`}>
@@ -232,21 +261,7 @@ const EventCard = ({ event, index }) => {
             )}
           </div>
 
-          {/* Author Info */}
-          {event.author && (
-            <div className={`flex items-center gap-2 text-xs mb-4 pb-4 border-b border-gray-100 ${
-              eventIsOver ? "text-gray-400" : "text-gray-500"
-            }`}>
-              <span className="font-medium">
-                By {event.author.firstName} {event.author.lastName}
-              </span>
-              {event.author.role === "ADMIN" && (
-                <MdVerified size={14} className={`flex-shrink-0 ${
-                  eventIsOver ? "text-gray-400" : "text-blue-500"
-                }`} />
-              )}
-            </div>
-          )}
+          {/* ❌ REMOVED: Author Info Section */}
 
           {/* Action Buttons */}
           <div className="flex gap-3">

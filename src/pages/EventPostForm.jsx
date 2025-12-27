@@ -5,7 +5,6 @@ import { ArrowLeft, XCircle, Plus, CheckCircle } from "lucide-react";
 import { toast } from "react-toastify";
 import axios from "axios";
 
-
 export default function CreateEventPost() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
@@ -13,13 +12,13 @@ export default function CreateEventPost() {
     location: "",
     date: "",
     time: "",
+    endDate: "", // 🆕 Added End Date
     reglink: "",
     description: "",
     images: [],
   });
   const [loading, setLoading] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
-
 
   const handleChange = (e) => {
     const { name, value, files } = e.target;
@@ -37,7 +36,6 @@ export default function CreateEventPost() {
     }
   };
 
-
   const removeImage = (index) => {
     setFormData((prev) => ({
       ...prev,
@@ -45,10 +43,8 @@ export default function CreateEventPost() {
     }));
   };
 
-
   const handleSubmit = async (e) => {
     e.preventDefault();
-
 
     // ✅ REQUIRED VALIDATIONS
     if (!formData.title.trim()) {
@@ -56,25 +52,33 @@ export default function CreateEventPost() {
       return;
     }
 
-
     if (!formData.description.trim()) {
       toast.error("Please add event description!");
       return;
     }
-
 
     if (formData.images.length === 0) {
       toast.error("Please upload at least one image!");
       return;
     }
 
-
-    // 🔥 NEW VALIDATION: If date provided, time is also required
+    // 🔥 VALIDATION: If date provided, time is also required
     if (formData.date && !formData.time) {
       toast.error("Please provide event time along with the date!");
       return;
     }
 
+    // 🆕 VALIDATION: If endDate provided, start date must also be provided
+    if (formData.endDate && !formData.date) {
+      toast.error("Please provide start date before adding end date!");
+      return;
+    }
+
+    // 🆕 VALIDATION: End date should be >= Start date
+    if (formData.endDate && formData.date && formData.endDate < formData.date) {
+      toast.error("End date cannot be before start date!");
+      return;
+    }
 
     setLoading(true);
     try {
@@ -84,34 +88,32 @@ export default function CreateEventPost() {
         description: formData.description,
       };
 
-
       // ⚠️ Add optional fields only if they have values
       if (formData.location?.trim()) {
         eventData.location = formData.location;
       }
 
-
       if (formData.reglink?.trim()) {
         eventData.reglink = formData.reglink;
       }
-
 
       // ✅ Add eventDate only if BOTH date AND time provided
       if (formData.date && formData.time) {
         eventData.eventDate = `${formData.date}T${formData.time}:00`;
       }
 
+      // 🆕 Add endDate only if provided (date only, no time)
+      if (formData.endDate) {
+        eventData.endDate = formData.endDate;
+      }
 
       const data = new FormData();
       data.append("event", JSON.stringify(eventData));
 
-
       // ✅ Add images
       formData.images.forEach((img) => data.append("images", img.file));
 
-
       const accessToken = localStorage.getItem("accessToken");
-
 
       const res = await axios.post(
         "https://api.jharkhandbiharupdates.com/api/v1/events",
@@ -124,7 +126,6 @@ export default function CreateEventPost() {
         }
       );
 
-
       if (res.data.success) {
         setShowPopup(true);
         setFormData({
@@ -132,6 +133,7 @@ export default function CreateEventPost() {
           location: "",
           date: "",
           time: "",
+          endDate: "",
           reglink: "",
           description: "",
           images: [],
@@ -145,7 +147,6 @@ export default function CreateEventPost() {
     }
   };
 
-
   return (
     <motion.div className="min-h-screen bg-gradient-to-b from-green-50 to-white flex flex-col items-center py-10 px-6">
       <button
@@ -154,7 +155,6 @@ export default function CreateEventPost() {
       >
         <ArrowLeft size={20} /> Back
       </button>
-
 
       <motion.div className="w-full max-w-lg bg-white p-8 rounded-2xl shadow-2xl border border-gray-100">
         <h1 className="text-3xl font-bold text-green-600 text-center mb-6">
@@ -177,7 +177,6 @@ export default function CreateEventPost() {
             />
           </div>
 
-
           {/* ⚠️ OPTIONAL: Location */}
           <div>
             <label className="block text-gray-700 font-medium mb-2">
@@ -191,7 +190,6 @@ export default function CreateEventPost() {
               className="w-full border px-4 py-2 rounded-lg focus:ring-2 focus:ring-green-400"
             />
           </div>
-
 
           {/* ⚠️ OPTIONAL: Registration Link */}
           <div>
@@ -207,12 +205,11 @@ export default function CreateEventPost() {
             />
           </div>
 
-
-          {/* ⚠️ OPTIONAL: Date & Time */}
+          {/* ⚠️ OPTIONAL: Start Date & Time */}
           <div className="flex gap-4">
             <div className="flex-1">
               <label className="block text-gray-700 font-medium mb-2">
-                Date <span className="text-gray-300 text-sm">(Optional)</span>
+                Start Date <span className="text-gray-400 text-sm">(Optional)</span>
               </label>
               <input
                 type="date"
@@ -224,7 +221,7 @@ export default function CreateEventPost() {
             </div>
             <div className="flex-1">
               <label className="block text-gray-700 font-medium mb-2">
-                Time <span className="text-gray-300 text-sm">(If You Provide Date)</span>
+                Time <span className="text-gray-400 text-sm">(If Date Provided)</span>
               </label>
               <input
                 type="time"
@@ -236,6 +233,25 @@ export default function CreateEventPost() {
             </div>
           </div>
 
+          {/* 🆕 OPTIONAL: End Date (for multi-day events) */}
+          <div>
+            <label className="block text-gray-700 font-medium mb-2">
+              End Date <span className="text-gray-400 text-sm">(Optional - For Multi-Day Events)</span>
+            </label>
+            <input
+              type="date"
+              name="endDate"
+              value={formData.endDate}
+              onChange={handleChange}
+              min={formData.date || undefined} // 🔥 Prevent selecting date before start date
+              className="w-full border px-4 py-2 rounded-lg focus:ring-2 focus:ring-green-400"
+            />
+            {formData.date && formData.endDate && (
+              <p className="text-xs text-green-600 mt-1">
+                📅 Event Duration: {formData.date} to {formData.endDate}
+              </p>
+            )}
+          </div>
 
           {/* ✅ REQUIRED: Description */}
           <div>
@@ -252,7 +268,6 @@ export default function CreateEventPost() {
               required
             />
           </div>
-
 
           {/* ✅ REQUIRED: Images */}
           <div>
@@ -295,7 +310,6 @@ export default function CreateEventPost() {
             </p>
           </div>
 
-
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
@@ -307,7 +321,6 @@ export default function CreateEventPost() {
           </motion.button>
         </form>
       </motion.div>
-
 
       {/* Success Popup */}
       <AnimatePresence>
