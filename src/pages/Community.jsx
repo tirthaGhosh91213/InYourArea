@@ -39,9 +39,11 @@ export default function Community() {
   const navigate = useNavigate();
   const token = localStorage.getItem("accessToken");
 
-  useEffect(() => {
-    if (!token) navigate("/login");
-  }, [token, navigate]);
+
+  //login check disabled for community access
+  // useEffect(() => {
+  //   if (!token) navigate("/login");
+  // }, [token, navigate]);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [posts, setPosts] = useState([]);

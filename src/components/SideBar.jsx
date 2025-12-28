@@ -9,7 +9,7 @@ import {
   Mail,
   MapPin,
   ChevronDown,
-  Building2, // you can choose a suitable icon from lucide-react or your icon library
+  Building2,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import logo from "../assets/logo.png";
@@ -27,12 +27,12 @@ export default function Sidebar({ sidebarOpen, onClose }) {
   const location = useLocation();
   const [showModal, setShowModal] = useState(false);
   const [role, setRole] = useState(null);
-  // ✅ CHANGE TO
-const [selectedState, setSelectedState] = useState(() => {
-  const saved = localStorage.getItem("state");
-  if (saved && !saved.startsWith("-")) return saved;
-  return states.find((s) => !s.startsWith("-")) || "";
-});
+  
+  const [selectedState, setSelectedState] = useState(() => {
+    const saved = localStorage.getItem("state");
+    if (saved && !saved.startsWith("-")) return saved;
+    return states.find((s) => !s.startsWith("-")) || "";
+  });
 
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
@@ -41,63 +41,53 @@ const [selectedState, setSelectedState] = useState(() => {
     if (storedRole) setRole(storedRole);
 
     const onStorageChange = (e) => {
-      // ✅ CHANGE TO
-if (e.key === "state" && e.newValue && e.newValue !== selectedState) {
-  setSelectedState(e.newValue);
-  if (location.pathname.startsWith("/statenews")) {
-    window.location.replace(`/statenews/${encodeURIComponent(e.newValue)}`);
-  }
-}
-
+      if (e.key === "state" && e.newValue && e.newValue !== selectedState) {
+        setSelectedState(e.newValue);
+        if (location.pathname.startsWith("/statenews")) {
+          window.location.replace(`/statenews/${encodeURIComponent(e.newValue)}`);
+        }
+      }
     };
     window.addEventListener("storage", onStorageChange);
     return () => {
       window.removeEventListener("storage", onStorageChange);
     };
-  }, [selectedState, location.pathname]
-);
+  }, [selectedState, location.pathname]);
 
-  // ✅ CHANGE TO
-const handleStateSelect = (state) => {
-  if (state.startsWith("-")) return;
-  setSelectedState(state);
-  setDropdownOpen(false);
-  localStorage.setItem("state", state);
-  window.location.replace(`/statenews/${encodeURIComponent(state)}`);
-};
-
+  const handleStateSelect = (state) => {
+    if (state.startsWith("-")) return;
+    setSelectedState(state);
+    setDropdownOpen(false);
+    localStorage.setItem("state", state);
+    window.location.replace(`/statenews/${encodeURIComponent(state)}`);
+  };
 
   useEffect(() => {
-    // ✅ CHANGE TO
-if (!selectedState.startsWith("-"))
-  localStorage.setItem("state", selectedState);
-if (
-  location.pathname.startsWith("/statenews") &&
-  !selectedState.startsWith("-")
-) {
-  navigate(`/statenews/${encodeURIComponent(selectedState)}`, { replace: true });
-}
-
-  }, [selectedState, location.pathname, navigate]
-);
+    if (!selectedState.startsWith("-"))
+      localStorage.setItem("state", selectedState);
+    if (
+      location.pathname.startsWith("/statenews") &&
+      !selectedState.startsWith("-")
+    ) {
+      navigate(`/statenews/${encodeURIComponent(selectedState)}`, { replace: true });
+    }
+  }, [selectedState, location.pathname, navigate]);
 
   const isActive = (path) =>
-  path.startsWith("/statenews")
-    ? location.pathname.startsWith("/statenews")
-    : location.pathname === path;
-
-
+    path.startsWith("/statenews")
+      ? location.pathname.startsWith("/statenews")
+      : location.pathname === path;
 
   const menuItems = [
     {
-  name: "State News",
-  icon: Radio,
-  path: `/statenews/${encodeURIComponent(selectedState)}`,
-},
+      name: "State News",
+      icon: Radio,
+      path: `/statenews/${encodeURIComponent(selectedState)}`,
+    },
     { name: "Jobs", icon: Newspaper, path: "/jobs" },
     { name: "Community", icon: Users, path: "/community" },
     { name: "Events", icon: Home, path: "/events" },
-    { name: "Properties", icon: Building2, path: "/properties" }, // New Section
+    { name: "Properties", icon: Building2, path: "/properties" },
   ];
 
   const getPostOptions = () => {
@@ -105,32 +95,35 @@ if (
     return ["Jobs", "Events", "Community"];
   };
 
+  // ✅ MODIFIED: Removed login redirect check
   const handleOptionClick = (type) => {
-    const token = localStorage.getItem("accessToken");
     setShowModal(false);
-    if (!token) {
-      navigate("/login");
-      return;
-    }
     switch (type) {
-      case "Jobs": navigate("/create/jobs"); break;
-      case "Local News": navigate("/create/localnews"); break;
-      case "Community": navigate("/create/community"); break;
-      case "Events": navigate("/create/events"); break;
-      default: break;
+      case "Jobs":
+        navigate("/create/jobs");
+        break;
+      case "Local News":
+        navigate("/create/localnews");
+        break;
+      case "Community":
+        navigate("/create/community");
+        break;
+      case "Events":
+        navigate("/create/events");
+        break;
+      default:
+        break;
     }
   };
 
   const handleMenuClick = (item) => {
-    // ✅ CHANGE TO
-if (item.name === "Local News") {
-  if (!selectedState) {
-    setDropdownOpen(true);
-    return;
-  }
-  navigate(`/statenews/${encodeURIComponent(selectedState)}`);
-}
- else {
+    if (item.name === "State News") {
+      if (!selectedState) {
+        setDropdownOpen(true);
+        return;
+      }
+      navigate(`/statenews/${encodeURIComponent(selectedState)}`);
+    } else {
       navigate(item.path);
     }
   };
@@ -176,11 +169,7 @@ if (item.name === "Local News") {
               >
                 <span className="flex items-center gap-2 text-lg font-semibold text-gray-700">
                   <MapPin className="text-green-600" size={20} />
-                  {
-  selectedState.startsWith("-")
-    ? "Select State"
-    : selectedState
-}
+                  {selectedState.startsWith("-") ? "Select State" : selectedState}
                 </span>
                 <ChevronDown className="text-gray-500" size={20} />
               </button>
