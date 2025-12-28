@@ -142,6 +142,97 @@ export default function NotificationPanel({
     }
   };
 
+  // ✅ UPDATED: Handle notification click and redirect
+  const handleNotificationClick = (notification) => {
+    console.log("🔔 Notification clicked:", notification);
+
+    const message = notification.message || "";
+    const type = notification.type || "";
+    const referenceId = notification.referenceId || null;
+    const referenceType = notification.referenceType || "";
+
+    // Close notification panel
+    if (onClose) onClose();
+
+    // Priority 1: Use backend-provided type and referenceId
+    if (referenceId && referenceType) {
+      switch (referenceType.toUpperCase()) {
+        case "JOB":
+          navigate(`/jobs/${referenceId}`);
+          return;
+        case "EVENT":
+          navigate(`/events/${referenceId}`);
+          return;
+        case "COMMUNITY":
+        case "COMMUNITY_POST":
+          navigate(`/community/${referenceId}`);
+          return;
+        case "LOCAL_NEWS":
+        case "NEWS":
+          navigate(`/statenews/${referenceId}`);
+          return;
+        case "PROPERTY":  // ✅ NEW: Added PROPERTY support
+          navigate(`/properties/${referenceId}`);
+          return;
+        default:
+          console.warn("Unknown referenceType:", referenceType);
+      }
+    }
+
+    // Priority 2: Parse message text for patterns
+    const lowerMessage = message.toLowerCase();
+
+    // Job approval
+    if (lowerMessage.includes("job posting") && lowerMessage.includes("approved")) {
+      navigate("/jobs");
+      return;
+    }
+
+    // Event approval
+    if (lowerMessage.includes("event") && lowerMessage.includes("approved")) {
+      navigate("/events");
+      return;
+    }
+
+    // Community post approval
+    if (lowerMessage.includes("community post") && lowerMessage.includes("approved")) {
+      navigate("/community");
+      return;
+    }
+
+    // Property approval
+    if (lowerMessage.includes("property") && lowerMessage.includes("approved")) {
+      navigate("/properties");
+      return;
+    }
+
+    // Comment on post
+    if (lowerMessage.includes("commented on your post")) {
+      // Try to determine post type from context
+      if (referenceId) {
+        // If we have referenceId but no referenceType, try community first
+        navigate(`/community/${referenceId}`);
+      } else {
+        // Fallback to community page
+        navigate("/community");
+      }
+      return;
+    }
+
+    // Reply to comment
+    if (lowerMessage.includes("replied to your comment")) {
+      if (referenceId) {
+        navigate(`/community/${referenceId}`);
+      } else {
+        navigate("/community");
+      }
+      return;
+    }
+
+    // Default: Stay on current page or go to dashboard
+    console.log("No specific redirect found for notification");
+  };
+
   // Start polling on mount
   useEffect(() => {
     console.log("🔔 NotificationPanel mounted - starting background polling");
@@ -193,7 +284,10 @@ export default function NotificationPanel({
     }
   };
 
-  const handleDeleteNotification = async (id) => {
+  const handleDeleteNotification = async (id, event) => {
+    // ✅ MODIFIED: Stop propagation to prevent triggering click handler
+    event.stopPropagation();
+    
     try {
       const token = localStorage.getItem("accessToken");
       if (!token) {
@@ -304,6 +398,7 @@ export default function NotificationPanel({
               notifications.map((n) => (
                 <div
                   key={n.id}
+                  onClick={() => handleNotificationClick(n)}
                   className="relative px-4 sm:px-6 py-3 sm:py-4 hover:bg-green-50 transition cursor-pointer border-l-4 border-green-600 rounded-r-lg"
                 >
                   <h5 className="font-semibold text-gray-900 text-sm sm:text-base pr-6">
@@ -315,7 +410,7 @@ export default function NotificationPanel({
 
                   <button
                     className="absolute top-2 sm:top-3 right-2 sm:right-3 text-gray-400 hover:text-red-500 focus:outline-none"
-                    onClick={() => handleDeleteNotification(n.id)}
+                    onClick={(e) => handleDeleteNotification(n.id, e)}
                     title="Delete notification"
                   >
                     <Trash2 size={14} className="sm:size-[16px]" />
