@@ -1,9 +1,10 @@
 // src/components/FeatureRailSmall.jsx
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { HeroVideoDialog } from "@/components/ui/hero-video-dialog";
+import { FaInstagram } from "react-icons/fa";
 import img1 from "../assets/locanewsPost.png";
 import img2 from "../assets/img2.png";
 import img3 from "../assets/jobPostmain.png";
@@ -22,7 +23,7 @@ const ACCENT = {
 const features = [
   {
     icon: "📰",
-    title: "Local News",
+    title: "State News",
     text: "Quickly browse essential updates, right from your neighborhood—never miss what matters, no clutter.",
     img: img1,
   },
@@ -116,10 +117,95 @@ function FeatureCard({ icon, title, text, img, flip, onClick }) {
   );
 }
 
+// Facebook Dialog Component
+function FacebookDialog({ isOpen, onClose }) {
+  useEffect(() => {
+    if (isOpen && window.FB) {
+      setTimeout(() => {
+        window.FB.XFBML.parse();
+      }, 100);
+    }
+  }, [isOpen]);
+
+  if (!isOpen) return null;
+
+  return (
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+      onClick={onClose}
+    >
+      <div 
+        className="relative bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 z-10 bg-white/90 hover:bg-white rounded-full p-2 shadow-lg transition-all"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+        <div className="p-6 overflow-y-auto max-h-[90vh]">
+          <div 
+            className="fb-page" 
+            data-href="https://www.facebook.com/JhUpdate"
+            data-tabs="timeline"
+            data-width="500" 
+            data-height="600"
+            data-small-header="false"
+            data-adapt-container-width="true"
+            data-hide-cover="false"
+            data-show-facepile="true"
+          >
+            <blockquote cite="https://www.facebook.com/JhUpdate" className="fb-xfbml-parse-ignore">
+              <a href="https://www.facebook.com/JhUpdate">JhUpdate</a>
+            </blockquote>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function FeatureRailSmall() {
   const navigate = useNavigate();
   const [showDistrictPopup, setShowDistrictPopup] = useState(false);
+  const [showFacebookDialog, setShowFacebookDialog] = useState(false);
   const topRef = useRef(null);
+
+  // Initialize Facebook SDK
+  useEffect(() => {
+    // Load Facebook SDK
+    if (!window.FB) {
+      window.fbAsyncInit = function() {
+        window.FB.init({
+          xfbml: true,
+          version: 'v18.0'
+        });
+      };
+
+      (function(d, s, id) {
+        var js, fjs = d.getElementsByTagName(s)[0];
+        if (d.getElementById(id)) return;
+        js = d.createElement(s);
+        js.id = id;
+        js.src = "https://connect.facebook.net/en_US/sdk.js";
+        fjs.parentNode.insertBefore(js, fjs);
+      }(document, 'script', 'facebook-jssdk'));
+    }
+  }, []);
 
   const handleFeatureClick = (title) => {
     if (title === "Community") {
@@ -150,6 +236,9 @@ export default function FeatureRailSmall() {
       className="w-full min-h-screen flex flex-col items-center justify-center py-6 px-3 md:px-0 relative"
       style={{ background: ACCENT.grayBg }}
     >
+      {/* Facebook SDK Root */}
+      <div id="fb-root"></div>
+
       {/* District popup */}
       {showDistrictPopup && (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40">
@@ -170,15 +259,11 @@ export default function FeatureRailSmall() {
         </div>
       )}
 
-      {/* Hero Video Dialog Section */}
-      <div className="w-full max-w-5xl mb-12 px-4">
-        <HeroVideoDialog
-          animationStyle="from-center"
-          videoSrc="https://www.youtube.com/embed/Qq0W1d0ERws?si=qfVnNqYJmNO5Cilm"
-          thumbnailSrc="/ytpage.png"
-          thumbnailAlt="JhUpdate Channel Preview"
-        />
-      </div>
+      {/* Facebook Dialog */}
+      <FacebookDialog 
+        isOpen={showFacebookDialog} 
+        onClose={() => setShowFacebookDialog(false)} 
+      />
 
       {/* Header Section */}
       <header className="mb-8 md:mt-7 flex flex-col items-center">
@@ -215,6 +300,67 @@ export default function FeatureRailSmall() {
           />
         ))}
       </section>
+
+      {/* YouTube Video Section */}
+      <div className="w-full max-w-5xl mb-12 px-4">
+        <HeroVideoDialog
+          animationStyle="from-center"
+          videoSrc="https://www.youtube.com/embed/Qq0W1d0ERws?si=qfVnNqYJmNO5Cilm"
+          thumbnailSrc="/yt.png"
+          thumbnailAlt="JhUpdate Channel Preview"
+        />
+      </div>
+
+      {/* Facebook Section */}
+      <motion.div
+        initial={{ opacity: 0, y: 50 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.3 }}
+        transition={{ duration: 0.8, ease: "easeOut" }}
+        className="w-full max-w-5xl mb-12 px-4"
+      >
+        <div 
+          onClick={() => setShowFacebookDialog(true)}
+          className="relative cursor-pointer group rounded-2xl overflow-hidden"
+          style={{
+            aspectRatio: '16/9',
+          }}
+        >
+          <img 
+            src="/jhupdateFB.png" 
+            alt="JhUpdate Facebook Page"
+            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+          />
+          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all duration-300"></div>
+        </div>
+      </motion.div>
+
+      {/* Instagram Section */}
+      <motion.div
+        initial={{ opacity: 0, y: 50 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.3 }}
+        transition={{ duration: 0.8, ease: "easeOut" }}
+        className="w-full max-w-5xl mb-12 px-4"
+      >
+        <a 
+          href="https://www.instagram.com/jhupdate/" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="block relative group rounded-2xl overflow-hidden"
+          style={{
+            aspectRatio: '16/9',
+          }}
+        >
+          <img 
+            src="/instajhupdate.png" 
+            alt="JhUpdate Instagram Page"
+            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+          />
+          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all duration-300"></div>
+        </a>
+      </motion.div>
+
     </main>
   );
 }
