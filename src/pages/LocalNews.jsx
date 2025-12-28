@@ -11,11 +11,15 @@ import { Clock, Play } from "lucide-react";
 import { MdVerified } from "react-icons/md";
 import Loader from '../components/Loader';
 
+
+
 // Helper: circular next index
 function getNextIndex(current, total) {
   if (total === 0) return 0;
   return (current + 1) % total;
 }
+
+
 
 // Helper: truncate text to specified length
 const truncateText = (text, maxLength) => {
@@ -24,6 +28,8 @@ const truncateText = (text, maxLength) => {
   if (cleanText.length <= maxLength) return cleanText;
   return cleanText.slice(0, maxLength).trim() + '...';
 };
+
+
 
 // 🔥 NEW: Get Cloudinary video thumbnail
 const getVideoThumbnail = (videoUrl) => {
@@ -40,21 +46,29 @@ const getVideoThumbnail = (videoUrl) => {
   return null;
 };
 
+
+
 // LocalStorage keys for StateNews ads
 const SLOT_KEYS = {
   TOP_RIGHT: "STATENEWS_AD_INDEX_TOP_RIGHT",
   BOTTOM_RIGHT: "STATENEWS_AD_INDEX_BOTTOM_RIGHT",
 };
 
+
+
 export default function LocalNews() {
   const params = useParams();
   const navigate = useNavigate();
+
+
 
   const states = [
     "----------- States -----------",
     "Bihar",
     "Jharkhand"
   ];
+
+
 
   const getInitialState = () => {
     const paramState = params.state ? decodeURIComponent(params.state) : "";
@@ -64,11 +78,15 @@ export default function LocalNews() {
     return states.find((s) => !s.startsWith("-")) || "";
   };
 
+
+
   const [state, setState] = useState(getInitialState());
   const [newsList, setNewsList] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const token = localStorage.getItem("accessToken");
+
+
 
   // Small ads state
   const [ads, setAds] = useState([]);
@@ -77,8 +95,12 @@ export default function LocalNews() {
   const [topRightClosed, setTopRightClosed] = useState(false);
   const [bottomRightClosed, setBottomRightClosed] = useState(false);
 
+
+
   // Large ads state for interleaving
   const [largeAds, setLargeAds] = useState([]);
+
+
 
   useEffect(() => {
     if (state && !state.startsWith("-") && params.state !== state) {
@@ -88,6 +110,8 @@ export default function LocalNews() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state]);
 
+
+
   const shuffleArray = (array) => {
     const shuffled = [...array];
     for (let i = shuffled.length - 1; i > 0; i--) {
@@ -96,6 +120,8 @@ export default function LocalNews() {
     }
     return shuffled;
   };
+
+
 
   useEffect(() => {
     if (!state || state.startsWith("-")) return;
@@ -109,7 +135,8 @@ export default function LocalNews() {
         );
         if (res.data.success) {
           const fetchedNews = res.data.data || [];
-          setNewsList(shuffleArray(fetchedNews));
+          // ✅ REMOVED shuffleArray - now showing posts in server order (recent first)
+          setNewsList(fetchedNews);
         } else setError("Failed to load news data");
       } catch (err) {
         setError("Failed to load state news");
@@ -120,6 +147,8 @@ export default function LocalNews() {
     fetchNews();
   }, [state, token]);
 
+
+
   // Fetch small ads for State News
   useEffect(() => {
     fetch("https://api.jharkhandbiharupdates.com/api/v1/banner-ads/active/small")
@@ -129,13 +158,19 @@ export default function LocalNews() {
           const orderedAds = [...data.data];
           setAds(orderedAds);
 
+
+
           const total = orderedAds.length;
           let savedTop = parseInt(localStorage.getItem(SLOT_KEYS.TOP_RIGHT) ?? "0", 10);
           let savedBottom = parseInt(localStorage.getItem(SLOT_KEYS.BOTTOM_RIGHT) ?? "1", 10);
 
+
+
           if (isNaN(savedTop) || savedTop < 0 || savedTop >= total) savedTop = 0;
           if (isNaN(savedBottom) || savedBottom < 0 || savedBottom >= total) savedBottom = total > 1 ? 1 : 0;
           if (savedTop === savedBottom && total > 1) savedBottom = getNextIndex(savedTop, total);
+
+
 
           setTopRightIndex(savedTop);
           setBottomRightIndex(savedBottom);
@@ -145,6 +180,8 @@ export default function LocalNews() {
         console.error("Error fetching state news ads:", err);
       });
   }, []);
+
+
 
   // Fetch large ads for interleaving
   useEffect(() => {
@@ -160,21 +197,29 @@ export default function LocalNews() {
       });
   }, []);
 
+
+
   // Rotate ad index on next refresh after a close
   useEffect(() => {
     if (!ads.length) return;
     const total = ads.length;
+
+
 
     if (topRightClosed) {
       const nextTop = getNextIndex(topRightIndex, total);
       localStorage.setItem(SLOT_KEYS.TOP_RIGHT, String(nextTop));
     }
 
+
+
     if (bottomRightClosed) {
       const nextBottom = getNextIndex(bottomRightIndex, total);
       localStorage.setItem(SLOT_KEYS.BOTTOM_RIGHT, String(nextBottom));
     }
   }, [topRightClosed, bottomRightClosed, topRightIndex, bottomRightIndex, ads]);
+
+
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -184,7 +229,11 @@ export default function LocalNews() {
     });
   };
 
+
+
   const handleNewsClick = (id) => navigate(`/statenews/details/${id}`);
+
+
 
   // Desktop layout logic
   const getDesktopNewsLayout = () => {
@@ -194,6 +243,8 @@ export default function LocalNews() {
     return { bigTop, smallBoxes, bigMore };
   };
   const { bigTop, smallBoxes, bigMore } = getDesktopNewsLayout();
+
+
 
   // 🔥 OPTIMIZED: Show thumbnail for videos, actual image for images
   const renderMedia = (url, alt, className) => {
@@ -229,8 +280,12 @@ export default function LocalNews() {
     return <img src={url} alt={alt} className={className} loading="lazy" />;
   };
 
+
+
   const topRightAd = ads.length ? ads[topRightIndex % ads.length] : null;
   const bottomRightAd = ads.length ? ads[bottomRightIndex % ads.length] : null;
+
+
 
   // Mobile interleaved: news then ads
   function buildInterleavedList(newsArr, adsArr) {
@@ -253,9 +308,13 @@ export default function LocalNews() {
   }
   const mobileItems = buildInterleavedList(newsList, largeAds);
 
+
+
   // Choose ads for desktop columns
   const desktopLargeBoxAds = largeAds.slice(0, 2);
   const desktopSmallBoxAds = largeAds.slice(2, 4);
+
+
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -266,6 +325,8 @@ export default function LocalNews() {
         <div className="fixed top-0 w-full z-30">
           <RightSidebar />
         </div>
+
+
 
         {/* Small ads top/bottom right */}
         <AnimatePresence>
@@ -289,6 +350,8 @@ export default function LocalNews() {
           )}
         </AnimatePresence>
 
+
+
         <main className="flex-1 flex flex-col gap-6 p-6 pt-24 items-center">
           <motion.div
             className="bg-emerald-700 text-white rounded-xl p-5 shadow-lg w-full max-w-6xl flex flex-col sm:flex-row items-center justify-between gap-4"
@@ -304,6 +367,8 @@ export default function LocalNews() {
               </p>
             </div>
           </motion.div>
+
+
 
           {loading ? (
             <div className="flex justify-center items-center h-64">
@@ -352,30 +417,27 @@ export default function LocalNews() {
                         )}
                       <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent" />
                       <div className="absolute bottom-0 p-6 text-white">
-                        <h3 className="text-2xl font-bold mb-2 capitalize">
-                          {truncateText(item.data.title, 35)}
+                        {/* ✅ MOBILE: Smaller title size, full title up to 70 chars, wraps to next line */}
+                        <h3 className="text-base font-semibold mb-3 capitalize leading-snug">
+                          {truncateText(item.data.title, 120)}
                         </h3>
-                        <div
-                          className="text-sm text-gray-200 mb-3 line-clamp-2"
-                          dangerouslySetInnerHTML={{
-                            __html: item.data.content,
-                          }}
-                        />
-                        <div className="flex items-center justify-between text-gray-300 text-sm">
-                          <div className="flex items-center gap-1.5">
+                        {/* ✅ MOBILE: Description removed completely */}
+                        {/* ✅ MOBILE: Reduced size for author, verified badge, and date */}
+                        <div className="flex items-center justify-between text-gray-300 text-xs">
+                          <div className="flex items-center gap-1">
                             <span>
                               {item.data.author?.firstName}{" "}
                               {item.data.author?.lastName}
                             </span>
                             {item.data.author?.role === "ADMIN" && (
                               <MdVerified 
-                                size={16} 
+                                size={12} 
                                 className="text-blue-500 flex-shrink-0" 
                               />
                             )}
                           </div>
                           <span className="flex items-center gap-1">
-                            <Clock size={14} />{" "}
+                            <Clock size={12} />{" "}
                             {formatDate(item.data.createdAt)}
                           </span>
                         </div>
@@ -384,6 +446,8 @@ export default function LocalNews() {
                   )
                 )}
               </div>
+
+
 
               {/* Desktop: two columns, show ads as boxes after news */}
               <div className="w-full max-w-6xl hidden lg:grid grid-cols-[2fr_1fr] gap-6 items-start">
@@ -412,10 +476,10 @@ export default function LocalNews() {
                           className="text-2xl font-bold mb-2 capitalize"
                           dangerouslySetInnerHTML={{ __html: news.title }}
                         />
-                        <div
-                          className="text-sm text-gray-200 mb-3 line-clamp-2"
-                          dangerouslySetInnerHTML={{ __html: news.content }}
-                        />
+                        {/* ✅ DESKTOP: Description limited to 70 characters */}
+                        <div className="text-sm text-gray-200 mb-3">
+                          {truncateText(news.content, 70)}
+                        </div>
                         <div className="flex items-center justify-between text-gray-300 text-sm">
                           <div className="flex items-center gap-1.5">
                             <span>
@@ -470,10 +534,10 @@ export default function LocalNews() {
                           className="text-2xl font-bold mb-2 capitalize"
                           dangerouslySetInnerHTML={{ __html: news.title }}
                         />
-                        <div
-                          className="text-sm text-gray-200 mb-3 line-clamp-2"
-                          dangerouslySetInnerHTML={{ __html: news.content }}
-                        />
+                        {/* ✅ DESKTOP: Description limited to 70 characters */}
+                        <div className="text-sm text-gray-200 mb-3">
+                          {truncateText(news.content, 70)}
+                        </div>
                         <div className="flex items-center justify-between text-gray-300 text-sm">
                           <div className="flex items-center gap-1.5">
                             <span>
@@ -520,12 +584,10 @@ export default function LocalNews() {
                             __html: news.title,
                           }}
                         />
-                        <div
-                          className="text-xs text-gray-200 line-clamp-2 mb-1"
-                          dangerouslySetInnerHTML={{
-                            __html: news.content,
-                          }}
-                        />
+                        {/* ✅ DESKTOP (Small Box): Description limited to 70 characters */}
+                        <div className="text-xs text-gray-200 mb-1">
+                          {truncateText(news.content, 70)}
+                        </div>
                         <div className="flex items-center justify-between text-xs text-gray-300">
                           <div className="flex items-center gap-1">
                             <span>
