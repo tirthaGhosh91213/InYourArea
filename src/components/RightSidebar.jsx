@@ -691,7 +691,7 @@ export default function RightSidebar() {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => {
-                if (!isLoggedIn) return navigate("/login");
+                // if (!isLoggedIn) return navigate("/login");
                 setLeftSidebarOpen(true);
               }}
               className="p-1.5 rounded-lg hover:bg-gray-100 transition"
