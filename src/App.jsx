@@ -31,6 +31,8 @@ import CodeOfEthics from "./pages/CodeOfEthics";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsConditions from "./pages/TermsConditions";
 import PropertyDetails from "./pages/PropertyDetails";
+import PropertyInquiries from "./pages/PropertyInquiries";
+import AllPropertiesAdmin from './pages/AllPropertiesAdmin';
 
 // ✅ Home component
 function Home() {
@@ -86,6 +88,8 @@ export default function App() {
         <Route path="/createPropertyPost" element={<CreatePropertyPost />} />
         <Route path="/add-post" element={<AdminAddPost />} />
         <Route path="/add" element={<AdminAddSection />} />
+        <Route path="/admin/inquiries" element={<PropertyInquiries />} />
+        <Route path="/admin/properties" element={<AllPropertiesAdmin />} />
         
         {/* Footer Pages */}
         <Route path="/about-us" element={<AboutUs />} />

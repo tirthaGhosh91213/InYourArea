@@ -19,6 +19,7 @@ import {
   DollarSign,
   Link as LinkIcon,
   Clock,
+   Phone,
   Building,
 } from "lucide-react";
 import { toast } from "react-toastify";
@@ -196,48 +197,79 @@ export default function AdminDashboard() {
   return (
     <div className="min-h-screen w-full flex flex-col bg-gray-50 text-gray-800">
       {/* Header */}
-      <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between bg-white shadow-sm border-b border-gray-200 p-4 sm:p-6 gap-3 sm:gap-0">
-        <motion.button
-          onClick={() => navigate(-1)}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          className="flex items-center text-gray-700 hover:text-green-700 transition-colors duration-200 order-2 sm:order-1"
-        >
-          <ArrowLeftCircle size={26} className="mr-2" />
-          <span className="hidden sm:inline font-semibold">Back</span>
-        </motion.button>
-        <h1 className="text-xl sm:text-2xl font-bold text-center text-green-800 order-1 sm:order-2">
-          Admin Dashboard — Pending Approvals
-        </h1>
-        <div className="flex justify-center sm:justify-end items-center gap-3 order-3 flex-wrap">
-          <motion.button
-            onClick={() => navigate("/add")}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="flex items-center bg-blue-200 hover:bg-blue-300 text-blue-800 px-4 py-2 rounded-lg shadow-sm font-medium transition-all duration-200"
-          >
-            <ImageIcon size={18} className="mr-2" />
-            ADs
-          </motion.button>
+<header className="flex flex-col sm:flex-row sm:items-center sm:justify-between bg-white shadow-sm border-b border-gray-200 p-4 sm:p-6 gap-3 sm:gap-0">
+  <motion.button
+    onClick={() => navigate(-1)}
+    whileHover={{ scale: 1.05 }}
+    whileTap={{ scale: 0.95 }}
+    className="flex items-center text-gray-700 hover:text-green-700 transition-colors duration-200 order-2 sm:order-1"
+  >
+    <ArrowLeftCircle size={26} className="mr-2" />
+    <span className="hidden sm:inline font-semibold">Back</span>
+  </motion.button>
+  <h1 className="text-xl sm:text-2xl font-bold text-center text-green-800 order-1 sm:order-2">
+    Admin Dashboard — Pending Approvals
+  </h1>
+  <div className="flex justify-center sm:justify-end items-center gap-3 order-3 flex-wrap">
+    
 
-          <motion.button
-            onClick={() => navigate("/user-dashboard")}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="flex items-center bg-green-200 hover:bg-green-300 text-green-800 px-4 py-2 rounded-lg shadow-sm font-medium transition-all duration-200"
-          >
-            <User size={18} className="mr-2" /> Profile
-          </motion.button>
-          <motion.button
-            onClick={handleLogout}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="flex items-center bg-red-200 hover:bg-red-300 text-red-800 px-3 py-2 rounded-lg shadow-sm font-medium transition-all duration-200"
-          >
-            <LogOut size={18} className="mr-1" /> Logout
-          </motion.button>
-        </div>
-      </header>
+
+  
+
+    <motion.button
+      onClick={() => navigate('/admin/properties')}
+      whileHover={{ scale: 1.05 }}
+      whileTap={{ scale: 0.95 }}
+      className="flex items-center bg-blue-600 text-white px-4 py-2 rounded-lg px-4 py-2 rounded-lg shadow-sm font-medium transition-all duration-200"
+    >
+      <Home size={18} className="mr-2"  />
+      View Properties →
+    </motion.button>
+
+
+
+
+
+    {/* ✅ NEW: Leads Button */}
+    <motion.button
+      onClick={() => navigate("/admin/inquiries")}
+      whileHover={{ scale: 1.05 }}
+      whileTap={{ scale: 0.95 }}
+      className="flex items-center bg-orange-200 hover:bg-orange-300 text-orange-800 px-4 py-2 rounded-lg shadow-sm font-medium transition-all duration-200"
+    >
+      <Phone size={18} className="mr-2" />
+      Property Leads
+    </motion.button>
+
+    <motion.button
+      onClick={() => navigate("/add")}
+      whileHover={{ scale: 1.05 }}
+      whileTap={{ scale: 0.95 }}
+      className="flex items-center bg-blue-200 hover:bg-blue-300 text-blue-800 px-4 py-2 rounded-lg shadow-sm font-medium transition-all duration-200"
+    >
+      <ImageIcon size={18} className="mr-2" />
+      ADs
+    </motion.button>
+
+    <motion.button
+      onClick={() => navigate("/user-dashboard")}
+      whileHover={{ scale: 1.05 }}
+      whileTap={{ scale: 0.95 }}
+      className="flex items-center bg-green-200 hover:bg-green-300 text-green-800 px-4 py-2 rounded-lg shadow-sm font-medium transition-all duration-200"
+    >
+      <User size={18} className="mr-2" /> Profile
+    </motion.button>
+    <motion.button
+      onClick={handleLogout}
+      whileHover={{ scale: 1.05 }}
+      whileTap={{ scale: 0.95 }}
+      className="flex items-center bg-red-200 hover:bg-red-300 text-red-800 px-3 py-2 rounded-lg shadow-sm font-medium transition-all duration-200"
+    >
+      <LogOut size={18} className="mr-1" /> Logout
+    </motion.button>
+  </div>
+</header>
+
 
       {/* Tabs */}
       <div className="flex justify-center gap-3 sm:gap-6 bg-white py-3 border-b border-gray-200">
