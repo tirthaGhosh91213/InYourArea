@@ -28,7 +28,6 @@ import Sidebar from "../components/SideBar";
 import RightSidebar from "../components/RightSidebar";
 import Loader from "../components/Loader";
 
-
 export default function PropertyDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -44,19 +43,27 @@ export default function PropertyDetails() {
   // UI states
   const [isSaved, setIsSaved] = useState(false);
 
+  // ✅ NEW: Inquiry Modal States
+  const [showInquiryModal, setShowInquiryModal] = useState(false);
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [inquiryLoading, setInquiryLoading] = useState(false);
+  const [inquirySuccess, setInquirySuccess] = useState(false);
+  const [inquiryError, setInquiryError] = useState("");
+  const [hasClickedButton, setHasClickedButton] = useState(false);
+
   // ✅ AUTHENTICATION CHECK - Must be logged in to view property details
   useEffect(() => {
     const checkAuthentication = () => {
       const accessToken = localStorage.getItem("accessToken");
-      
+
       if (!accessToken) {
         console.warn("⚠️ No authentication token found. Redirecting to login...");
-        navigate("/login", { 
+        navigate("/login", {
           replace: true,
-          state: { 
+          state: {
             from: `/properties/${id}`,
-            message: "Please login to view property details" 
-          }
+            message: "Please login to view property details",
+          },
         });
         return false;
       }
@@ -65,7 +72,7 @@ export default function PropertyDetails() {
 
     // ✅ Check authentication before fetching data
     const isAuthenticated = checkAuthentication();
-    
+
     if (isAuthenticated) {
       fetchPropertyDetails();
     }
@@ -75,16 +82,16 @@ export default function PropertyDetails() {
     try {
       setLoading(true);
       setError("");
-      
+
       const accessToken = localStorage.getItem("accessToken");
-      
+
       const response = await fetch(
         `https://api.jharkhandbiharupdates.com/api/v1/properties/${id}`,
         {
           headers: {
-            "Authorization": `Bearer ${accessToken}`,
-            "Content-Type": "application/json"
-          }
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+          },
         }
       );
 
@@ -92,12 +99,12 @@ export default function PropertyDetails() {
       if (response.status === 401 || response.status === 403) {
         console.error("❌ Unauthorized access. Token may be expired.");
         localStorage.removeItem("accessToken");
-        navigate("/login", { 
+        navigate("/login", {
           replace: true,
-          state: { 
+          state: {
             from: `/properties/${id}`,
-            message: "Session expired. Please login again." 
-          }
+            message: "Session expired. Please login again.",
+          },
         });
         return;
       }
@@ -114,6 +121,95 @@ export default function PropertyDetails() {
       setError("Failed to load property details");
     } finally {
       setLoading(false);
+    }
+  };
+
+  // ✅ NEW: Handle Get In Touch button click (Step 1)
+  const handleGetInTouch = async () => {
+    if (hasClickedButton) {
+      // Already clicked, just open modal
+      setShowInquiryModal(true);
+      return;
+    }
+
+    try {
+      const accessToken = localStorage.getItem("accessToken");
+
+      const response = await fetch(
+        `https://api.jharkhandbiharupdates.com/api/v1/properties/${id}/inquiries/click`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      const data = await response.json();
+
+      if (data.success) {
+        console.log("✅ Button click recorded");
+        setHasClickedButton(true);
+        setShowInquiryModal(true);
+      } else {
+        console.error("Failed to record button click:", data.message);
+        setShowInquiryModal(true); // Still open modal
+      }
+    } catch (err) {
+      console.error("Error recording button click:", err);
+      setShowInquiryModal(true); // Still open modal
+    }
+  };
+
+  // ✅ NEW: Handle inquiry form submission (Step 2)
+  const handleSubmitInquiry = async (e) => {
+    e.preventDefault();
+
+    // Validate phone number
+    const phoneRegex = /^[6-9]\d{9}$/;
+    if (!phoneRegex.test(phoneNumber)) {
+      setInquiryError("Please enter a valid 10-digit Indian mobile number");
+      return;
+    }
+
+    setInquiryLoading(true);
+    setInquiryError("");
+
+    try {
+      const accessToken = localStorage.getItem("accessToken");
+
+      const response = await fetch(
+        `https://api.jharkhandbiharupdates.com/api/v1/properties/${id}/inquiries`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            phoneNumber: phoneNumber,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (data.success) {
+        setInquirySuccess(true);
+        setPhoneNumber("");
+        setTimeout(() => {
+          setShowInquiryModal(false);
+          setInquirySuccess(false);
+        }, 3000);
+      } else {
+        setInquiryError(data.message || "Failed to submit inquiry");
+      }
+    } catch (err) {
+      console.error("Error submitting inquiry:", err);
+      setInquiryError("Failed to submit inquiry. Please try again.");
+    } finally {
+      setInquiryLoading(false);
     }
   };
 
@@ -272,7 +368,7 @@ export default function PropertyDetails() {
                   <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">
                     {property.title}
                   </h1>
-                  
+
                   {/* ✅ Only show location if address exists */}
                   {property.address && (
                     <div className="flex items-center gap-2 text-gray-600 mb-4">
@@ -588,12 +684,14 @@ export default function PropertyDetails() {
                 )}
 
                 {/* Location - ✅ Only show if location data exists */}
-                {(property.address || property.mapLink || (property.latitude && property.longitude)) && (
+                {(property.address ||
+                  property.mapLink ||
+                  (property.latitude && property.longitude)) && (
                   <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                     <h2 className="text-xl font-bold text-gray-900 mb-4">
                       Location
                     </h2>
-                    
+
                     {property.address && (
                       <div className="mb-4">
                         <p className="text-gray-700 flex items-start gap-2">
@@ -644,109 +742,157 @@ export default function PropertyDetails() {
                 )}
               </div>
 
-              {/* Right Column - Contact Sidebar - ✅ Only show if contact info exists */}
-              {(property.contactName || property.contactPhone || property.contactEmail) && (
-                <div className="lg:col-span-1">
-                  <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 sticky top-24">
-                    <h3 className="text-xl font-bold text-gray-900 mb-6">
-                      Contact Agent
-                    </h3>
+              {/* Right Column - Contact Sidebar */}
+              <div className="lg:col-span-1">
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 sticky top-24">
+                  <h3 className="text-xl font-bold text-gray-900 mb-6">
+                    Interested in this Property?
+                  </h3>
 
-                    {/* Agent Info */}
-                    <div className="mb-6">
-                      <div className="flex items-center gap-4 mb-6">
-                        <div className="w-16 h-16 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center flex-shrink-0">
-                          <User size={32} className="text-white" />
-                        </div>
-                        <div>
-                          {property.contactName && (
-                            <h4 className="font-bold text-gray-900 text-lg">
-                              {property.contactName}
-                            </h4>
-                          )}
-                          {property.postedByType && (
-                            <p className="text-sm text-gray-600">
-                              {property.postedByType}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="space-y-4">
-                        {/* Phone - ✅ Only show if exists */}
-                        {property.contactPhone && (
-                          <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                            <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                              <Phone size={18} className="text-blue-600" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-xs text-gray-600">Phone</p>
-                              <a
-                                href={`tel:${property.contactPhone}`}
-                                className="font-semibold text-gray-900 hover:text-green-600 transition truncate block"
-                              >
-                                {property.contactPhone}
-                              </a>
-                            </div>
-                          </div>
+                  {/* Agent Info */}
+                  <div className="mb-6">
+                    <div className="flex items-center gap-4 mb-6">
+                      {/* <div className="w-16 h-16 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center flex-shrink-0">
+                        <User size={32} className="text-white" />
+                      </div> */}
+                      {/* <div>
+                        {property.contactName && (
+                          <h4 className="font-bold text-gray-900 text-lg">
+                            {property.contactName}
+                          </h4>
                         )}
-
-                        {/* Email - ✅ Only show if exists */}
-                        {property.contactEmail && (
-                          <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                            <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0">
-                              <Mail size={18} className="text-purple-600" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-xs text-gray-600">Email</p>
-                              <a
-                                href={`mailto:${property.contactEmail}`}
-                                className="font-semibold text-gray-900 hover:text-green-600 transition truncate block text-sm"
-                              >
-                                {property.contactEmail}
-                              </a>
-                            </div>
-                          </div>
+                        {property.postedByType && (
+                          <p className="text-sm text-gray-600">
+                            {property.postedByType}
+                          </p>
                         )}
-                      </div>
+                      </div> */}
                     </div>
 
-                    {/* Action Buttons */}
-                    <div className="space-y-3">
-                      {property.contactPhone && (
-                        <a
-                          href={`tel:${property.contactPhone}`}
-                          className="w-full bg-green-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-700 transition flex items-center justify-center gap-2"
-                        >
-                          <Phone size={20} />
-                          Call Now
-                        </a>
-                      )}
-                      {property.contactEmail && (
-                        <a
-                          href={`mailto:${property.contactEmail}`}
-                          className="w-full bg-white border-2 border-gray-300 text-gray-700 font-bold py-3 px-4 rounded-lg hover:border-green-600 hover:text-green-600 transition flex items-center justify-center gap-2"
-                        >
-                          <Mail size={20} />
-                          Send Email
-                        </a>
-                      )}
-                    </div>
+                    {/* ✅ NEW: Get In Touch Button */}
+                    <button
+                      onClick={handleGetInTouch}
+                      className="w-full bg-gradient-to-r from-green-600 to-green-700 text-white font-bold py-4 px-6 rounded-xl hover:from-green-700 hover:to-green-800 transition shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 flex items-center justify-center gap-2"
+                    >
+                      <Phone size={20} />
+                      Get In Touch
+                    </button>
 
-                    {/* Property ID */}
-                    {property.id && (
-                      <div className="mt-6 pt-6 border-t border-gray-200">
-                        <p className="text-xs text-gray-600 mb-1">Property ID</p>
-                        <p className="font-bold text-gray-900">#{property.id}</p>
-                      </div>
-                    )}
+                    <p className="text-xs text-center text-gray-500 mt-3">
+                      Our team will contact you shortly
+                    </p>
                   </div>
+
+                  {/* Property ID */}
+                  {property.id && (
+                    <div className="mt-6 pt-6 border-t border-gray-200">
+                      <p className="text-xs text-gray-600 mb-1">Property ID</p>
+                      <p className="font-bold text-gray-900">#{property.id}</p>
+                    </div>
+                  )}
                 </div>
-              )}
+              </div>
             </div>
           </div>
         </main>
       </div>
+
+      {/* ✅ NEW: Inquiry Modal */}
+      <AnimatePresence>
+        {showInquiryModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/60 z-[70] flex items-center justify-center p-4"
+            onClick={() => !inquirySuccess && setShowInquiryModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 relative"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {!inquirySuccess ? (
+                <>
+                  <button
+                    onClick={() => setShowInquiryModal(false)}
+                    className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition"
+                  >
+                    <X size={24} />
+                  </button>
+
+                  <div className="text-center mb-6">
+                    <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Phone size={32} className="text-green-600" />
+                    </div>
+                    <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                      Almost There!
+                    </h3>
+                    <p className="text-gray-600">
+                      Share your phone number so our team can reach you
+                    </p>
+                  </div>
+
+                  <form onSubmit={handleSubmitInquiry} className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Mobile Number *
+                      </label>
+                      <input
+                        type="tel"
+                        value={phoneNumber}
+                        onChange={(e) => setPhoneNumber(e.target.value)}
+                        placeholder="Enter 10-digit mobile number"
+                        maxLength="10"
+                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:border-green-600 focus:outline-none transition text-lg"
+                        required
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        Example: 9876543210
+                      </p>
+                    </div>
+
+                    {inquiryError && (
+                      <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+                        {inquiryError}
+                      </div>
+                    )}
+
+                    <button
+                      type="submit"
+                      disabled={inquiryLoading}
+                      className="w-full bg-green-600 text-white font-bold py-3 px-6 rounded-xl hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {inquiryLoading ? "Submitting..." : "Submit Inquiry"}
+                    </button>
+
+                    <p className="text-xs text-center text-gray-500">
+                      By submitting, you agree to be contacted by our team
+                    </p>
+                  </form>
+                </>
+              ) : (
+                <div className="text-center py-8">
+                  <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <Check size={40} className="text-green-600" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-3">
+                    Inquiry Submitted!
+                  </h3>
+                  <p className="text-gray-600 mb-2">
+                    Thank you for your interest!
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    Our team will contact you shortly at your provided number.
+                  </p>
+                </div>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Lightbox Modal */}
       <AnimatePresence>
