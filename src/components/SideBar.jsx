@@ -14,13 +14,16 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import logo from "../assets/logo.png";
 
+
 const states = [
   "----------- States -----------",
   "Bihar",
   "Jharkhand",
 ];
 
+
 const MERAKI_LINK = "https://www.ulmind.com";
+
 
 export default function Sidebar({ sidebarOpen, onClose }) {
   const navigate = useNavigate();
@@ -34,11 +37,14 @@ export default function Sidebar({ sidebarOpen, onClose }) {
     return states.find((s) => !s.startsWith("-")) || "";
   });
 
+
   const [dropdownOpen, setDropdownOpen] = useState(false);
+
 
   useEffect(() => {
     const storedRole = localStorage.getItem("role");
     if (storedRole) setRole(storedRole);
+
 
     const onStorageChange = (e) => {
       if (e.key === "state" && e.newValue && e.newValue !== selectedState) {
@@ -54,6 +60,7 @@ export default function Sidebar({ sidebarOpen, onClose }) {
     };
   }, [selectedState, location.pathname]);
 
+
   const handleStateSelect = (state) => {
     if (state.startsWith("-")) return;
     setSelectedState(state);
@@ -61,6 +68,7 @@ export default function Sidebar({ sidebarOpen, onClose }) {
     localStorage.setItem("state", state);
     window.location.replace(`/statenews/${encodeURIComponent(state)}`);
   };
+
 
   useEffect(() => {
     if (!selectedState.startsWith("-"))
@@ -73,10 +81,12 @@ export default function Sidebar({ sidebarOpen, onClose }) {
     }
   }, [selectedState, location.pathname, navigate]);
 
+
   const isActive = (path) =>
     path.startsWith("/statenews")
       ? location.pathname.startsWith("/statenews")
       : location.pathname === path;
+
 
   const menuItems = [
     {
@@ -90,12 +100,14 @@ export default function Sidebar({ sidebarOpen, onClose }) {
     { name: "Properties", icon: Building2, path: "/properties" },
   ];
 
+
   const getPostOptions = () => {
-    if (role === "admin") return ["Local News", "Jobs", "Events", "Community"];
-    return ["Jobs", "Events", "Community"];
+    if (role === "admin") return ["Local News", "Jobs", "Events", "Community", "Properties"];
+    return ["Jobs", "Events", "Community", "Properties"];
   };
 
-  // ✅ MODIFIED: Removed login redirect check
+
+  // ✅ MODIFIED: Added Properties case
   const handleOptionClick = (type) => {
     setShowModal(false);
     switch (type) {
@@ -111,10 +123,14 @@ export default function Sidebar({ sidebarOpen, onClose }) {
       case "Events":
         navigate("/create/events");
         break;
+      case "Properties":
+        navigate("/create/properties");
+        break;
       default:
         break;
     }
   };
+
 
   const handleMenuClick = (item) => {
     if (item.name === "State News") {
@@ -127,6 +143,7 @@ export default function Sidebar({ sidebarOpen, onClose }) {
       navigate(item.path);
     }
   };
+
 
   return (
     <AnimatePresence>

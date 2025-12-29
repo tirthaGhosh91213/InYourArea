@@ -24,6 +24,8 @@ import {
   ZoomIn,
   ZoomOut,
   RotateCw,
+  Home,
+  RefreshCw,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -70,6 +72,13 @@ export default function UserDashboard() {
     id: null,
     title: "",
   });
+  const [deletingItem, setDeletingItem] = useState(false);
+
+  // ✅ Property Status Update Modal
+  const [statusUpdateModalOpen, setStatusUpdateModalOpen] = useState(false);
+  const [selectedProperty, setSelectedProperty] = useState(null);
+  const [newPropertyStatus, setNewPropertyStatus] = useState("");
+  const [updatingStatus, setUpdatingStatus] = useState(false);
 
   useEffect(() => {
     if (!token) navigate("/login");
@@ -121,12 +130,6 @@ export default function UserDashboard() {
         "https://api.jharkhandbiharupdates.com/api/v1/user/my-content",
         { headers }
       );
-      // console.log("API Response:", res.data.data);
-    //   console.log("📦 Full API Response:", res.data.data);
-    // console.log("📰 State News Array:", res.data.data.stateNews);
-    // if (res.data.data.stateNews && res.data.data.stateNews.length > 0) {
-    //   console.log("🔍 First State News Item:", res.data.data.stateNews[0]);
-    // }
       setContent(res.data.data);
     } catch (error) {
       toast.error("Failed to fetch content");
@@ -250,7 +253,6 @@ export default function UserDashboard() {
       setImagePreview(null);
       setScale(1);
       setRotation(0);
-      // Fetch updated profile to get new image
       const profileRes = await axios.get(
         "https://api.jharkhandbiharupdates.com/api/v1/user/profile",
         { headers }
@@ -275,7 +277,6 @@ export default function UserDashboard() {
     setRotation(0);
   };
 
-  // ✅ NEW: Redirect to post details instead of showing modal
   const handleViewDetails = (type, id) => {
     if (type === "events") {
       navigate(`/events/${id}`);
@@ -285,6 +286,8 @@ export default function UserDashboard() {
       navigate(`/community/${id}`);
     } else if (type === "localNews") {
       navigate(`/statenews/details/${id}`);
+    } else if (type === "properties") {
+      navigate(`/properties/${id}`);
     }
   };
 
@@ -295,6 +298,7 @@ export default function UserDashboard() {
 
   const handleDelete = async () => {
     const { type, id } = deleteTarget;
+    setDeletingItem(true);
     try {
       let url = "";
       if (type === "events") url = `https://api.jharkhandbiharupdates.com/api/v1/events/${id}`;
@@ -303,13 +307,19 @@ export default function UserDashboard() {
         url = `https://api.jharkhandbiharupdates.com/api/v1/community/${id}`;
       if (type === "localNews")
         url = `https://api.jharkhandbiharupdates.com/api/v1/state-news/${id}`;
+      if (type === "properties")
+        url = `https://api.jharkhandbiharupdates.com/api/v1/properties/${id}`;
+      
       await axios.delete(url, { headers });
       toast.success("Deleted successfully!");
       setDeleteConfirmOpen(false);
       await fetchContent();
+      await fetchStats();
     } catch (error) {
       toast.error("Failed to delete");
       console.error("Delete error:", error);
+    } finally {
+      setDeletingItem(false);
     }
   };
 
@@ -341,6 +351,62 @@ export default function UserDashboard() {
     }
   };
 
+  // ✅ UPDATED: Open Property Status Update Modal - Allow Toggle/Revert
+  const handleOpenStatusUpdateModal = (property) => {
+    setSelectedProperty(property);
+    // Set the toggle status based on current status
+    if (property.propertyStatus === "FOR_SALE") {
+      setNewPropertyStatus("SOLD");
+    } else if (property.propertyStatus === "SOLD") {
+      setNewPropertyStatus("FOR_SALE"); // Allow revert
+    } else if (property.propertyStatus === "FOR_RENT") {
+      setNewPropertyStatus("RENTED");
+    } else if (property.propertyStatus === "RENTED") {
+      setNewPropertyStatus("FOR_RENT"); // Allow revert
+    } else {
+      setNewPropertyStatus(property.propertyStatus);
+    }
+    setStatusUpdateModalOpen(true);
+  };
+
+  // ✅ Handle Property Status Update
+  const handlePropertyStatusUpdate = async () => {
+    if (!selectedProperty || !newPropertyStatus) {
+      toast.error("Please select a status");
+      return;
+    }
+
+    if (newPropertyStatus === selectedProperty.propertyStatus) {
+      toast.info("Status is already set to " + newPropertyStatus);
+      setStatusUpdateModalOpen(false);
+      return;
+    }
+
+    setUpdatingStatus(true);
+    try {
+      await axios.put(
+        `https://api.jharkhandbiharupdates.com/api/v1/properties/${selectedProperty.id}/status?status=${newPropertyStatus}`,
+        {},
+        { headers }
+      );
+      toast.success("Property status updated successfully!");
+      setStatusUpdateModalOpen(false);
+      setSelectedProperty(null);
+      setNewPropertyStatus("");
+      await fetchContent();
+      await fetchStats();
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || 
+                          error.response?.data?.error || 
+                          "Failed to update property status";
+      toast.error(errorMessage);
+      console.error("Status update error:", error);
+      console.error("Error response:", error.response?.data);
+    } finally {
+      setUpdatingStatus(false);
+    }
+  };
+
   const handleImageClick = (url, e) => {
     e.stopPropagation();
     setLightboxImage(url);
@@ -356,6 +422,23 @@ export default function UserDashboard() {
     return "bg-gray-100 text-gray-700";
   };
 
+  // ✅ Get Property Status Badge Color
+  const getPropertyStatusColor = (status) => {
+    if (!status) return "bg-gray-100 text-gray-700";
+    const s = status.toUpperCase();
+    if (s === "FOR_SALE") return "bg-blue-100 text-blue-700";
+    if (s === "FOR_RENT") return "bg-purple-100 text-purple-700";
+    if (s === "SOLD") return "bg-green-100 text-green-700";
+    if (s === "RENTED") return "bg-orange-100 text-orange-700";
+    return "bg-gray-100 text-gray-700";
+  };
+
+  // ✅ Format Property Status for Display
+  const formatPropertyStatus = (status) => {
+    if (!status) return "Unknown";
+    return status.replace(/_/g, " ");
+  };
+
   const handleLogout = () => {
     localStorage.removeItem("accessToken");
     localStorage.removeItem("role");
@@ -363,7 +446,6 @@ export default function UserDashboard() {
     navigate("/login");
   };
 
-  // Content filtering logic
   const filteredContent = (() => {
     if (!content) return [];
     if (activeTab === "events") return content.events;
@@ -371,14 +453,15 @@ export default function UserDashboard() {
     if (activeTab === "community") return content.communityPosts;
     if (activeTab === "comments") return comments;
     if (activeTab === "localNews") return content.stateNews;
+    if (activeTab === "properties") return content.properties || [];
     return [];
   })();
 
-  // UI Tabs definition
   const tabs = [
     { key: "events", label: "Events", icon: Calendar },
     { key: "jobs", label: "Jobs", icon: Briefcase },
     { key: "community", label: "Community", icon: FileText },
+    { key: "properties", label: "Properties", icon: Home },
   ];
   if (role === "admin")
     tabs.push({ key: "localNews", label: "State News", icon: FileText });
@@ -493,12 +576,13 @@ export default function UserDashboard() {
       </motion.div>
 
       {/* Stats */}
-      <motion.div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+      <motion.div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-4">
         {[
           { title: "State News", value: stats.totalStateNews },
           { title: "Events", value: stats.totalEvents },
           { title: "Jobs", value: stats.totalJobs },
           { title: "Community", value: stats.totalCommunityPosts },
+          { title: "Properties", value: stats.totalProperties || 0 },
           { title: "Comments", value: stats.totalComments },
           { title: "Total", value: stats.totalContent },
         ].map((s, i) => (
@@ -544,27 +628,35 @@ export default function UserDashboard() {
             >
               <div className="flex-1">
                 <div className="flex items-center flex-wrap gap-3">
-  <h3 className="text-lg font-semibold text-gray-900">
-    {item.title}
-  </h3>
-  {/* ✅ Only show status badge for Events, Jobs, Community - NOT for localNews */}
-  {activeTab !== "localNews" && (
-    <span
-      className={`px-3 py-1 text-xs rounded-full ${getStatusColor(
-        item.status
-      )}`}
-    >
-      {item.status || "UNKNOWN"}
-    </span>
-  )}
-</div>
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    {item.title}
+                  </h3>
+                  {activeTab !== "localNews" && (
+                    <span
+                      className={`px-3 py-1 text-xs rounded-full ${getStatusColor(
+                        item.status
+                      )}`}
+                    >
+                      {item.status || "UNKNOWN"}
+                    </span>
+                  )}
+                  {activeTab === "properties" && (
+                    <span
+                      className={`px-3 py-1 text-xs rounded-full ${getPropertyStatusColor(
+                        item.propertyStatus
+                      )}`}
+                    >
+                      {formatPropertyStatus(item.propertyStatus)}
+                    </span>
+                  )}
+                </div>
 
                 <p className="text-sm text-gray-500 mt-1 flex flex-wrap items-center gap-7">
                   {activeTab === "jobs" && (
-                    <span>Deadline: {item.applicationDeadline || "N/A"}</span>
-                  )}
-                  {activeTab === "jobs" && (
-                    <span>Salary Range: {item.salaryRange || "N/A"}</span>
+                    <>
+                      <span>Deadline: {item.applicationDeadline || "N/A"}</span>
+                      <span>Salary Range: {item.salaryRange || "N/A"}</span>
+                    </>
                   )}
                   {activeTab === "events" && (
                     <span>Date: {item.eventDate || "N/A"}</span>
@@ -574,7 +666,13 @@ export default function UserDashboard() {
                       Created: {new Date(item.createdAt).toLocaleDateString()}
                     </span>
                   )}
-                  
+                  {activeTab === "properties" && (
+                    <>
+                      <span>₹{item.price?.toLocaleString() || "N/A"}</span>
+                      <span>{item.city}, {item.district}</span>
+                      <span>{item.propertyType}</span>
+                    </>
+                  )}
                   <span>
                     Created: {new Date(item.createdAt).toLocaleDateString()}
                   </span>
@@ -582,8 +680,7 @@ export default function UserDashboard() {
               </div>
 
               {activeTab !== "comments" && (
-                <div className="flex gap-2 mt-2">
-                  {/* ✅ CHANGED: View Details now redirects instead of opening modal */}
+                <div className="flex gap-2 mt-2 flex-wrap">
                   <button
                     onClick={() => handleViewDetails(activeTab, item.id)}
                     className="flex items-center gap-2 bg-indigo-50 text-indigo-700 px-3 py-1 rounded-lg hover:bg-indigo-100 transition"
@@ -591,7 +688,18 @@ export default function UserDashboard() {
                     <Eye size={14} /> View Details
                   </button>
 
-                  {/* Update and Delete for Local News (admin only) */}
+                  {/* ✅ UPDATED: Always show Update Status button for properties (no condition) */}
+                  {activeTab === "properties" &&
+                    item.author &&
+                    item.author.id === profile.id && (
+                      <button
+                        onClick={() => handleOpenStatusUpdateModal(item)}
+                        className="flex items-center gap-2 bg-green-50 text-green-700 px-3 py-1 rounded-lg hover:bg-green-100 transition"
+                      >
+                        <RefreshCw size={14} /> Update Status
+                      </button>
+                    )}
+
                   {activeTab === "localNews" && role === "admin" && (
                     <>
                       <button
@@ -611,8 +719,7 @@ export default function UserDashboard() {
                     </>
                   )}
 
-                  {/* Delete button for community, events, jobs -- if the post belongs to the current user */}
-                  {["community", "jobs", "events"].includes(activeTab) &&
+                  {["community", "jobs", "events", "properties"].includes(activeTab) &&
                     item.author &&
                     item.author.id === profile.id && (
                       <button
@@ -704,9 +811,7 @@ export default function UserDashboard() {
                       />
                     </div>
                     <canvas ref={canvasRef} style={{ display: "none" }} />
-                    {/* Crop Controls */}
                     <div className="w-full space-y-3 mb-4">
-                      {/* Zoom Control */}
                       <div className="flex items-center gap-3">
                         <ZoomOut size={20} className="text-gray-600" />
                         <input
@@ -728,7 +833,6 @@ export default function UserDashboard() {
                         <ZoomIn size={20} className="text-gray-600" />
                       </div>
 
-                      {/* Rotation Control */}
                       <div className="flex items-center gap-3">
                         <RotateCw size={20} className="text-gray-600" />
                         <input
@@ -755,7 +859,6 @@ export default function UserDashboard() {
                       </div>
                     </div>
 
-                    {/* Reset and Remove Buttons */}
                     <div className="flex gap-2">
                       <button
                         onClick={() => {
@@ -898,6 +1001,202 @@ export default function UserDashboard() {
         )}
       </AnimatePresence>
 
+      {/* ✅ UPDATED: Property Status Update Modal - Allow Toggle/Revert */}
+      <AnimatePresence>
+        {statusUpdateModalOpen && selectedProperty && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4"
+            onClick={() => !updatingStatus && setStatusUpdateModalOpen(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 relative"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                onClick={() => setStatusUpdateModalOpen(false)}
+                disabled={updatingStatus}
+                className="absolute right-3 top-3 bg-gray-200 rounded-full w-8 h-8 flex items-center justify-center text-gray-600 hover:bg-gray-300 transition disabled:opacity-50"
+              >
+                ✕
+              </button>
+              <div className="flex items-center gap-4 mb-6">
+                <div className="bg-green-100 rounded-full p-3">
+                  <RefreshCw size={24} className="text-green-600" />
+                </div>
+                <h2 className="text-xl font-bold text-gray-900">
+                  Update Property Status
+                </h2>
+              </div>
+
+              <div className="mb-4">
+                <p className="text-sm text-gray-600 mb-2">Property:</p>
+                <p className="font-semibold text-gray-800 bg-gray-50 p-3 rounded-lg">
+                  {selectedProperty.title}
+                </p>
+              </div>
+
+              <div className="mb-4">
+                <p className="text-sm text-gray-600 mb-2">Current Status:</p>
+                <span
+                  className={`inline-block px-4 py-2 rounded-lg font-semibold ${getPropertyStatusColor(
+                    selectedProperty.propertyStatus
+                  )}`}
+                >
+                  {formatPropertyStatus(selectedProperty.propertyStatus)}
+                </span>
+              </div>
+
+              <div className="mb-6">
+                <label className="block text-sm font-semibold text-gray-700 mb-3">
+                  Select New Status:
+                </label>
+                <div className="space-y-3">
+                  {/* ✅ FOR_SALE ↔ SOLD Toggle */}
+                  {(selectedProperty.propertyStatus === "FOR_SALE" || selectedProperty.propertyStatus === "SOLD") && (
+                    <>
+                      {selectedProperty.propertyStatus === "FOR_SALE" && (
+                        <label
+                          className={`flex items-center p-3 rounded-lg border-2 cursor-pointer transition ${
+                            newPropertyStatus === "SOLD"
+                              ? "border-green-500 bg-green-50"
+                              : "border-gray-200 hover:border-green-300 hover:bg-gray-50"
+                          }`}
+                        >
+                          <input
+                            type="radio"
+                            name="propertyStatus"
+                            value="SOLD"
+                            checked={newPropertyStatus === "SOLD"}
+                            onChange={(e) => setNewPropertyStatus(e.target.value)}
+                            className="w-5 h-5 text-green-600 focus:ring-green-500"
+                          />
+                          <span className="ml-3 font-medium text-gray-800">
+                            Mark as SOLD
+                          </span>
+                        </label>
+                      )}
+                      
+                      {selectedProperty.propertyStatus === "SOLD" && (
+                        <label
+                          className={`flex items-center p-3 rounded-lg border-2 cursor-pointer transition ${
+                            newPropertyStatus === "FOR_SALE"
+                              ? "border-blue-500 bg-blue-50"
+                              : "border-gray-200 hover:border-blue-300 hover:bg-gray-50"
+                          }`}
+                        >
+                          <input
+                            type="radio"
+                            name="propertyStatus"
+                            value="FOR_SALE"
+                            checked={newPropertyStatus === "FOR_SALE"}
+                            onChange={(e) => setNewPropertyStatus(e.target.value)}
+                            className="w-5 h-5 text-blue-600 focus:ring-blue-500"
+                          />
+                          <span className="ml-3 font-medium text-gray-800">
+                            Mark as FOR SALE (Revert)
+                          </span>
+                        </label>
+                      )}
+                    </>
+                  )}
+
+                  {/* ✅ FOR_RENT ↔ RENTED Toggle */}
+                  {(selectedProperty.propertyStatus === "FOR_RENT" || selectedProperty.propertyStatus === "RENTED") && (
+                    <>
+                      {selectedProperty.propertyStatus === "FOR_RENT" && (
+                        <label
+                          className={`flex items-center p-3 rounded-lg border-2 cursor-pointer transition ${
+                            newPropertyStatus === "RENTED"
+                              ? "border-orange-500 bg-orange-50"
+                              : "border-gray-200 hover:border-orange-300 hover:bg-gray-50"
+                          }`}
+                        >
+                          <input
+                            type="radio"
+                            name="propertyStatus"
+                            value="RENTED"
+                            checked={newPropertyStatus === "RENTED"}
+                            onChange={(e) => setNewPropertyStatus(e.target.value)}
+                            className="w-5 h-5 text-orange-600 focus:ring-orange-500"
+                          />
+                          <span className="ml-3 font-medium text-gray-800">
+                            Mark as RENTED
+                          </span>
+                        </label>
+                      )}
+                      
+                      {selectedProperty.propertyStatus === "RENTED" && (
+                        <label
+                          className={`flex items-center p-3 rounded-lg border-2 cursor-pointer transition ${
+                            newPropertyStatus === "FOR_RENT"
+                              ? "border-purple-500 bg-purple-50"
+                              : "border-gray-200 hover:border-purple-300 hover:bg-gray-50"
+                          }`}
+                        >
+                          <input
+                            type="radio"
+                            name="propertyStatus"
+                            value="FOR_RENT"
+                            checked={newPropertyStatus === "FOR_RENT"}
+                            onChange={(e) => setNewPropertyStatus(e.target.value)}
+                            className="w-5 h-5 text-purple-600 focus:ring-purple-500"
+                          />
+                          <span className="ml-3 font-medium text-gray-800">
+                            Mark as FOR RENT (Revert)
+                          </span>
+                        </label>
+                      )}
+                    </>
+                  )}
+
+                  {/* ✅ Info message */}
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-800">
+                    {(selectedProperty.propertyStatus === "FOR_SALE" || selectedProperty.propertyStatus === "SOLD") && (
+                      <p>💡 You can toggle between FOR SALE and SOLD status anytime.</p>
+                    )}
+                    {(selectedProperty.propertyStatus === "FOR_RENT" || selectedProperty.propertyStatus === "RENTED") && (
+                      <p>💡 You can toggle between FOR RENT and RENTED status anytime.</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-3 justify-end">
+                <button
+                  onClick={() => setStatusUpdateModalOpen(false)}
+                  className="bg-gray-100 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-200 transition disabled:opacity-50"
+                  disabled={updatingStatus}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handlePropertyStatusUpdate}
+                  className="flex items-center gap-2 bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition disabled:opacity-50"
+                  disabled={updatingStatus}
+                >
+                  {updatingStatus ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      Updating...
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw size={16} /> Update Status
+                    </>
+                  )}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Delete Confirmation Modal */}
       <AnimatePresence>
         {deleteConfirmOpen && (
@@ -906,7 +1205,7 @@ export default function UserDashboard() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4"
-            onClick={() => setDeleteConfirmOpen(false)}
+            onClick={() => !deletingItem && setDeleteConfirmOpen(false)}
           >
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
@@ -935,15 +1234,26 @@ export default function UserDashboard() {
               <div className="flex gap-3 justify-end">
                 <button
                   onClick={() => setDeleteConfirmOpen(false)}
-                  className="bg-gray-100 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-200 transition"
+                  className="bg-gray-100 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-200 transition disabled:opacity-50"
+                  disabled={deletingItem}
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleDelete}
-                  className="flex items-center gap-2 bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 transition"
+                  className="flex items-center gap-2 bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 transition disabled:opacity-50"
+                  disabled={deletingItem}
                 >
-                  <Trash2 size={16} /> Delete
+                  {deletingItem ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      Deleting...
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 size={16} /> Delete
+                    </>
+                  )}
                 </button>
               </div>
             </motion.div>
