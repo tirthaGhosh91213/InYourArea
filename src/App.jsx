@@ -30,6 +30,7 @@ import AboutUs from "./pages/AboutUs";
 import CodeOfEthics from "./pages/CodeOfEthics";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsConditions from "./pages/TermsConditions";
+import PropertyDetails from "./pages/PropertyDetails";
 
 // ✅ Home component
 function Home() {
@@ -73,11 +74,13 @@ export default function App() {
         <Route path="/create/jobs" element={<CreateJobPost />} />
         <Route path="/create/localnews" element={<CreateLocalNewsPost />} />
         <Route path="/create/community" element={<CreateCommunityPost />} />
+        <Route path="/create/properties" element={<CreatePropertyPost />} />
         <Route path="/admin/:type/:id" element={<AdminItemDetail />} />
         <Route path="/community/:id" element={<CommunityDetails />} />
         <Route path="/jobs/:id" element={<JobDetails />} />
         <Route path="/events/:id" element={<EventDetails />} />
         <Route path="/statenews/details/:id" element={<LocalNewsDetails />} />
+        <Route path="/properties/:id" element={<PropertyDetails />} />
         <Route path="/user-dashboard" element={<UserDashboard />} />
         <Route path="/properties" element={<Properties />} />
         <Route path="/createPropertyPost" element={<CreatePropertyPost />} />
