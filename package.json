@@ -12,6 +12,7 @@
   "dependencies": {
     "@emotion/styled": "^11.14.1",
     "@mui/material": "^7.3.2",
+    "@stomp/stompjs": "^7.2.1",
     "@tailwindcss/vite": "^4.1.13",
     "axios": "^1.12.2",
     "class-variance-authority": "^0.7.1",
@@ -30,6 +31,7 @@
     "react-router-dom": "^7.9.3",
     "react-snowfall": "^2.4.0",
     "react-toastify": "^11.0.5",
+    "sockjs-client": "^1.6.1",
     "styled-components": "^6.1.19",
     "sweetalert2": "^11.26.3",
     "tailwind-merge": "^3.4.0",
