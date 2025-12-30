@@ -184,7 +184,6 @@ function getWeatherStyle(conditionText, isDay) {
 // Date/Time Component for when geolocation is denied
 function DateTimeDisplay() {
   const [currentTime, setCurrentTime] = useState(new Date());
-  const { activeUsers, connected } = useActiveUsers();
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -218,22 +217,7 @@ function DateTimeDisplay() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}
     >
-      {/* Active Users - NEW */}
-      <div className="flex items-center gap-1.5 pr-2 sm:pr-3 border-r border-slate-300/50">
-        <div className="flex h-6 w-6 sm:h-8 sm:w-8 items-center justify-center rounded-lg border border-green-300/60 bg-green-50/50">
-          <Users className="w-3 h-3 sm:w-4 sm:h-4 text-green-700" />
-        </div>
-        <div className="flex flex-col leading-tight">
-          <span className="text-[9px] sm:text-[10px] uppercase tracking-wider text-slate-500 font-medium">
-            Live
-          </span>
-          <span className="text-xs sm:text-sm font-semibold text-green-700 tabular-nums">
-            {connected ? activeUsers : '...'}
-          </span>
-        </div>
-      </div>
-
-      {/* Clock */}
+      {/* Left: Clock icon + time */}
       <div className="flex items-center gap-1.5 sm:gap-2 pr-2 sm:pr-3 border-r border-slate-300/50">
         <div className="flex h-6 w-6 sm:h-8 sm:w-8 items-center justify-center rounded-lg border border-slate-300/60 bg-slate-50/50">
           <Clock className="w-3 h-3 sm:w-4 sm:h-4 text-slate-700" />
@@ -248,7 +232,7 @@ function DateTimeDisplay() {
         </div>
       </div>
 
-      {/* Date */}
+      {/* Right: Date */}
       <div className="flex flex-col justify-center pl-0.5 sm:pl-1">
         <span className="text-[9px] sm:text-[10px] uppercase tracking-wider text-slate-500 font-medium">
           Today
@@ -286,6 +270,9 @@ export default function RightSidebar() {
   const role = localStorage.getItem("role");
   const isLoggedIn = Boolean(token);
   const isAdmin = role?.toLowerCase().includes("admin");
+
+  // Active Users Hook
+  const { activeUsers, connected } = useActiveUsers();
 
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024);
   useEffect(() => {
@@ -496,6 +483,7 @@ export default function RightSidebar() {
             setGeoPermissionDenied(true);
             setWeatherLoading(false);
           } else if (permissionStatus.state === "prompt") {
+            // Important: Must call getCurrentPosition to trigger the permission prompt
             console.log("Permission state is prompt - requesting location to trigger prompt");
             startWatchingPosition();
           }
@@ -509,9 +497,11 @@ export default function RightSidebar() {
               setGeoPermissionDenied(false);
               setWeatherLoading(true);
               
+              // Clear cache on permission re-grant to fetch fresh weather
               localStorage.removeItem(WEATHER_CACHE_KEY);
               localStorage.removeItem(LAST_KNOWN_POSITION_KEY);
               
+              // Stop any existing watch and start fresh
               stopWatchingPosition();
               startWatchingPosition();
             } else if (permissionStatus.state === "denied") {
@@ -526,9 +516,12 @@ export default function RightSidebar() {
           };
         } catch (error) {
           console.error("Permissions API error:", error);
+          // Fallback: try to get position anyway which will trigger the prompt
           startWatchingPosition();
         }
       } else {
+        // Permissions API not supported - fallback behavior
+        // This will trigger the permission prompt
         console.log("Permissions API not supported - using fallback");
         
         if (!isOAuthRedirect) {
@@ -549,6 +542,7 @@ export default function RightSidebar() {
     return () => {
       stopWatchingPosition();
       
+      // Clean up permission listener
       if (permissionStatusRef.current) {
         permissionStatusRef.current.onchange = null;
       }
@@ -702,6 +696,7 @@ export default function RightSidebar() {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => {
+                // if (!isLoggedIn) return navigate("/login");
                 setLeftSidebarOpen(true);
               }}
               className="p-1.5 rounded-lg hover:bg-gray-100 transition"
@@ -713,6 +708,25 @@ export default function RightSidebar() {
         </div>
 
         <div className="flex items-center gap-2 sm:gap-3">
+          {/* Active Users Counter */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.3 }}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-full bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-sm"
+            title={connected ? "Live users connected" : "Connecting..."}
+          >
+            <div className="flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded-full bg-white/20">
+              <Users className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-white" />
+            </div>
+            <span className="text-xs sm:text-sm font-bold tabular-nums">
+              {activeUsers || 0}
+            </span>
+            <span className="hidden sm:inline text-[10px] sm:text-xs font-medium opacity-90">
+              Live
+            </span>
+          </motion.div>
+
           {isLoggedIn && (
             <div className="relative" ref={notifRef}>
               <motion.button
