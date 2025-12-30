@@ -1,7 +1,7 @@
 // src/pages/Community.jsx
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { MessageCircle, Search } from "lucide-react";
+import { MessageCircle, Search, ChevronDown } from "lucide-react";
 import Sidebar from "../components/SideBar";
 import RightSidebar from "../components/RightSidebar";
 import SmallAdd from "../components/SmallAdd";
@@ -39,12 +39,6 @@ export default function Community() {
   const navigate = useNavigate();
   const token = localStorage.getItem("accessToken");
 
-
-  //login check disabled for community access
-  // useEffect(() => {
-  //   if (!token) navigate("/login");
-  // }, [token, navigate]);
-
   const [searchTerm, setSearchTerm] = useState("");
   const [posts, setPosts] = useState([]);
   const [authorAvatars, setAuthorAvatars] = useState({});
@@ -53,6 +47,16 @@ export default function Community() {
   const [showCommentInput, setShowCommentInput] = useState({});
   const [commentText, setCommentText] = useState({});
   const [loading, setLoading] = useState(true);
+
+  // 🔥 PAGINATION STATE
+  const [currentPage, setCurrentPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const PAGE_SIZE = 10;
+
+  // 🔥 INFINITE SCROLL REF
+  const observerTarget = useRef(null);
 
   // Small ads
   const [ads, setAds] = useState([]);
@@ -91,31 +95,47 @@ export default function Community() {
     }
   };
 
-  const fetchPosts = async () => {
-    try {
+  // 🔥 FETCH POSTS WITH PAGINATION
+  const fetchPosts = useCallback(async (page = 0, append = false) => {
+    if (append) {
+      setLoadingMore(true);
+    } else {
       setLoading(true);
+    }
 
+    try {
       const res = await axios.get(
         `https://api.jharkhandbiharupdates.com/api/v1/community`,
-        { headers: { Authorization: `Bearer ${token}` } }
+        {
+          params: { page, size: PAGE_SIZE },
+          headers: token ? { Authorization: `Bearer ${token}` } : {}
+        }
       );
 
       if (res.data.success) {
-        const allPosts = res.data.data;
-        console.log(`✅ Loaded ALL posts: ${allPosts.length} total`);
-        
-        setPosts(allPosts);
+        const pageData = res.data.data;
+        const fetchedPosts = pageData.content || [];
 
-        // Randomly select 2-3 posts to show comments automatically
-        if (allPosts.length > 0) {
+        if (append) {
+          setPosts(prev => [...prev, ...fetchedPosts]);
+        } else {
+          setPosts(fetchedPosts);
+        }
+
+        setCurrentPage(pageData.number);
+        setTotalPages(pageData.totalPages);
+        setHasMore(!pageData.last);
+
+        console.log(`✅ Loaded page ${pageData.number + 1}/${pageData.totalPages}: ${fetchedPosts.length} posts`);
+
+        // Auto-show comments for 2-3 random posts (only on first load)
+        if (page === 0 && fetchedPosts.length > 0) {
           const numberOfPostsToShow = Math.min(
             Math.floor(Math.random() * 2) + 2,
-            allPosts.length
+            fetchedPosts.length
           );
 
-          const shuffledPosts = [...allPosts].sort(
-            () => Math.random() - 0.5
-          );
+          const shuffledPosts = [...fetchedPosts].sort(() => Math.random() - 0.5);
           const selectedPosts = shuffledPosts.slice(0, numberOfPostsToShow);
 
           const autoShowComments = {};
@@ -128,57 +148,75 @@ export default function Community() {
         }
 
         // Update avatars
-        const avatarMap = allPosts.reduce((acc, post) => {
+        const avatarMap = fetchedPosts.reduce((acc, post) => {
           acc[post.author.id] = post.author.profileImageUrl || null;
           return acc;
         }, {});
-        setAuthorAvatars(avatarMap);
+        setAuthorAvatars(prev => ({ ...prev, ...avatarMap }));
       }
     } catch (error) {
       console.error("❌ Error fetching posts:", error);
       toast.error("Failed to fetch posts");
     } finally {
       setLoading(false);
+      setLoadingMore(false);
+    }
+  }, [token]);
+
+  // 🔥 INITIAL LOAD
+  useEffect(() => {
+    setPosts([]);
+    setCurrentPage(0);
+    setHasMore(true);
+    fetchPosts(0, false);
+  }, [fetchPosts]);
+
+  // 🔥 LOAD MORE HANDLER (Desktop button)
+  const handleLoadMore = () => {
+    if (!loadingMore && hasMore) {
+      fetchPosts(currentPage + 1, true);
     }
   };
 
+  // 🔥 INFINITE SCROLL OBSERVER (Mobile)
   useEffect(() => {
-    fetchPosts();
+    const observer = new IntersectionObserver(
+      entries => {
+        if (entries[0].isIntersecting && hasMore && !loadingMore && !loading) {
+          fetchPosts(currentPage + 1, true);
+        }
+      },
+      { threshold: 0.1 }
+    );
 
+    const currentTarget = observerTarget.current;
+    if (currentTarget) {
+      observer.observe(currentTarget);
+    }
+
+    return () => {
+      if (currentTarget) {
+        observer.unobserve(currentTarget);
+      }
+    };
+  }, [hasMore, loadingMore, loading, currentPage, fetchPosts]);
+
+  useEffect(() => {
     // Small ads
-    fetch(
-      "https://api.jharkhandbiharupdates.com/api/v1/banner-ads/active/small"
-    )
+    fetch("https://api.jharkhandbiharupdates.com/api/v1/banner-ads/active/small")
       .then((res) => res.json())
       .then((data) => {
-        if (
-          data &&
-          data.data &&
-          Array.isArray(data.data) &&
-          data.data.length > 0
-        ) {
+        if (data && data.data && Array.isArray(data.data) && data.data.length > 0) {
           const orderedAds = [...data.data];
           setAds(orderedAds);
 
           const total = orderedAds.length;
-          let savedTop = parseInt(
-            localStorage.getItem(SLOT_KEYS.TOP_RIGHT) ?? "0",
-            10
-          );
-          let savedBottom = parseInt(
-            localStorage.getItem(SLOT_KEYS.BOTTOM_RIGHT) ?? "1",
-            10
-          );
+          let savedTop = parseInt(localStorage.getItem(SLOT_KEYS.TOP_RIGHT) ?? "0", 10);
+          let savedBottom = parseInt(localStorage.getItem(SLOT_KEYS.BOTTOM_RIGHT) ?? "1", 10);
 
-          if (isNaN(savedTop) || savedTop < 0 || savedTop >= total) {
-            savedTop = 0;
-          }
-          if (isNaN(savedBottom) || savedBottom < 0 || savedBottom >= total) {
-            savedBottom = total > 1 ? 1 : 0;
-          }
-          if (savedTop === savedBottom && total > 1) {
-            savedBottom = getNextIndex(savedTop, total);
-          }
+          if (isNaN(savedTop) || savedTop < 0 || savedTop >= total) savedTop = 0;
+          if (isNaN(savedBottom) || savedBottom < 0 || savedBottom >= total) savedBottom = total > 1 ? 1 : 0;
+          if (savedTop === savedBottom && total > 1) savedBottom = getNextIndex(savedTop, total);
 
           setTopRightIndex(savedTop);
           setBottomRightIndex(savedBottom);
@@ -207,7 +245,6 @@ export default function Community() {
       });
   }, []);
 
-  // Rotate small ads index on next refresh after a close
   useEffect(() => {
     if (!ads.length) return;
     const total = ads.length;
@@ -290,21 +327,17 @@ export default function Community() {
     let adPtr = 0;
 
     if (filteredPosts.length === 1) {
-      if (largeAds.length > 0)
-        items.push({ type: "ad", adIndex: largeAdIndexes[0] ?? 0 });
+      if (largeAds.length > 0) items.push({ type: "ad", adIndex: largeAdIndexes[0] ?? 0 });
       items.push({ type: "post", post: filteredPosts[0] });
-      if (largeAds.length > 1)
-        items.push({ type: "ad", adIndex: largeAdIndexes[1] ?? 0 });
+      if (largeAds.length > 1) items.push({ type: "ad", adIndex: largeAdIndexes[1] ?? 0 });
       return items;
     }
 
     if (filteredPosts.length === 2) {
       items.push({ type: "post", post: filteredPosts[0] });
-      if (largeAds.length > 0)
-        items.push({ type: "ad", adIndex: largeAdIndexes[0] ?? 0 });
+      if (largeAds.length > 0) items.push({ type: "ad", adIndex: largeAdIndexes[0] ?? 0 });
       items.push({ type: "post", post: filteredPosts[1] });
-      if (largeAds.length > 1)
-        items.push({ type: "ad", adIndex: largeAdIndexes[1] ?? 0 });
+      if (largeAds.length > 1) items.push({ type: "ad", adIndex: largeAdIndexes[1] ?? 0 });
       return items;
     }
 
@@ -336,23 +369,17 @@ export default function Community() {
     const hasTitle = post.title && post.title.trim() !== "";
     const hasImage = post.imageUrls && post.imageUrls.length > 0;
     const hasLocation = post.location && post.location.trim() !== "";
-    
-    // Check if it's description-only post (no title, no image)
     const isDescriptionOnly = !hasTitle && !hasImage;
-    
     const isAdmin = post.author.role === "ADMIN";
-    
     const postComments = commentsMap[post.id] || [];
     const displayedComments = postComments.slice(0, 3);
     const remainingCount = postComments.length - 3;
 
-    // For description-only posts: show up to 500 chars with proper line breaks
     const contentPreview500 = post.content.length > 500 
       ? post.content.substring(0, 500) 
       : post.content;
     const needsReadMore = post.content.length > 500;
 
-    // For posts with all fields: use existing truncation
     const truncatedContentMobile = truncateText(post.content, 200);
     const truncatedContentDesktop = truncateText(post.content, 300);
 
@@ -362,7 +389,6 @@ export default function Community() {
         onClick={() => handlePostClick(post.id)}
       >
         <div className="flex flex-col w-full">
-          {/* Header: avatar, name, time */}
           <div className="flex items-center justify-between px-3 sm:px-4 pt-3 sm:pt-4">
             <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1 overflow-hidden">
               <div className="flex-shrink-0">
@@ -391,9 +417,7 @@ export default function Community() {
             </div>
           </div>
 
-          {/* Content area - different layouts based on what user provided */}
           {isDescriptionOnly ? (
-            /* Twitter-style description-only post */
             <div className="px-3 sm:px-4 pt-2 sm:pt-3">
               <p className="text-sm sm:text-base text-gray-800 leading-relaxed break-words overflow-wrap-anywhere whitespace-pre-line">
                 {contentPreview500}
@@ -412,7 +436,6 @@ export default function Community() {
             </div>
           ) : (
             <>
-              {/* Title (if provided) */}
               {hasTitle && (
                 <div className="px-3 sm:px-4 pt-2 sm:pt-3">
                   <h3 className="text-sm sm:text-base md:text-lg font-semibold text-gray-900 leading-snug break-words overflow-wrap-anywhere">
@@ -421,7 +444,6 @@ export default function Community() {
                 </div>
               )}
 
-              {/* Image (if provided) */}
               {hasImage && (
                 <div className={`${hasTitle ? 'mt-2 sm:mt-3' : 'mt-2 sm:mt-3'} w-full h-52 sm:h-60 md:h-80 overflow-hidden`}>
                   <img
@@ -432,7 +454,6 @@ export default function Community() {
                 </div>
               )}
 
-              {/* Description (truncated for posts with title/image) */}
               <div className="px-3 sm:px-4 pt-2 sm:pt-3">
                 <p className="block md:hidden text-base sm:text-[17px] text-gray-700 leading-relaxed break-words overflow-wrap-anywhere">
                   {truncatedContentMobile}
@@ -444,7 +465,6 @@ export default function Community() {
             </>
           )}
 
-          {/* Footer: comment button */}
           <div className="flex items-center justify-between px-3 sm:px-4 py-2 sm:py-3">
             <div className="flex-1" />
             <button
@@ -463,7 +483,6 @@ export default function Community() {
           </div>
         </div>
 
-        {/* Comments - Only show 3 */}
         {showCommentInput[post.id] && (
           <div className="px-3 sm:px-4 pb-3 sm:pb-4">
             <div className="mt-2 space-y-2">
@@ -536,12 +555,10 @@ export default function Community() {
 
   return (
     <>
-      {/* Top Navbar */}
       <div className="w-full fixed top-0 left-0 z-50 bg-white shadow-md border-b border-gray-200">
         <RightSidebar />
       </div>
 
-      {/* Small Ads */}
       <AnimatePresence>
         {topRightAd && !topRightClosed && (
           <SmallAdd
@@ -561,16 +578,12 @@ export default function Community() {
         )}
       </AnimatePresence>
 
-      {/* Layout */}
       <div className="flex min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 pt-16">
-        {/* Left Sidebar */}
         <div className="hidden lg:block w-64 bg-white shadow-md border-r border-gray-200 flex-shrink-0">
           <Sidebar />
         </div>
 
-        {/* Main Content */}
         <main className="flex-1 flex flex-col items-center px-2 pt-4 sm:pt-6 pb-6 min-w-0">
-          {/* Header + search */}
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -613,7 +626,7 @@ export default function Community() {
             </motion.p>
           ) : (
             <>
-              {/* MOBILE: posts + ads interleaved, single column */}
+              {/* 🔥 MOBILE: Infinite scroll */}
               <div className="flex flex-col gap-3 sm:gap-4 w-full max-w-5xl md:hidden pb-6">
                 {mobileItems.map((item, idx) =>
                   item.type === "post" ? (
@@ -633,21 +646,58 @@ export default function Community() {
                     </div>
                   ) : null
                 )}
+                
+                {/* 🔥 INFINITE SCROLL TRIGGER */}
+                <div ref={observerTarget} className="h-10 flex items-center justify-center">
+                  {loadingMore && (
+                    <div className="flex items-center gap-2 text-emerald-600">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-emerald-600"></div>
+                      <span className="text-sm font-medium">Loading more...</span>
+                    </div>
+                  )}
+                  {!hasMore && posts.length > 0 && (
+                    <p className="text-gray-500 text-sm">No more posts to load</p>
+                  )}
+                </div>
               </div>
 
-              {/* DESKTOP/TABLET: post list + sticky ads */}
+              {/* 🔥 DESKTOP: Load More Button */}
               <div className="hidden md:grid md:grid-cols-3 gap-8 w-full max-w-7xl pb-10">
-                {/* Posts column */}
                 <div className="md:col-span-2 flex flex-col gap-4 min-w-0">
                   {filteredPosts.map((post) => (
-                    <CommunityCard
-                      key={post.id}
-                      post={post}
-                    />
+                    <CommunityCard key={post.id} post={post} />
                   ))}
+                  
+                  {/* 🔥 LOAD MORE BUTTON */}
+                  {hasMore && (
+                    <motion.button
+                      onClick={handleLoadMore}
+                      disabled={loadingMore}
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-4 px-8 rounded-2xl shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-all duration-300"
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      {loadingMore ? (
+                        <>
+                          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                          <span>Loading...</span>
+                        </>
+                      ) : (
+                        <>
+                          <span>Load More Posts</span>
+                          <ChevronDown size={20} />
+                        </>
+                      )}
+                    </motion.button>
+                  )}
+                  
+                  {!hasMore && posts.length > 0 && (
+                    <div className="text-center py-6 text-gray-500 font-medium">
+                      You've reached the end of posts
+                    </div>
+                  )}
                 </div>
 
-                {/* Sticky ads column */}
                 <div className="flex flex-shrink-0">
                   <div className="sticky top-28 w-full flex flex-col gap-6 max-h-[80vh]">
                     {largeAds.length > 0 &&

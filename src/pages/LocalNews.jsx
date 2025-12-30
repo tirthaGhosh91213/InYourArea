@@ -1,5 +1,5 @@
 // src/pages/LocalNews.jsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import axios from "axios";
@@ -7,19 +7,15 @@ import Sidebar from "../../src/components/SideBar";
 import RightSidebar from "../components/RightSidebar";
 import SmallAdd from "../components/SmallAdd";
 import LargeAd from "../components/LargeAd";
-import { Clock, Play } from "lucide-react";
+import { Clock, Play, ChevronDown } from "lucide-react";
 import { MdVerified } from "react-icons/md";
 import Loader from '../components/Loader';
-
-
 
 // Helper: circular next index
 function getNextIndex(current, total) {
   if (total === 0) return 0;
   return (current + 1) % total;
 }
-
-
 
 // Helper: truncate text to specified length
 const truncateText = (text, maxLength) => {
@@ -29,15 +25,11 @@ const truncateText = (text, maxLength) => {
   return cleanText.slice(0, maxLength).trim() + '...';
 };
 
-
-
 // 🔥 NEW: Get Cloudinary video thumbnail
 const getVideoThumbnail = (videoUrl) => {
   if (!videoUrl) return null;
   
-  // Check if it's a Cloudinary video
   if (videoUrl.includes('cloudinary.com') && videoUrl.includes('/video/upload/')) {
-    // Convert video URL to thumbnail URL
     return videoUrl
       .replace('/video/upload/', '/video/upload/so_0,q_auto,f_auto/')
       .replace(/\.(mp4|webm|ogg|mov)$/i, '.jpg');
@@ -46,29 +38,21 @@ const getVideoThumbnail = (videoUrl) => {
   return null;
 };
 
-
-
 // LocalStorage keys for StateNews ads
 const SLOT_KEYS = {
   TOP_RIGHT: "STATENEWS_AD_INDEX_TOP_RIGHT",
   BOTTOM_RIGHT: "STATENEWS_AD_INDEX_BOTTOM_RIGHT",
 };
 
-
-
 export default function LocalNews() {
   const params = useParams();
   const navigate = useNavigate();
-
-
 
   const states = [
     "----------- States -----------",
     "Bihar",
     "Jharkhand"
   ];
-
-
 
   const getInitialState = () => {
     const paramState = params.state ? decodeURIComponent(params.state) : "";
@@ -78,15 +62,22 @@ export default function LocalNews() {
     return states.find((s) => !s.startsWith("-")) || "";
   };
 
-
-
   const [state, setState] = useState(getInitialState());
   const [newsList, setNewsList] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState("");
+  
+  // 🔥 PAGINATION STATE
+  const [currentPage, setCurrentPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const PAGE_SIZE = 10;
+  
   const token = localStorage.getItem("accessToken");
 
-
+  // 🔥 INFINITE SCROLL REF (Mobile)
+  const observerTarget = useRef(null);
 
   // Small ads state
   const [ads, setAds] = useState([]);
@@ -95,22 +86,15 @@ export default function LocalNews() {
   const [topRightClosed, setTopRightClosed] = useState(false);
   const [bottomRightClosed, setBottomRightClosed] = useState(false);
 
-
-
   // Large ads state for interleaving
   const [largeAds, setLargeAds] = useState([]);
-
-
 
   useEffect(() => {
     if (state && !state.startsWith("-") && params.state !== state) {
       localStorage.setItem("state", state);
       navigate(`/statenews/${encodeURIComponent(state)}`, { replace: true });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state]);
-
-
+  }, [state, params.state, navigate]);
 
   const shuffleArray = (array) => {
     const shuffled = [...array];
@@ -121,33 +105,89 @@ export default function LocalNews() {
     return shuffled;
   };
 
-
-
-  useEffect(() => {
+  // 🔥 FETCH NEWS WITH PAGINATION
+  const fetchNews = useCallback(async (page = 0, append = false) => {
     if (!state || state.startsWith("-")) return;
-    const fetchNews = async () => {
+    
+    if (append) {
+      setLoadingMore(true);
+    } else {
       setLoading(true);
-      setError("");
-      try {
-        const res = await axios.get(
-          `https://api.jharkhandbiharupdates.com/api/v1/state-news/${state}`,
-          token ? { headers: { Authorization: `Bearer ${token}` } } : {}
-        );
-        if (res.data.success) {
-          const fetchedNews = res.data.data || [];
-          // ✅ REMOVED shuffleArray - now showing posts in server order (recent first)
+    }
+    
+    setError("");
+    
+    try {
+      const res = await axios.get(
+        `https://api.jharkhandbiharupdates.com/api/v1/state-news/${state}`,
+        {
+          params: { page, size: PAGE_SIZE },
+          ...(token ? { headers: { Authorization: `Bearer ${token}` } } : {})
+        }
+      );
+      
+      if (res.data.success) {
+        const pageData = res.data.data;
+        const fetchedNews = pageData.content || [];
+        
+        if (append) {
+          setNewsList(prev => [...prev, ...fetchedNews]);
+        } else {
           setNewsList(fetchedNews);
-        } else setError("Failed to load news data");
-      } catch (err) {
-        setError("Failed to load state news");
-      } finally {
-        setLoading(false);
+        }
+        
+        setCurrentPage(pageData.number);
+        setTotalPages(pageData.totalPages);
+        setHasMore(!pageData.last);
+      } else {
+        setError("Failed to load news data");
       }
-    };
-    fetchNews();
+    } catch (err) {
+      console.error("Error fetching news:", err);
+      setError("Failed to load state news");
+    } finally {
+      setLoading(false);
+      setLoadingMore(false);
+    }
   }, [state, token]);
 
+  // 🔥 INITIAL LOAD
+  useEffect(() => {
+    setNewsList([]);
+    setCurrentPage(0);
+    setHasMore(true);
+    fetchNews(0, false);
+  }, [state, fetchNews]);
 
+  // 🔥 LOAD MORE HANDLER (Desktop button)
+  const handleLoadMore = () => {
+    if (!loadingMore && hasMore) {
+      fetchNews(currentPage + 1, true);
+    }
+  };
+
+  // 🔥 INFINITE SCROLL OBSERVER (Mobile)
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      entries => {
+        if (entries[0].isIntersecting && hasMore && !loadingMore && !loading) {
+          fetchNews(currentPage + 1, true);
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    const currentTarget = observerTarget.current;
+    if (currentTarget) {
+      observer.observe(currentTarget);
+    }
+
+    return () => {
+      if (currentTarget) {
+        observer.unobserve(currentTarget);
+      }
+    };
+  }, [hasMore, loadingMore, loading, currentPage, fetchNews]);
 
   // Fetch small ads for State News
   useEffect(() => {
@@ -158,19 +198,13 @@ export default function LocalNews() {
           const orderedAds = [...data.data];
           setAds(orderedAds);
 
-
-
           const total = orderedAds.length;
           let savedTop = parseInt(localStorage.getItem(SLOT_KEYS.TOP_RIGHT) ?? "0", 10);
           let savedBottom = parseInt(localStorage.getItem(SLOT_KEYS.BOTTOM_RIGHT) ?? "1", 10);
 
-
-
           if (isNaN(savedTop) || savedTop < 0 || savedTop >= total) savedTop = 0;
           if (isNaN(savedBottom) || savedBottom < 0 || savedBottom >= total) savedBottom = total > 1 ? 1 : 0;
           if (savedTop === savedBottom && total > 1) savedBottom = getNextIndex(savedTop, total);
-
-
 
           setTopRightIndex(savedTop);
           setBottomRightIndex(savedBottom);
@@ -180,8 +214,6 @@ export default function LocalNews() {
         console.error("Error fetching state news ads:", err);
       });
   }, []);
-
-
 
   // Fetch large ads for interleaving
   useEffect(() => {
@@ -197,29 +229,21 @@ export default function LocalNews() {
       });
   }, []);
 
-
-
   // Rotate ad index on next refresh after a close
   useEffect(() => {
     if (!ads.length) return;
     const total = ads.length;
-
-
 
     if (topRightClosed) {
       const nextTop = getNextIndex(topRightIndex, total);
       localStorage.setItem(SLOT_KEYS.TOP_RIGHT, String(nextTop));
     }
 
-
-
     if (bottomRightClosed) {
       const nextBottom = getNextIndex(bottomRightIndex, total);
       localStorage.setItem(SLOT_KEYS.BOTTOM_RIGHT, String(nextBottom));
     }
   }, [topRightClosed, bottomRightClosed, topRightIndex, bottomRightIndex, ads]);
-
-
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -229,11 +253,7 @@ export default function LocalNews() {
     });
   };
 
-
-
   const handleNewsClick = (id) => navigate(`/statenews/details/${id}`);
-
-
 
   // Desktop layout logic
   const getDesktopNewsLayout = () => {
@@ -243,8 +263,6 @@ export default function LocalNews() {
     return { bigTop, smallBoxes, bigMore };
   };
   const { bigTop, smallBoxes, bigMore } = getDesktopNewsLayout();
-
-
 
   // 🔥 OPTIMIZED: Show thumbnail for videos, actual image for images
   const renderMedia = (url, alt, className) => {
@@ -266,7 +284,6 @@ export default function LocalNews() {
               className={className}
               loading="lazy"
             />
-            {/* Play icon overlay */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               <div className="bg-white/90 rounded-full p-4 shadow-lg transition-transform duration-300 group-hover:scale-110">
                 <Play size={32} className="text-gray-800 fill-gray-800" />
@@ -280,12 +297,8 @@ export default function LocalNews() {
     return <img src={url} alt={alt} className={className} loading="lazy" />;
   };
 
-
-
   const topRightAd = ads.length ? ads[topRightIndex % ads.length] : null;
   const bottomRightAd = ads.length ? ads[bottomRightIndex % ads.length] : null;
-
-
 
   // Mobile interleaved: news then ads
   function buildInterleavedList(newsArr, adsArr) {
@@ -308,13 +321,9 @@ export default function LocalNews() {
   }
   const mobileItems = buildInterleavedList(newsList, largeAds);
 
-
-
   // Choose ads for desktop columns
   const desktopLargeBoxAds = largeAds.slice(0, 2);
   const desktopSmallBoxAds = largeAds.slice(2, 4);
-
-
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -325,8 +334,6 @@ export default function LocalNews() {
         <div className="fixed top-0 w-full z-30">
           <RightSidebar />
         </div>
-
-
 
         {/* Small ads top/bottom right */}
         <AnimatePresence>
@@ -350,8 +357,6 @@ export default function LocalNews() {
           )}
         </AnimatePresence>
 
-
-
         <main className="flex-1 flex flex-col gap-6 p-6 pt-24 items-center">
           <motion.div
             className="bg-emerald-700 text-white rounded-xl p-5 shadow-lg w-full max-w-6xl flex flex-col sm:flex-row items-center justify-between gap-4"
@@ -368,8 +373,6 @@ export default function LocalNews() {
             </div>
           </motion.div>
 
-
-
           {loading ? (
             <div className="flex justify-center items-center h-64">
               <Loader />
@@ -385,7 +388,7 @@ export default function LocalNews() {
             )
           ) : (
             <>
-              {/* Mobile: interleaved large ads + news (content first) */}
+              {/* 🔥 MOBILE: Infinite scroll with observer */}
               <div className="w-full max-w-6xl lg:hidden flex flex-col gap-6">
                 {mobileItems.map((item, i) =>
                   item.type === "ad" ? (
@@ -417,12 +420,9 @@ export default function LocalNews() {
                         )}
                       <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent" />
                       <div className="absolute bottom-0 p-6 text-white">
-                        {/* ✅ MOBILE: Smaller title size, full title up to 70 chars, wraps to next line */}
                         <h3 className="text-base font-semibold mb-3 capitalize leading-snug">
                           {truncateText(item.data.title, 120)}
                         </h3>
-                        {/* ✅ MOBILE: Description removed completely */}
-                        {/* ✅ MOBILE: Reduced size for author, verified badge, and date */}
                         <div className="flex items-center justify-between text-gray-300 text-xs">
                           <div className="flex items-center gap-1">
                             <span>
@@ -445,13 +445,24 @@ export default function LocalNews() {
                     </motion.div>
                   )
                 )}
+                
+                {/* 🔥 INFINITE SCROLL TRIGGER (Mobile) */}
+                <div ref={observerTarget} className="h-10 flex items-center justify-center">
+                  {loadingMore && (
+                    <div className="flex items-center gap-2 text-emerald-600">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-emerald-600"></div>
+                      <span className="text-sm font-medium">Loading more...</span>
+                    </div>
+                  )}
+                  {!hasMore && newsList.length > 0 && (
+                    <p className="text-gray-500 text-sm">No more news to load</p>
+                  )}
+                </div>
               </div>
 
-
-
-              {/* Desktop: two columns, show ads as boxes after news */}
+              {/* 🔥 DESKTOP: Load More Button */}
               <div className="w-full max-w-6xl hidden lg:grid grid-cols-[2fr_1fr] gap-6 items-start">
-                {/* Left: Big boxes (news, then large ads, then more news) */}
+                {/* Left: Big boxes */}
                 <div className="flex flex-col gap-6">
                   {bigTop.map((news, i) => (
                     <motion.div
@@ -476,7 +487,6 @@ export default function LocalNews() {
                           className="text-2xl font-bold mb-2 capitalize"
                           dangerouslySetInnerHTML={{ __html: news.title }}
                         />
-                        {/* ✅ DESKTOP: Description limited to 70 characters */}
                         <div className="text-sm text-gray-200 mb-3">
                           {truncateText(news.content, 70)}
                         </div>
@@ -499,7 +509,7 @@ export default function LocalNews() {
                       </div>
                     </motion.div>
                   ))}
-                  {/* Show large ads after the news entries in "big boxes" */}
+                  
                   {desktopLargeBoxAds.map((ad, i) => (
                     <LargeAd
                       key={"ad-desktop-large-" + (ad.id ?? i)}
@@ -511,6 +521,7 @@ export default function LocalNews() {
                       }
                     />
                   ))}
+                  
                   {bigMore.map((news, i) => (
                     <motion.div
                       key={news.id || `big-more-${i}`}
@@ -534,7 +545,6 @@ export default function LocalNews() {
                           className="text-2xl font-bold mb-2 capitalize"
                           dangerouslySetInnerHTML={{ __html: news.title }}
                         />
-                        {/* ✅ DESKTOP: Description limited to 70 characters */}
                         <div className="text-sm text-gray-200 mb-3">
                           {truncateText(news.content, 70)}
                         </div>
@@ -557,8 +567,38 @@ export default function LocalNews() {
                       </div>
                     </motion.div>
                   ))}
+                  
+                  {/* 🔥 LOAD MORE BUTTON (Desktop) */}
+                  {hasMore && (
+                    <motion.button
+                      onClick={handleLoadMore}
+                      disabled={loadingMore}
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-4 px-8 rounded-2xl shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-all duration-300"
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      {loadingMore ? (
+                        <>
+                          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                          <span>Loading...</span>
+                        </>
+                      ) : (
+                        <>
+                          <span>Load More News</span>
+                          <ChevronDown size={20} />
+                        </>
+                      )}
+                    </motion.button>
+                  )}
+                  
+                  {!hasMore && newsList.length > 0 && (
+                    <div className="text-center py-6 text-gray-500 font-medium">
+                      You've reached the end of news
+                    </div>
+                  )}
                 </div>
-                {/* Right: Small boxes (news then large ads, styled as small) */}
+                
+                {/* Right: Small boxes */}
                 <div className="flex flex-col gap-6 sticky top-24 h-[520px]">
                   {smallBoxes.map((news, i) => (
                     <motion.div
@@ -584,7 +624,6 @@ export default function LocalNews() {
                             __html: news.title,
                           }}
                         />
-                        {/* ✅ DESKTOP (Small Box): Description limited to 70 characters */}
                         <div className="text-xs text-gray-200 mb-1">
                           {truncateText(news.content, 70)}
                         </div>
@@ -609,7 +648,7 @@ export default function LocalNews() {
                       </div>
                     </motion.div>
                   ))}
-                  {/* Show large ads in small box column */}
+                  
                   {desktopSmallBoxAds.map((ad, i) => (
                     <LargeAd
                       key={"ad-desktop-small-" + (ad.id ?? i)}
