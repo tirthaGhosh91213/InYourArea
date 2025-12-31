@@ -5,6 +5,7 @@ import App from "./App.jsx";
 import OneSignal from "react-onesignal";
 import { syncPlayerIdToBackend } from "./utils/onesignalSync";
 import { HelmetProvider } from "react-helmet-async";
+import NewYearConfetti from "./components/NewYearConfetti.jsx";
 
 
 async function initOneSignalReact() {
@@ -58,6 +59,7 @@ initOneSignalReact();
 createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <HelmetProvider>
+      <NewYearConfetti />
       <App />
     </HelmetProvider>
   </React.StrictMode>
