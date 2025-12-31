@@ -9,7 +9,7 @@ import Footer from "./Footer.jsx";
 import FeatureRail from "./FeautreRail.jsx";
 import heroImage from "../assets/hero.jpg";
 import logo from "../assets/logo.png"; // Import your logo here
-import SmallAdd from "./SmallAdd"; // adjust path if needed
+import SmallAdd from "./SmallAdd";
 
 // Helper: circular index
 const getNextIndex = (current, total) => {
@@ -227,7 +227,7 @@ export default function InYourArea() {
       >
         <div className="relative w-screen h-full left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] bg-white py-0">
           <img
-            src={heroImage}
+            src={"./1000413957.jpg"}
             alt="Heroimage preview"
             className="block mx-auto w-full max-h-[500px] object-contain"
             loading="eager"
