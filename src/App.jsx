@@ -3,7 +3,9 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import HeroPage from "./components/heroPage";
 import Footer from "./components/Footer";
 import LocalNews from "./pages/LocalNews"; 
-import NotFound from "./components/NotFound";
+// import NotFound from "./components/NotFound";
+// import { NotFound } from "./components/ui/ghost-404-page-1"
+import { NotFoundPage } from "./components/ui/404-page-not-found"
 import Community from "./pages/Community";
 import Jobs from "./pages/Jobs";
 import Events from "./pages/Events";
@@ -97,7 +99,7 @@ export default function App() {
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         <Route path="/terms-conditions" element={<TermsConditions />} />
         
-        <Route path="*" element={<NotFound />} />
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </Router>
   );
