@@ -160,6 +160,9 @@ export default function LocalNewsDetails() {
   const [deletingCommentId, setDeletingCommentId] = useState(null);
   const [showShareMenu, setShowShareMenu] = useState(false);
 
+  // 🔥 NEW: Property Popup State
+  const [showPropertyPopup, setShowPropertyPopup] = useState(false);
+
   // Reply functionality states
   const [replyingToId, setReplyingToId] = useState(null);
   const [replyText, setReplyText] = useState("");
@@ -180,6 +183,15 @@ export default function LocalNewsDetails() {
 
   const touchStartX = useRef(0);
   const touchEndX = useRef(0);
+
+  // 🔥 NEW: Show Property Popup after 2 seconds
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowPropertyPopup(true);
+    }, 2000);
+
+    return () => clearTimeout(timer);
+  }, []);
 
   // 🔥 UPDATED: Helper renders media with Instagram-style video player
   const renderMedia = (url, alt, isFullscreen = false) => {
@@ -961,7 +973,6 @@ const isFirstMediaVideo = postImage && (
   )}
 </Helmet>
 
-
       <div className="flex h-screen bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden">
         {/* Ads */}
         {topRightAd && !topRightClosed && (
@@ -980,6 +991,51 @@ const isFirstMediaVideo = postImage && (
             onClose={() => setBottomRightClosed(true)}
           />
         )}
+
+        {/* 🔥 NEW: Property Popup */}
+        <AnimatePresence>
+          {showPropertyPopup && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4"
+              onClick={() => setShowPropertyPopup(false)}
+            >
+              <motion.div
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.8, opacity: 0 }}
+                transition={{ type: "spring", duration: 0.5 }}
+                className="relative max-w-md w-full"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Cross Button */}
+                <button
+                  onClick={() => setShowPropertyPopup(false)}
+                  className="absolute -top-3 -right-3 bg-white text-gray-800 rounded-full p-2 shadow-xl hover:bg-gray-100 transition z-10"
+                >
+                  <X size={24} />
+                </button>
+
+                {/* Property Image - Clickable */}
+                <div
+                  onClick={() => {
+                    setShowPropertyPopup(false);
+                    navigate('/properties');
+                  }}
+                  className="cursor-pointer"
+                >
+                  <img
+                    src="/proppopup.png"
+                    alt="Property Advertisement"
+                    className="w-full rounded-2xl shadow-2xl"
+                  />
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         <main className="flex-1 overflow-y-auto p-4 md:p-6 relative">
           <motion.button
