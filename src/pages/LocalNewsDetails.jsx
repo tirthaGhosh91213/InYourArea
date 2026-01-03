@@ -23,10 +23,6 @@ import {
   MoreVertical,
   Play,
   Pause,
-  Bed,
-  Bath,
-  Square,
-  Home,
 } from "lucide-react";
 import axios from "axios";
 import { toast } from "react-toastify";
@@ -164,10 +160,6 @@ export default function LocalNewsDetails() {
   const [deletingCommentId, setDeletingCommentId] = useState(null);
   const [showShareMenu, setShowShareMenu] = useState(false);
 
-  // 🔥 NEW: Property Popup States
-  const [showPropertyPopup, setShowPropertyPopup] = useState(false);
-  const [randomProperty, setRandomProperty] = useState(null);
-
   // Reply functionality states
   const [replyingToId, setReplyingToId] = useState(null);
   const [replyText, setReplyText] = useState("");
@@ -188,58 +180,6 @@ export default function LocalNewsDetails() {
 
   const touchStartX = useRef(0);
   const touchEndX = useRef(0);
-
-  // 🔥 NEW: Fetch Random Property
-  useEffect(() => {
-    const fetchRandomProperty = async () => {
-      try {
-        const timestamp = new Date().getTime();
-        const response = await fetch(
-          `https://api.jharkhandbiharupdates.com/api/v1/properties?t=${timestamp}`
-        );
-        const data = await response.json();
-
-        if (data.success && data.data && data.data.length > 0) {
-          // Filter only APPROVED and FOR_SALE/FOR_RENT properties
-          const availableProperties = data.data.filter(
-            (prop) =>
-              prop.status === "APPROVED" &&
-              (prop.propertyStatus === "FOR_SALE" || prop.propertyStatus === "FOR_RENT")
-          );
-
-          if (availableProperties.length > 0) {
-            // Pick random property
-            const randomIndex = Math.floor(Math.random() * availableProperties.length);
-            setRandomProperty(availableProperties[randomIndex]);
-          }
-        }
-      } catch (error) {
-        console.error("Error fetching properties:", error);
-      }
-    };
-
-    fetchRandomProperty();
-  }, []);
-
-  // 🔥 NEW: Show Property Popup after 2 seconds (only if property exists)
-  useEffect(() => {
-    if (randomProperty) {
-      const timer = setTimeout(() => {
-        setShowPropertyPopup(true);
-      }, 2000);
-
-      return () => clearTimeout(timer);
-    }
-  }, [randomProperty]);
-
-  // 🔥 NEW: Format Price Function
-  const formatPrice = (price) => {
-    if (!price) return "N/A";
-    const num = parseFloat(price);
-    if (num >= 10000000) return `₹${(num / 10000000).toFixed(2)} Cr`;
-    if (num >= 100000) return `₹${(num / 100000).toFixed(2)} L`;
-    return `₹${num.toLocaleString("en-IN")}`;
-  };
 
   // 🔥 UPDATED: Helper renders media with Instagram-style video player
   const renderMedia = (url, alt, isFullscreen = false) => {
@@ -1021,6 +961,7 @@ const isFirstMediaVideo = postImage && (
   )}
 </Helmet>
 
+
       <div className="flex h-screen bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden">
         {/* Ads */}
         {topRightAd && !topRightClosed && (
@@ -1039,121 +980,6 @@ const isFirstMediaVideo = postImage && (
             onClose={() => setBottomRightClosed(true)}
           />
         )}
-
-        {/* 🔥 NEW: Property Card Popup */}
-        <AnimatePresence>
-          {showPropertyPopup && randomProperty && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4"
-              onClick={() => setShowPropertyPopup(false)}
-            >
-              <motion.div
-                initial={{ scale: 0.8, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.8, opacity: 0 }}
-                transition={{ type: "spring", duration: 0.5 }}
-                className="relative max-w-md w-full"
-                onClick={(e) => e.stopPropagation()}
-              >
-                {/* Cross Button */}
-                <button
-                  onClick={() => setShowPropertyPopup(false)}
-                  className="absolute -top-3 -right-3 bg-white text-gray-800 rounded-full p-2 shadow-xl hover:bg-gray-100 transition z-10"
-                >
-                  <X size={24} />
-                </button>
-
-                {/* Property Card - Clickable */}
-                <motion.div
-                  whileHover={{ y: -5 }}
-                  onClick={() => {
-                    setShowPropertyPopup(false);
-                    navigate('/properties');
-                  }}
-                  className="bg-white rounded-3xl shadow-2xl overflow-hidden cursor-pointer border border-gray-100 hover:shadow-2xl transition-all duration-300"
-                >
-                  {/* Property Image */}
-                  <div className="relative h-64 overflow-hidden bg-gray-200">
-                    {randomProperty.imageUrls && randomProperty.imageUrls.length > 0 ? (
-                      <img
-                        src={randomProperty.imageUrls[0]}
-                        alt={randomProperty.title}
-                        className="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-green-100 to-blue-100">
-                        <Home size={64} className="text-gray-400" />
-                      </div>
-                    )}
-
-                    {/* Status Badge */}
-                    <div className="absolute top-4 right-4 z-10">
-                      <span
-                        className={`px-3 py-1 rounded-full text-xs font-bold shadow-lg ${
-                          randomProperty.propertyStatus === "FOR_SALE"
-                            ? "bg-blue-600 text-white"
-                            : "bg-orange-600 text-white"
-                        }`}
-                      >
-                        {randomProperty.propertyStatus === "FOR_SALE"
-                          ? "For Sale"
-                          : "For Rent"}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Property Details */}
-                  <div className="p-5">
-                    {/* Title */}
-                    <h3 className="text-xl font-bold text-gray-800 mb-2 break-words line-clamp-2">
-                      {randomProperty.title}
-                    </h3>
-
-                    {/* Location */}
-                    <div className="flex items-center text-gray-600 mb-4">
-                      <MapPin size={16} className="mr-1 flex-shrink-0 text-green-600" />
-                      <span className="text-sm line-clamp-1">
-                        {randomProperty.city}, {randomProperty.district}
-                      </span>
-                    </div>
-
-                    {/* Property Features */}
-                    <div className="flex items-center gap-4 text-sm text-gray-600 mb-4 flex-wrap">
-                      {randomProperty.totalArea && (
-                        <div className="flex items-center gap-1">
-                          <Square size={16} className="text-green-600" />
-                          <span>{randomProperty.totalArea} sq.ft</span>
-                        </div>
-                      )}
-                      {randomProperty.bedrooms && (
-                        <div className="flex items-center gap-1">
-                          <Bed size={16} className="text-green-600" />
-                          <span>{randomProperty.bedrooms} Beds</span>
-                        </div>
-                      )}
-                      {randomProperty.bathrooms && (
-                        <div className="flex items-center gap-1">
-                          <Bath size={16} className="text-green-600" />
-                          <span>{randomProperty.bathrooms} Baths</span>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Price */}
-                    <div className="flex items-center justify-between">
-                      <div className="text-2xl font-bold text-gray-900">
-                        {formatPrice(randomProperty.price)}
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
 
         <main className="flex-1 overflow-y-auto p-4 md:p-6 relative">
           <motion.button
@@ -1177,7 +1003,7 @@ const isFirstMediaVideo = postImage && (
             animate={{ opacity: 1, y: 0 }}
             className="max-w-3xl mx-auto bg-white rounded-3xl shadow-2xl p-4 md:p-6 space-y-6 border border-green-200"
           >
-            {/* Image/Video Carousel */}
+            {/* 🔥 UPDATED: Image/Video Carousel with Instagram-Style Video Player */}
             {news.imageUrls?.length > 0 && (
               <div 
                 className="relative w-full flex items-center justify-center bg-black rounded-2xl overflow-hidden shadow-lg"
