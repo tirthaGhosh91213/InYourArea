@@ -15,6 +15,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import logo from "../assets/logo.png";
 
 
+
 const states = [
   "----------- States -----------",
   "Bihar",
@@ -22,7 +23,9 @@ const states = [
 ];
 
 
+
 const MERAKI_LINK = "https://www.ulmind.com";
+
 
 
 export default function Sidebar({ sidebarOpen, onClose }) {
@@ -38,12 +41,15 @@ export default function Sidebar({ sidebarOpen, onClose }) {
   });
 
 
+
   const [dropdownOpen, setDropdownOpen] = useState(false);
+
 
 
   useEffect(() => {
     const storedRole = localStorage.getItem("role");
     if (storedRole) setRole(storedRole);
+
 
 
     const onStorageChange = (e) => {
@@ -61,6 +67,7 @@ export default function Sidebar({ sidebarOpen, onClose }) {
   }, [selectedState, location.pathname]);
 
 
+
   const handleStateSelect = (state) => {
     if (state.startsWith("-")) return;
     setSelectedState(state);
@@ -68,6 +75,7 @@ export default function Sidebar({ sidebarOpen, onClose }) {
     localStorage.setItem("state", state);
     window.location.replace(`/statenews/${encodeURIComponent(state)}`);
   };
+
 
 
   useEffect(() => {
@@ -82,10 +90,12 @@ export default function Sidebar({ sidebarOpen, onClose }) {
   }, [selectedState, location.pathname, navigate]);
 
 
+
   const isActive = (path) =>
     path.startsWith("/statenews")
       ? location.pathname.startsWith("/statenews")
       : location.pathname === path;
+
 
 
   const menuItems = [
@@ -101,10 +111,12 @@ export default function Sidebar({ sidebarOpen, onClose }) {
   ];
 
 
+
   const getPostOptions = () => {
     if (role === "admin") return ["Local News", "Jobs", "Events", "Community", "Properties"];
     return ["Jobs", "Events", "Community", "Properties"];
   };
+
 
 
   // ✅ MODIFIED: Added Properties case
@@ -132,6 +144,7 @@ export default function Sidebar({ sidebarOpen, onClose }) {
   };
 
 
+
   const handleMenuClick = (item) => {
     if (item.name === "State News") {
       if (!selectedState) {
@@ -143,6 +156,7 @@ export default function Sidebar({ sidebarOpen, onClose }) {
       navigate(item.path);
     }
   };
+
 
 
   return (
@@ -157,13 +171,21 @@ export default function Sidebar({ sidebarOpen, onClose }) {
         >
           <div>
             <div className="flex items-center justify-between ">
-              <img
-                src={logo}
-                alt="Logo"
-                className="max-h-32 w-auto mt-3 select-none sm:max-h-28 md:max-h-28"
-                style={{ marginLeft: '40px' }}
-                draggable={false}
-              />
+              {/* 🔥 NEW: Clickable Logo */}
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => navigate("/")}
+                className="cursor-pointer"
+              >
+                <img
+                  src={logo}
+                  alt="Logo"
+                  className="max-h-32 w-auto mt-3 select-none sm:max-h-28 md:max-h-28"
+                  style={{ marginLeft: '40px' }}
+                  draggable={false}
+                />
+              </motion.div>
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
