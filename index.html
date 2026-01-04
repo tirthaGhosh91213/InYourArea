@@ -8,7 +8,7 @@
     <title>JHARKHAND BIHAR UPDATES</title>
     <meta name="title" content="JHARKHAND BIHAR UPDATES - Your Region. Your News. Your Voice." />
     <meta name="description" content="Jharkhand Bihar Updates is a leading regional digital news platform dedicated to delivering accurate, timely, and ground-level news from Jharkhand and Bihar. We focus on stories that matter most to local people—covering politics, administration, crime, education, employment, business, culture, and social issues—straight from the source. Our strength lies in on-ground reporting, exclusive local updates, and community-driven storytelling." />
-    <meta name="keywords" content="Jharkhand news, Bihar news, regional news, local news, politics, crime, education, employment, business news, Jharkhand Bihar Updates" />
+    <meta name="keywords" content="Jharkhand news, Bihar news, regional news, local news, politics, crime, education, employment, business news, Jharkhand Bihar Updates, jharkhand updates, bihar updates" />
     <meta name="author" content="Jharkhand Bihar Updates" />
     <meta name="robots" content="index, follow" />
     
@@ -41,6 +41,7 @@
     <meta name="twitter:image" content="https://jharkhandupdates.com/banner.jpg" />
     <meta name="twitter:image:alt" content="Jharkhand Bihar Updates - Regional News Platform" />
 
+
     <!-- PWA Meta Tags -->
     <meta name="theme-color" content="#10b981" />
     <meta name="description" content="JHARKHAND BIHAR UPDATES - Your Region. Your News. Your Voice." />
@@ -52,7 +53,61 @@
     
     <!-- Additional SEO Tags -->
     <link rel="canonical" href="https://jharkhandupdates.com/" />
-    <meta name="theme-color" content="#ffffff" />
+
+
+    <!-- ✅ NEW: NewsMediaOrganization Schema (CRITICAL FOR GOOGLE NEWS) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "NewsMediaOrganization",
+      "name": "Jharkhand Bihar Updates",
+      "alternateName": "Jharkhand Updates",
+      "url": "https://jharkhandupdates.com",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://jharkhandupdates.com/logo.png",
+        "width": 512,
+        "height": 512
+      },
+      "description": "Leading regional digital news platform delivering accurate, timely, and ground-level news from Jharkhand and Bihar",
+      "sameAs": [
+        "https://www.facebook.com/JharkhandBiharUpdates"
+      ],
+      "address": {
+        "@type": "PostalAddress",
+        "addressRegion": "Jharkhand",
+        "addressCountry": "IN"
+      },
+      "areaServed": [
+        {
+          "@type": "Place",
+          "name": "Jharkhand"
+        },
+        {
+          "@type": "Place",
+          "name": "Bihar"
+        }
+      ],
+      "knowsAbout": ["Politics", "Crime", "Education", "Employment", "Business", "Regional News"]
+    }
+    </script>
+
+
+    <!-- ✅ NEW: WebSite Schema with SearchAction -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "Jharkhand Bihar Updates",
+      "url": "https://jharkhandupdates.com/",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": "https://jharkhandupdates.com/search?q={search_term_string}",
+        "query-input": "required name=search_term_string"
+      }
+    }
+    </script>
+
 
     <!-- Google AdSense Script -->
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4004104553380757"
