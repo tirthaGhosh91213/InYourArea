@@ -369,8 +369,8 @@ export default function Properties() {
                     <option value="ALL">All Status</option>
                     <option value="FOR_SALE">For Sale</option>
                     <option value="FOR_RENT">For Rent</option>
-                    <option value="SOLD">Sold</option>
-                    <option value="RENTED">Rented</option>
+                    {/* <option value="SOLD">Sold</option>
+                    <option value="RENTED">Rented</option> */}
                   </select>
                   <ChevronDown
                     className="absolute right-3 top-9 text-gray-500 pointer-events-none"
