@@ -1,6 +1,6 @@
 // src/components/InYourArea.jsx
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { MapPin } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ToastContainer, toast } from "react-toastify";
@@ -11,11 +11,13 @@ import heroImage from "../assets/hero.jpg";
 import logo from "../assets/logo.png"; // Import your logo here
 import SmallAdd from "./SmallAdd";
 
+
 // Helper: circular index
 const getNextIndex = (current, total) => {
   if (total === 0) return 0;
   return (current + 1) % total;
 };
+
 
 // LocalStorage keys for InYourArea ads
 const SLOT_KEYS = {
@@ -23,8 +25,10 @@ const SLOT_KEYS = {
   BOTTOM_RIGHT: "INYOURAREA_AD_INDEX_BOTTOM_RIGHT",
 };
 
+
 export default function InYourArea() {
   const navigate = useNavigate();
+
 
   const states = [
   "----------- States -----------",
@@ -32,7 +36,9 @@ export default function InYourArea() {
   "Jharkhand",
 ];
 
+
   const [selectedState, setSelectedState] = useState("");
+
 
 
   // Ads state
@@ -42,6 +48,7 @@ export default function InYourArea() {
   const [topRightClosed, setTopRightClosed] = useState(false);
   const [bottomRightClosed, setBottomRightClosed] = useState(false);
 
+
   const onSubmit = () => {
   if (!selectedState || selectedState.startsWith("-")) {
     toast.error("Please select your state!", { autoClose: 1000 });
@@ -50,6 +57,7 @@ export default function InYourArea() {
   localStorage.setItem("state", selectedState);
   navigate(`/statenews/${encodeURIComponent(selectedState)}`);
 };
+
 
   // Fetch small ads for InYourArea
   useEffect(() => {
@@ -65,6 +73,7 @@ export default function InYourArea() {
           const orderedAds = [...data.data];
           setAds(orderedAds);
 
+
           const total = orderedAds.length;
           let savedTop = parseInt(
             localStorage.getItem(SLOT_KEYS.TOP_RIGHT) ?? "0",
@@ -75,6 +84,7 @@ export default function InYourArea() {
             10
           );
 
+
           if (isNaN(savedTop) || savedTop < 0 || savedTop >= total) {
             savedTop = 0;
           }
@@ -82,9 +92,11 @@ export default function InYourArea() {
             savedBottom = total > 1 ? 1 : 0;
           }
 
+
           if (savedTop === savedBottom && total > 1) {
             savedBottom = getNextIndex(savedTop, total);
           }
+
 
           setTopRightIndex(savedTop);
           setBottomRightIndex(savedBottom);
@@ -95,15 +107,18 @@ export default function InYourArea() {
       });
   }, []);
 
+
   // Rotate ad index on next refresh after close
   useEffect(() => {
     if (!ads.length) return;
     const total = ads.length;
 
+
     if (topRightClosed) {
       const nextTop = getNextIndex(topRightIndex, total);
       localStorage.setItem(SLOT_KEYS.TOP_RIGHT, String(nextTop));
     }
+
 
     if (bottomRightClosed) {
       const nextBottom = getNextIndex(bottomRightIndex, total);
@@ -111,8 +126,10 @@ export default function InYourArea() {
     }
   }, [topRightClosed, bottomRightClosed, topRightIndex, bottomRightIndex, ads]);
 
+
   const topRightAd = ads.length ? ads[topRightIndex % ads.length] : null;
   const bottomRightAd = ads.length ? ads[bottomRightIndex % ads.length] : null;
+
 
   return (
     <div className="min-h-screen bg-white flex flex-col font-sans overflow-x-hidden">
@@ -136,6 +153,7 @@ export default function InYourArea() {
         )}
       </AnimatePresence>
 
+
       {/* Header */}
       <motion.header
         initial={{ y: -80, opacity: 0 }}
@@ -155,6 +173,7 @@ export default function InYourArea() {
         </div>
       </motion.header>
 
+
       {/* Hero Section */}
       <motion.section
         initial={{ opacity: 0, y: 40 }}
@@ -164,14 +183,16 @@ export default function InYourArea() {
       >
         <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 mb-4 leading-relaxed">
           The Jharkhand & Bihar Leading{" "}
-          <span className="text-green-700">Local News</span>,{" "}
-          <span className="text-green-700">Events</span> &amp;{" "}
-          <span className="text-green-700">Jobs</span> &amp;{" "}
-          <span className="text-green-700">Community</span> Platform
+          <Link to="/statenews/Jharkhand" className="text-green-700 hover:underline">State News</Link>,{" "}
+          <Link to="/events" className="text-green-700 hover:underline">Events</Link>,{" "}
+          <Link to="/jobs" className="text-green-700 hover:underline">Jobs</Link>,{" "}
+          <Link to="/community" className="text-green-700 hover:underline">Community</Link> &amp;{" "}
+          <Link to="/properties" className="text-green-700 hover:underline">Properties</Link> Platform
         </h1>
         <p className="mt-2 text-gray-600 text-base sm:text-lg">
           Select your state to see state news
         </p>
+
 
         {/* District Dropdown */}
         <motion.div
@@ -218,6 +239,7 @@ export default function InYourArea() {
         </motion.div>
       </motion.section>
 
+
       {/* Hero Image */}
       <motion.section
         initial={{ opacity: 0, scale: 0.98 }}
@@ -236,8 +258,10 @@ export default function InYourArea() {
         </div>
       </motion.section>
 
+
       <FeatureRail />
       <Footer className="mt-0 pt-0" />
+
 
       {/* Toastify Container */}
       <ToastContainer
