@@ -59,7 +59,7 @@ initOneSignalReact();
 createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <HelmetProvider>
-      <NewYearConfetti />
+      {/* <NewYearConfetti /> comment out that new year celebration */}
       <App />
     </HelmetProvider>
   </React.StrictMode>
