@@ -869,13 +869,13 @@ export default function CommunityDetails() {
             animate={{ opacity: 1, y: 0 }}
             className="max-w-3xl mx-auto bg-white rounded-3xl shadow-2xl p-4 md:p-6 space-y-6 border border-green-200"
           >
-            {/* Image Section - Only if images exist */}
+            {/* 🔥 FIXED: Full image with natural ratio - Only if images exist */}
             {hasImages && (
-              <div className="relative w-full h-60 sm:h-72 md:h-80 rounded-2xl overflow-hidden shadow-lg">
+              <div className="relative w-full rounded-2xl overflow-hidden shadow-lg">
                 {renderMedia(
                   post.imageUrls[currentImage],
                   hasTitle ? post.title : "Post image",
-                  "w-full h-full object-cover rounded-2xl transition-all duration-500 bg-black"
+                  "w-full h-auto object-contain rounded-2xl transition-all duration-500 bg-gray-50"
                 )}
                 {post.imageUrls.length > 1 && (
                   <>

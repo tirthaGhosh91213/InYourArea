@@ -254,19 +254,23 @@ export default function JobDetails() {
     fetchCurrentUser();
   }, [token]);
 
+  // 🔥 FIXED: Fetch specific job by ID
   const fetchJob = async () => {
     try {
       setLoading(true);
       const res = await axios.get(
-        `https://api.jharkhandbiharupdates.com/api/v1/jobs`,
+        `https://api.jharkhandbiharupdates.com/api/v1/jobs/${id}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-      const foundJob = res.data.data.find((j) => j.id.toString() === id);
-      setJob(foundJob);
-    } catch {
-      toast.error("Failed to fetch job");
+      if (res.data.success) {
+        setJob(res.data.data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch job:", error);
+      toast.error("Failed to fetch job details");
+      navigate("/jobs");
     } finally {
       setLoading(false);
     }
@@ -527,7 +531,6 @@ export default function JobDetails() {
     }
   }, [topRightClosed, bottomRightClosed, topRightIndex, bottomRightIndex, ads]);
 
-  
   // 🔥 PERFECT HIERARCHY - Recursive Comment Renderer with Blue Tick
   const renderComment = (comment, level = 0) => {
     const isEditing = editingCommentId === comment.id;
@@ -813,12 +816,13 @@ export default function JobDetails() {
             animate={{ opacity: 1, y: 0 }}
             className="max-w-3xl mx-auto bg-white rounded-3xl shadow-2xl p-4 md:p-6 space-y-6 border border-green-200"
           >
+            {/* 🔥 FIXED: Full image with natural ratio, no cropping */}
             {job.imageUrls?.length > 0 && (
-              <div className="relative w-full h-60 sm:h-72 md:h-80 rounded-2xl overflow-hidden shadow-lg">
+              <div className="relative w-full rounded-2xl overflow-hidden shadow-lg">
                 <img
                   src={job.imageUrls[currentImage]}
                   alt={job.title}
-                  className="w-full h-full object-cover transition-all duration-500 rounded-2xl cursor-pointer"
+                  className="w-full h-auto object-contain transition-all duration-500 rounded-2xl cursor-pointer bg-gray-50"
                   onClick={() => setIsFullscreen(true)}
                 />
                 {job.imageUrls.length > 1 && (
@@ -1031,8 +1035,9 @@ export default function JobDetails() {
                 className={`text-gray-700 whitespace-pre-line leading-relaxed text-base md:text-lg transition-all duration-500 ${
                   isExpanded ? "" : "line-clamp-4"
                 }`}
-                dangerouslySetInnerHTML={{ __html: job.description }}
-              />
+              >
+                {job.description}
+              </div>
               <button
                 onClick={() => setIsExpanded(!isExpanded)}
                 className="mt-2 text-green-700 font-semibold hover:underline"
@@ -1112,6 +1117,7 @@ export default function JobDetails() {
           </motion.div>
         </main>
 
+        {/* Fullscreen Image */}
         <AnimatePresence>
           {isFullscreen && job.imageUrls?.length > 0 && (
             <motion.div
