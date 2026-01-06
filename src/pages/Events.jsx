@@ -20,11 +20,13 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import Loader from "../components/Loader";
 
+
 // Helper: Get next index in circular manner
 function getNextIndex(current, total) {
   if (total === 0) return 0;
   return (current + 1) % total;
 }
+
 
 // Helper: Shuffle an array (for large ads order)
 function shuffle(array) {
@@ -36,12 +38,14 @@ function shuffle(array) {
   return arr;
 }
 
+
 const SLOT_KEYS = {
   TOP_RIGHT: "EVENTS_AD_INDEX_TOP_RIGHT",
   BOTTOM_RIGHT: "EVENTS_AD_INDEX_BOTTOM_RIGHT",
   LARGE_AD_1: "EVENTS_LARGE_AD_INDEX_1",
   LARGE_AD_2: "EVENTS_LARGE_AD_INDEX_2",
 };
+
 
 // 🔥 Check if event is over - using END DATE if available, otherwise START DATE
 const isEventOver = (eventDate, endDate) => {
@@ -61,15 +65,17 @@ const isEventOver = (eventDate, endDate) => {
   return eventOnlyDate < todayDate;
 };
 
+
 // Event Card Component - WITH EVENT OVER STAMP
 const EventCard = ({ event, index }) => {
   const navigate = useNavigate();
   
   const hasLocation = event.location && event.location.trim();
   const hasDate = event.eventDate;
-  const hasEndDate = event.endDate; // 🆕 Check for end date
+  const hasEndDate = event.endDate;
   const hasRegLink = event.reglink && event.reglink.trim();
-  const eventIsOver = isEventOver(event.eventDate, event.endDate); // 🆕 Pass both dates
+  const eventIsOver = isEventOver(event.eventDate, event.endDate);
+
 
   const formatDate = (dateString) => {
     if (!dateString) return null;
@@ -89,7 +95,7 @@ const EventCard = ({ event, index }) => {
     };
   };
 
-  // 🆕 Format date without time (for end date)
+
   const formatDateOnly = (dateString) => {
     if (!dateString) return null;
     const date = new Date(dateString);
@@ -100,8 +106,10 @@ const EventCard = ({ event, index }) => {
     });
   };
 
+
   const dateInfo = hasDate ? formatDate(event.eventDate) : null;
-  const endDateInfo = hasEndDate ? formatDateOnly(event.endDate) : null; // 🆕
+  const endDateInfo = hasEndDate ? formatDateOnly(event.endDate) : null;
+
 
   return (
     <motion.div
@@ -145,24 +153,26 @@ const EventCard = ({ event, index }) => {
         </motion.div>
       )}
 
+
       {/* INNER CARD */}
       <div className={`relative bg-white rounded-2xl overflow-hidden transition-all duration-300 ${
         eventIsOver ? "grayscale-[50%]" : ""
       }`}>
-        {/* Image Container with Date Badge */}
-        <div className="relative h-56 overflow-hidden group">
+        {/* 🚀 MODIFIED: Image Container - Dynamic Height (No Fixed Height) */}
+        <div className="relative w-full overflow-hidden group bg-gray-50">
           {Array.isArray(event.imageUrls) && event.imageUrls.length > 0 ? (
             <img
               src={event.imageUrls[0]}
               alt={event.title}
-              className={`w-full h-full object-cover transition-all duration-500 ${
+              className={`w-full h-auto object-contain transition-all duration-500 ${
                 eventIsOver 
                   ? "group-hover:scale-105 filter brightness-75" 
                   : "group-hover:scale-110"
               }`}
+              style={{ display: 'block', maxHeight: '500px' }}
             />
           ) : (
-            <div className={`w-full h-full flex items-center justify-center ${
+            <div className={`w-full h-56 flex items-center justify-center ${
               eventIsOver 
                 ? "bg-gradient-to-br from-gray-400 to-gray-500" 
                 : "bg-gradient-to-br from-purple-400 to-blue-500"
@@ -171,10 +181,12 @@ const EventCard = ({ event, index }) => {
             </div>
           )}
 
+
           {/* Semi-transparent overlay for past events */}
           {eventIsOver && (
             <div className="absolute inset-0 bg-black/20"></div>
           )}
+
 
           {/* Date Badge - Top Left */}
           {dateInfo && (
@@ -199,6 +211,7 @@ const EventCard = ({ event, index }) => {
           )}
         </div>
 
+
         {/* Content Section */}
         <div className="p-5 bg-white">
           {/* Title */}
@@ -209,6 +222,7 @@ const EventCard = ({ event, index }) => {
           }`}>
             {event.title}
           </h3>
+
 
           {/* Event Details */}
           <div className="space-y-2 mb-4">
@@ -223,7 +237,8 @@ const EventCard = ({ event, index }) => {
               </div>
             )}
 
-            {/* 🆕 Date Range Display (if both start and end dates exist) */}
+
+            {/* Date Range Display (if both start and end dates exist) */}
             {dateInfo && endDateInfo && (
               <div className={`flex items-center gap-2 ${
                 eventIsOver ? "text-gray-400" : "text-gray-600"
@@ -237,6 +252,7 @@ const EventCard = ({ event, index }) => {
               </div>
             )}
 
+
             {/* Single Date Display (if only start date exists) */}
             {dateInfo && !endDateInfo && (
               <div className={`flex items-center gap-2 ${
@@ -248,6 +264,7 @@ const EventCard = ({ event, index }) => {
                 <span className="text-sm">{dateInfo.fullDate}</span>
               </div>
             )}
+
 
             {dateInfo && (
               <div className={`flex items-center gap-2 ${
@@ -261,7 +278,6 @@ const EventCard = ({ event, index }) => {
             )}
           </div>
 
-          {/* ❌ REMOVED: Author Info Section */}
 
           {/* Action Buttons */}
           <div className="flex gap-3">
@@ -279,6 +295,7 @@ const EventCard = ({ event, index }) => {
                 Registration
               </motion.button>
             )}
+
 
             {/* View Details Button - Always visible */}
             <motion.button
@@ -298,7 +315,8 @@ const EventCard = ({ event, index }) => {
             </motion.button>
           </div>
 
-          {/* 🔥 Event Over Notice (below buttons) */}
+
+          {/* Event Over Notice (below buttons) */}
           {eventIsOver && (
             <motion.div
               initial={{ opacity: 0, y: -10 }}
@@ -320,11 +338,13 @@ const EventCard = ({ event, index }) => {
   );
 };
 
+
 export default function Events() {
   const navigate = useNavigate();
   const [events, setEvents] = useState([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
+
 
   const [ads, setAds] = useState([]);
   const [topRightIndex, setTopRightIndex] = useState(0);
@@ -332,11 +352,13 @@ export default function Events() {
   const [topRightClosed, setTopRightClosed] = useState(false);
   const [bottomRightClosed, setBottomRightClosed] = useState(false);
 
+
   const [largeAds, setLargeAds] = useState([]);
   const [largeAdIndexes, setLargeAdIndexes] = useState([0, 1]);
   const [largeAd1Closed, setLargeAd1Closed] = useState(false);
   const [largeAd2Closed, setLargeAd2Closed] = useState(false);
   const timerRef = useRef();
+
 
   // Fetch events
   const fetchEvents = async () => {
@@ -353,8 +375,10 @@ export default function Events() {
     }
   };
 
+
   useEffect(() => {
     fetchEvents();
+
 
     // Fetch small ads
     fetch("https://api.jharkhandbiharupdates.com/api/v1/banner-ads/active/small")
@@ -363,6 +387,7 @@ export default function Events() {
         if (data && data.data && Array.isArray(data.data) && data.data.length > 0) {
           const orderedAds = [...data.data];
           setAds(orderedAds);
+
 
           const total = orderedAds.length;
           let savedTop = parseInt(
@@ -373,6 +398,7 @@ export default function Events() {
             localStorage.getItem(SLOT_KEYS.BOTTOM_RIGHT) ?? "1",
             10
           );
+
 
           if (total === 1) {
             setTopRightIndex(0);
@@ -386,12 +412,14 @@ export default function Events() {
             if (savedTop === savedBottom && total > 1)
               savedBottom = getNextIndex(savedTop, total);
 
+
             setTopRightIndex(savedTop);
             setBottomRightIndex(savedBottom);
           }
         }
       })
       .catch((err) => console.error("Error fetching events small ads:", err));
+
 
     // Fetch large ads
     fetch("https://api.jharkhandbiharupdates.com/api/v1/banner-ads/active/large")
@@ -400,6 +428,7 @@ export default function Events() {
         if (data && Array.isArray(data.data)) {
           const shuffled = shuffle(data.data);
           setLargeAds(shuffled);
+
 
           let largeAdIdx1 = parseInt(
             localStorage.getItem(SLOT_KEYS.LARGE_AD_1) ?? "0",
@@ -410,6 +439,7 @@ export default function Events() {
             10
           );
           const total = shuffled.length;
+
 
           if (total === 1) {
             setLargeAdIndexes([0]);
@@ -423,6 +453,7 @@ export default function Events() {
             if (largeAdIdx1 === largeAdIdx2 && total > 1)
               largeAdIdx2 = getNextIndex(largeAdIdx1, total);
 
+
             setLargeAdIndexes([largeAdIdx1, largeAdIdx2]);
           }
         }
@@ -431,6 +462,7 @@ export default function Events() {
         console.error("Error fetching events large ads:", err);
       });
   }, []);
+
 
   useEffect(() => {
     if (!ads.length || ads.length === 1) return;
@@ -445,9 +477,11 @@ export default function Events() {
     }
   }, [topRightClosed, bottomRightClosed, topRightIndex, bottomRightIndex, ads]);
 
+
   useEffect(() => {
     if (largeAds.length === 0 || largeAds.length === 1) return;
     if (timerRef.current) clearInterval(timerRef.current);
+
 
     timerRef.current = setInterval(() => {
       setLargeAdIndexes(([idx1, idx2]) => {
@@ -457,16 +491,19 @@ export default function Events() {
         if (nextIdx1 === nextIdx2 && total > 1)
           nextIdx2 = getNextIndex(nextIdx1, total);
 
+
         localStorage.setItem(SLOT_KEYS.LARGE_AD_1, String(nextIdx1));
         localStorage.setItem(SLOT_KEYS.LARGE_AD_2, String(nextIdx2));
         return [nextIdx1, nextIdx2];
       });
     }, 10000);
 
+
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
   }, [largeAds]);
+
 
   // Filter events
   const filteredEvents = events.filter((e) => {
@@ -476,6 +513,7 @@ export default function Events() {
     return title.includes(q) || location.includes(q);
   });
 
+
   // Desktop: split into two event columns
   const leftEvents = [];
   const centerEvents = [];
@@ -483,6 +521,7 @@ export default function Events() {
     if (idx % 2 === 0) leftEvents.push(event);
     else centerEvents.push(event);
   });
+
 
   // Small ads
   const topRightAd =
@@ -492,11 +531,13 @@ export default function Events() {
       ? ads[bottomRightIndex % ads.length]
       : null;
 
+
   // Helper: build mobile sequence
   const buildMobileItems = () => {
     const items = [];
     if (!filteredEvents.length) return items;
     let adPtr = 0;
+
 
     if (filteredEvents.length === 1) {
       if (largeAds.length > 0)
@@ -507,6 +548,7 @@ export default function Events() {
       return items;
     }
 
+
     if (filteredEvents.length === 2) {
       items.push({ type: "event", event: filteredEvents[0] });
       if (largeAds.length > 0)
@@ -516,6 +558,7 @@ export default function Events() {
         items.push({ type: "ad", adIndex: largeAdIndexes[1] ?? 0 });
       return items;
     }
+
 
     for (let i = 0; i < filteredEvents.length; i++) {
       items.push({ type: "event", event: filteredEvents[i] });
@@ -533,7 +576,9 @@ export default function Events() {
     return items;
   };
 
+
   const mobileItems = buildMobileItems();
+
 
   return (
     <>
@@ -541,6 +586,7 @@ export default function Events() {
       <div className="w-full fixed top-0 left-0 z-50 bg-white shadow-md border-b border-gray-200">
         <RightSidebar refreshEvents={fetchEvents} />
       </div>
+
 
       {/* Small Ads */}
       <AnimatePresence>
@@ -562,12 +608,14 @@ export default function Events() {
         )}
       </AnimatePresence>
 
+
       {/* Page Layout */}
       <div className="flex min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-white pt-16">
         {/* Left Sidebar */}
         <div className="hidden lg:block w-64 bg-white shadow-md border-r border-gray-200">
           <Sidebar activePage="events" />
         </div>
+
 
         {/* Main Content */}
         <main className="flex-1 flex flex-col items-center px-4 pt-6 pb-10">
@@ -607,6 +655,7 @@ export default function Events() {
             </div>
           </motion.div>
 
+
           {/* Loading State */}
           {loading ? (
             <div className="flex justify-center items-center py-20">
@@ -643,6 +692,7 @@ export default function Events() {
                 )}
               </div>
 
+
               {/* DESKTOP: events grid + sticky ads */}
               <div className="hidden md:grid md:grid-cols-3 gap-6 w-full max-w-7xl pb-10">
                 {/* First Column: Events (even indexes) */}
@@ -659,12 +709,14 @@ export default function Events() {
                   ))}
                 </div>
 
+
                 {/* Second Column: Events (odd indexes) */}
                 <div className="flex flex-col gap-6">
                   {centerEvents.map((event, idx) => (
                     <EventCard key={`center-${event.id}`} event={event} index={idx * 2 + 1} />
                   ))}
                 </div>
+
 
                 {/* Third Column: Sponsored Ads (sticky) */}
                 <div className="flex">
@@ -674,6 +726,7 @@ export default function Events() {
                         if (i === 0 && largeAd1Closed) return null;
                         if (i === 1 && largeAd2Closed) return null;
                         if (!largeAds[idx]) return null;
+
 
                         return (
                           <motion.div
@@ -695,6 +748,7 @@ export default function Events() {
                             >
                               <X className="w-4 h-4 text-gray-700" />
                             </motion.button>
+
 
                             <LargeAd
                               ad={largeAds[idx]}
