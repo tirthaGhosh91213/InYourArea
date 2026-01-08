@@ -28,7 +28,7 @@ import { toast } from "react-toastify";
 import { MdVerified } from "react-icons/md";
 import SmallAdd from "../components/SmallAdd";
 import Loader from '../components/Loader';
-
+import { Helmet } from 'react-helmet-async';
 // Helper: circular index
 const getNextIndex = (current, total) => {
   if (total === 0) return 0;
@@ -794,7 +794,7 @@ export default function JobDetails() {
           <meta name="twitter:image" content={job.imageUrls?.[0] || job.companyLogo} />
         </Helmet>
       )}
-      
+
       <div className="flex h-screen bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden">
         {/* Ads like Events/Jobs list/LocalNews */}
         {topRightAd && !topRightClosed && (
