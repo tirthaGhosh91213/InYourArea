@@ -775,6 +775,26 @@ export default function JobDetails() {
 
   return (
     <>
+    {job && (
+        <Helmet>
+          <title>{job.jobTitle || job.title} - JHARKHAND BIHAR UPDATES</title>
+          <meta name="description" content={job.description?.substring(0, 200)} />
+          
+          {/* Open Graph Tags */}
+          <meta property="og:type" content="article" />
+          <meta property="og:title" content={job.jobTitle || job.title} />
+          <meta property="og:description" content={job.description?.substring(0, 200)} />
+          <meta property="og:image" content={job.imageUrls?.[0] || job.companyLogo} />
+          <meta property="og:url" content={window.location.href} />
+          
+          {/* Twitter Card */}
+          <meta name="twitter:card" content="summary_large_image" />
+          <meta name="twitter:title" content={job.jobTitle || job.title} />
+          <meta name="twitter:description" content={job.description?.substring(0, 200)} />
+          <meta name="twitter:image" content={job.imageUrls?.[0] || job.companyLogo} />
+        </Helmet>
+      )}
+      
       <div className="flex h-screen bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden">
         {/* Ads like Events/Jobs list/LocalNews */}
         {topRightAd && !topRightClosed && (
