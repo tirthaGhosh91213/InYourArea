@@ -28,6 +28,8 @@ import Sidebar from "../components/SideBar";
 import RightSidebar from "../components/RightSidebar";
 import Loader from "../components/Loader";
 
+import { Helmet } from 'react-helmet-async';
+
 export default function PropertyDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
