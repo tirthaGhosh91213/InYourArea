@@ -336,6 +336,32 @@ export default function PropertyDetails() {
 
   return (
     <>
+    {property && (
+        <Helmet>
+          <title>{property.title} - JHARKHAND BIHAR UPDATES</title>
+          <meta name="description" content={property.description?.substring(0, 200)} />
+          
+          {/* Open Graph Tags */}
+          <meta property="og:type" content="article" />
+          <meta property="og:title" content={property.title} />
+          <meta property="og:description" content={property.description?.substring(0, 200)} />
+          <meta property="og:image" content={property.imageUrls?.[0]} />
+          <meta property="og:url" content={window.location.href} />
+          
+          {/* Twitter Card */}
+          <meta name="twitter:card" content="summary_large_image" />
+          <meta name="twitter:title" content={property.title} />
+          <meta name="twitter:description" content={property.description?.substring(0, 200)} />
+          <meta name="twitter:image" content={property.imageUrls?.[0]} />
+          
+          {/* Additional Property-specific meta */}
+          <meta property="product:price:amount" content={property.price} />
+          <meta property="product:price:currency" content="INR" />
+        </Helmet>
+      )}
+
+
+
       {/* Top Navbar */}
       <div className="w-full fixed top-0 left-0 z-50 bg-white shadow-md border-b border-gray-200">
         <RightSidebar />
