@@ -260,9 +260,9 @@ export default function JobDetails() {
       setLoading(true);
       const res = await axios.get(
         `https://api.jharkhandbiharupdates.com/api/v1/jobs/${id}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+        // {
+        //   headers: { Authorization: `Bearer ${token}` },
+        // }
       );
       if (res.data.success) {
         setJob(res.data.data);
@@ -303,6 +303,13 @@ export default function JobDetails() {
   };
 
   const postComment = async () => {
+    // 🔥 CHECK IF USER IS LOGGED IN BEFORE POSTING COMMENT
+    if (!token) {
+      toast.warning("Please login to comment");
+      navigate("/login");
+      return;
+    }
+
     if (!commentText.trim()) return toast.error("Comment cannot be empty");
     try {
       const res = await axios.post(
@@ -468,7 +475,7 @@ export default function JobDetails() {
 
   // Fetch job, comments, and small ads
   useEffect(() => {
-    if (!token) navigate("/login");
+    // if (!token) navigate("/login");
     fetchJob();
     fetchComments();
 
@@ -1099,6 +1106,7 @@ export default function JobDetails() {
               <h3 className="text-xl md:text-2xl font-semibold text-gray-800 mb-4">
                 💬 Comments
               </h3>
+
               <div className="flex flex-col sm:flex-row items-center gap-3 mb-6">
                 <input
                   type="text"
@@ -1136,6 +1144,7 @@ export default function JobDetails() {
             </div>
           </motion.div>
         </main>
+      
 
         {/* Fullscreen Image */}
         <AnimatePresence>
