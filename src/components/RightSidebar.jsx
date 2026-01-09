@@ -19,33 +19,41 @@ import {
   Calendar,
   Clock,
   Users,
+  History,
 } from "lucide-react";
 import NotificationPanel from "./NotificationPanel";
 import Sidebar from "./SideBar";
 import axios from "axios";
 import useActiveUsers from "../hooks/useActiveUsers";
 
+
 const WEATHER_API_KEY = "08e6542c3ce14ae39f1174408252212";
+
 
 // localStorage keys
 const WEATHER_CACHE_KEY = "JBU_WEATHER_CACHE";
 const LAST_KNOWN_POSITION_KEY = "JBU_LAST_POSITION";
 const OAUTH_REDIRECT_FLAG = "JBU_OAUTH_REDIRECT";
 
+
 // Cache TTL
 const WEATHER_CACHE_TTL = 30 * 60 * 1000; // 30 minutes
+
 
 // Maximum distance drift before re-fetching weather (in km)
 const MAX_LOCATION_DRIFT_KM = 5;
 
+
 // Minimum accuracy required (in meters)
 const MIN_ACCURACY_METERS = 1000;
+
 
 // Calculate distance between two coordinates using Haversine formula
 function calculateDistance(lat1, lon1, lat2, lon2) {
   const R = 6371; // Earth's radius in km
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
   const dLon = ((lon2 - lon1) * Math.PI) / 180;
+
 
   const a =
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
@@ -54,11 +62,14 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
       Math.sin(dLon / 2) *
       Math.sin(dLon / 2);
 
+
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   const distance = R * c; // Distance in km
 
+
   return distance;
 }
+
 
 // Weather cache helpers
 function setWeatherCache(weatherData) {
@@ -70,6 +81,7 @@ function setWeatherCache(weatherData) {
     };
     localStorage.setItem(WEATHER_CACHE_KEY, JSON.stringify(cacheEntry));
 
+
     // Also store last known position
     localStorage.setItem(
       LAST_KNOWN_POSITION_KEY,
@@ -80,10 +92,12 @@ function setWeatherCache(weatherData) {
   }
 }
 
+
 function getWeatherCache() {
   try {
     const stored = localStorage.getItem(WEATHER_CACHE_KEY);
     if (!stored) return null;
+
 
     const cacheEntry = JSON.parse(stored);
     if (Date.now() > cacheEntry.expiresAt) {
@@ -92,12 +106,14 @@ function getWeatherCache() {
       return null;
     }
 
+
     return cacheEntry.data;
   } catch (e) {
     localStorage.removeItem(WEATHER_CACHE_KEY);
     return null;
   }
 }
+
 
 function getLastKnownPosition() {
   try {
@@ -109,10 +125,12 @@ function getLastKnownPosition() {
   }
 }
 
+
 // Check if this is an OAuth redirect
 function checkOAuthRedirect() {
   const urlParams = new URLSearchParams(window.location.search);
   const hasOAuthParams = urlParams.has("code") || urlParams.has("state");
+
 
   if (hasOAuthParams) {
     console.log("OAuth redirect detected");
@@ -120,18 +138,22 @@ function checkOAuthRedirect() {
     return true;
   }
 
+
   // Check if we previously detected OAuth
   const wasOAuth = localStorage.getItem(OAUTH_REDIRECT_FLAG) === "true";
   if (wasOAuth) {
     localStorage.removeItem(OAUTH_REDIRECT_FLAG);
   }
 
+
   return wasOAuth;
 }
+
 
 // Map weather condition to icon component and theme
 function getWeatherStyle(conditionText, isDay) {
   const text = (conditionText || "").toLowerCase();
+
 
   if (text.includes("thunder") || text.includes("storm")) {
     return {
@@ -172,6 +194,7 @@ function getWeatherStyle(conditionText, isDay) {
     };
   }
 
+
   return {
     icon: isDay ? Sun : Moon,
     gradient: isDay
@@ -181,17 +204,21 @@ function getWeatherStyle(conditionText, isDay) {
   };
 }
 
+
 // Date/Time Component for when geolocation is denied
 function DateTimeDisplay() {
   const [currentTime, setCurrentTime] = useState(new Date());
+
 
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTime(new Date());
     }, 1000);
 
+
     return () => clearInterval(timer);
   }, []);
+
 
   const formatTime = (date) => {
     return date.toLocaleTimeString("en-IN", {
@@ -202,6 +229,7 @@ function DateTimeDisplay() {
     });
   };
 
+
   const formatDate = (date) => {
     return date.toLocaleDateString("en-IN", {
       weekday: "short",
@@ -209,6 +237,7 @@ function DateTimeDisplay() {
       month: "short",
     });
   };
+
 
   return (
     <motion.div
@@ -232,6 +261,7 @@ function DateTimeDisplay() {
         </div>
       </div>
 
+
       {/* Right: Date */}
       <div className="flex flex-col justify-center pl-0.5 sm:pl-1">
         <span className="text-[9px] sm:text-[10px] uppercase tracking-wider text-slate-500 font-medium">
@@ -248,6 +278,7 @@ function DateTimeDisplay() {
   );
 }
 
+
 export default function RightSidebar() {
   const navigate = useNavigate();
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -259,6 +290,7 @@ export default function RightSidebar() {
   const [loading, setLoading] = useState(false);
   const [hasNewNotif, setHasNewNotif] = useState(false);
 
+
   const dropdownRef = useRef(null);
   const notifRef = useRef(null);
   const watchIdRef = useRef(null);
@@ -266,13 +298,16 @@ export default function RightSidebar() {
   const positionAttemptRef = useRef(0);
   const permissionStatusRef = useRef(null);
 
+
   const token = localStorage.getItem("accessToken");
   const role = localStorage.getItem("role");
   const isLoggedIn = Boolean(token);
   const isAdmin = role?.toLowerCase().includes("admin");
 
+
   // Active Users Hook
   const { activeUsers, connected } = useActiveUsers();
+
 
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024);
   useEffect(() => {
@@ -281,10 +316,12 @@ export default function RightSidebar() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+
   // Weather state
   const [weather, setWeather] = useState(null);
   const [weatherLoading, setWeatherLoading] = useState(true);
   const [geoPermissionDenied, setGeoPermissionDenied] = useState(false);
+
 
   // Fetch weather with coordinates
   const fetchWeatherAndCache = async (lat, lon, accuracy) => {
@@ -292,6 +329,7 @@ export default function RightSidebar() {
       console.log(
         `Fetching weather for: ${lat}, ${lon} (accuracy: ${accuracy}m)`
       );
+
 
       const res = await axios.get(
         "https://api.weatherapi.com/v1/current.json",
@@ -304,8 +342,10 @@ export default function RightSidebar() {
         }
       );
 
+
       const loc = res.data.location;
       const cur = res.data.current;
+
 
       const weatherData = {
         city: loc.name,
@@ -319,6 +359,7 @@ export default function RightSidebar() {
         fetchedAt: Date.now(),
       };
 
+
       console.log("Weather fetched successfully:", weatherData.city);
       setWeather(weatherData);
       setWeatherCache(weatherData);
@@ -329,6 +370,7 @@ export default function RightSidebar() {
     }
   };
 
+
   // Start watching position
   const startWatchingPosition = () => {
     if (isWatchingRef.current) {
@@ -336,11 +378,13 @@ export default function RightSidebar() {
       return;
     }
 
+
     const geoOptions = {
       enableHighAccuracy: true,
       timeout: 15000,
       maximumAge: 0,
     };
+
 
     const successCallback = (position) => {
       positionAttemptRef.current += 1;
@@ -348,9 +392,11 @@ export default function RightSidebar() {
       const newLon = position.coords.longitude;
       const accuracy = position.coords.accuracy;
 
+
       console.log(
         `Position #${positionAttemptRef.current}: ${newLat}, ${newLon} (accuracy: ${accuracy}m)`
       );
+
 
       if (positionAttemptRef.current === 1 && accuracy > MIN_ACCURACY_METERS) {
         console.log(
@@ -359,11 +405,14 @@ export default function RightSidebar() {
         return;
       }
 
+
       setGeoPermissionDenied(false);
+
 
       const lastPos = getLastKnownPosition();
       const cached = getWeatherCache();
       let shouldFetch = true;
+
 
       if (lastPos && cached) {
         const distance = calculateDistance(
@@ -373,7 +422,9 @@ export default function RightSidebar() {
           newLon
         );
 
+
         console.log(`Distance from last position: ${distance.toFixed(2)} km`);
+
 
         if (distance < MAX_LOCATION_DRIFT_KM) {
           const cacheAge = Date.now() - (cached.fetchedAt || 0);
@@ -389,6 +440,7 @@ export default function RightSidebar() {
         }
       }
 
+
       if (shouldFetch) {
         fetchWeatherAndCache(newLat, newLon, accuracy);
       } else if (cached) {
@@ -397,8 +449,10 @@ export default function RightSidebar() {
       }
     };
 
+
     const errorCallback = (error) => {
       console.error("Geolocation error:", error.message, error.code);
+
 
       if (error.code === 1) {
         console.log("User denied geolocation");
@@ -407,8 +461,10 @@ export default function RightSidebar() {
         localStorage.removeItem(LAST_KNOWN_POSITION_KEY);
       }
 
+
       setWeatherLoading(false);
     };
+
 
     console.log("Starting position watch...");
     isWatchingRef.current = true;
@@ -419,6 +475,7 @@ export default function RightSidebar() {
     );
     console.log("Position watch started with ID:", watchIdRef.current);
   };
+
 
   // Stop watching position
   const stopWatchingPosition = () => {
@@ -431,12 +488,15 @@ export default function RightSidebar() {
     }
   };
 
+
   // Initialize geolocation with permission monitoring
   useEffect(() => {
     const initWeather = async () => {
       console.log("Initializing weather system...");
 
+
       const isOAuthRedirect = checkOAuthRedirect();
+
 
       if (isOAuthRedirect) {
         console.log("OAuth redirect detected - forcing fresh location");
@@ -444,12 +504,14 @@ export default function RightSidebar() {
         localStorage.removeItem(LAST_KNOWN_POSITION_KEY);
       }
 
+
       if (!("geolocation" in navigator)) {
         console.log("Geolocation not supported");
         setGeoPermissionDenied(true);
         setWeatherLoading(false);
         return;
       }
+
 
       // Check if Permissions API is supported
       if ("permissions" in navigator) {
@@ -460,7 +522,9 @@ export default function RightSidebar() {
           
           permissionStatusRef.current = permissionStatus;
 
+
           console.log("Initial permission state:", permissionStatus.state);
+
 
           // Handle initial permission state
           if (permissionStatus.state === "granted") {
@@ -488,9 +552,11 @@ export default function RightSidebar() {
             startWatchingPosition();
           }
 
+
           // Listen for permission changes
           permissionStatus.onchange = () => {
             console.log("Permission state changed to:", permissionStatus.state);
+
 
             if (permissionStatus.state === "granted") {
               console.log("Permission granted - starting location watch");
@@ -537,7 +603,9 @@ export default function RightSidebar() {
       }
     };
 
+
     initWeather();
+
 
     return () => {
       stopWatchingPosition();
@@ -548,6 +616,7 @@ export default function RightSidebar() {
       }
     };
   }, []);
+
 
   // Notifications
   const fetchNotifications = async () => {
@@ -572,17 +641,20 @@ export default function RightSidebar() {
     }
   };
 
+
   const handleClearNotifications = () => {
     setNotifications([]);
     setUnreadCount(0);
     setHasNewNotif(false);
   };
 
+
   const handleLogout = () => {
     localStorage.removeItem("accessToken");
     localStorage.removeItem("role");
     navigate("/login");
   };
+
 
   const handleNavigation = (path) => {
     if (!isLoggedIn) {
@@ -594,6 +666,7 @@ export default function RightSidebar() {
     setRightSidebarOpen(false);
     setLeftSidebarOpen(false);
   };
+
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -611,6 +684,7 @@ export default function RightSidebar() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+
   useEffect(() => {
     const onEsc = (e) => {
       if (e.key === "Escape") {
@@ -624,6 +698,7 @@ export default function RightSidebar() {
     return () => document.removeEventListener("keydown", onEsc);
   }, []);
 
+
   useEffect(() => {
     if (isLoggedIn) {
       fetchNotifications();
@@ -631,6 +706,7 @@ export default function RightSidebar() {
       return () => clearInterval(interval);
     }
   }, [isLoggedIn]);
+
 
   // Render weather or date/time
   const renderLocationInfo = () => {
@@ -645,18 +721,22 @@ export default function RightSidebar() {
       );
     }
 
+
     if (geoPermissionDenied) {
       return <DateTimeDisplay />;
     }
+
 
     if (!weather) {
       return <DateTimeDisplay />;
     }
 
+
     const { icon: WeatherIcon, gradient, iconColor } = getWeatherStyle(
       weather.conditionText,
       weather.isDay
     );
+
 
     return (
       <motion.div
@@ -683,6 +763,7 @@ export default function RightSidebar() {
     );
   };
 
+
   return (
     <>
       <motion.div
@@ -707,6 +788,7 @@ export default function RightSidebar() {
           {renderLocationInfo()}
         </div>
 
+
         <div className="flex items-center gap-2 sm:gap-3">
           {/* Active Users Counter */}
           <motion.div
@@ -726,6 +808,7 @@ export default function RightSidebar() {
               Live
             </span>
           </motion.div>
+
 
           {isLoggedIn && (
             <div className="relative" ref={notifRef}>
@@ -755,6 +838,7 @@ export default function RightSidebar() {
               />
             </div>
           )}
+
 
           {isLoggedIn ? (
             <div className="relative hidden sm:block" ref={dropdownRef}>
@@ -792,6 +876,16 @@ export default function RightSidebar() {
                       </button>
                     )}
                     <button
+                      onClick={() => {
+                        navigate('/history');
+                        setDropdownOpen(false);
+                      }}
+                      className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition cursor-pointer flex items-center gap-2"
+                    >
+                      <History className="w-4 h-4" />
+                      History
+                    </button>
+                    <button
                       onClick={handleLogout}
                       className="w-full text-left px-4 py-2 text-sm hover:bg-red-50 text-red-600 transition cursor-pointer"
                     >
@@ -811,6 +905,7 @@ export default function RightSidebar() {
               Login
             </motion.button>
           )}
+
 
           <div className="sm:hidden">
             {isLoggedIn ? (
@@ -836,10 +931,12 @@ export default function RightSidebar() {
         </div>
       </motion.div>
 
+
       <Sidebar
         sidebarOpen={isDesktop || leftSidebarOpen}
         onClose={() => setLeftSidebarOpen(false)}
       />
+
 
       <AnimatePresence>
         {rightSidebarOpen && isLoggedIn && (
@@ -897,6 +994,16 @@ export default function RightSidebar() {
                     Profile
                   </button>
                 )}
+                <button
+                  onClick={() => {
+                    navigate('/history');
+                    setRightSidebarOpen(false);
+                  }}
+                  className="flex items-center gap-2 p-3 text-left hover:bg-gray-50 rounded-lg text-sm cursor-pointer"
+                >
+                  <History className="w-4 h-4" />
+                  History
+                </button>
                 <button
                   onClick={handleLogout}
                   className="flex items-center gap-2 p-3 text-left hover:bg-red-50 rounded-lg text-red-600 text-sm cursor-pointer"

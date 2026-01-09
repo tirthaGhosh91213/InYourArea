@@ -35,6 +35,7 @@ import TermsConditions from "./pages/TermsConditions";
 import PropertyDetails from "./pages/PropertyDetails";
 import PropertyInquiries from "./pages/PropertyInquiries";
 import AllPropertiesAdmin from './pages/AllPropertiesAdmin';
+import History from "./components/HistoryModal";
 
 // ✅ Home component
 function Home() {
@@ -92,6 +93,8 @@ export default function App() {
         <Route path="/add" element={<AdminAddSection />} />
         <Route path="/admin/inquiries" element={<PropertyInquiries />} />
         <Route path="/admin/properties" element={<AllPropertiesAdmin />} />
+
+        <Route path="/history" element={<History />} />
         
         {/* Footer Pages */}
         <Route path="/about-us" element={<AboutUs />} />
