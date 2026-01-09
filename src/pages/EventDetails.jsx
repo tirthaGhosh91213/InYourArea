@@ -250,7 +250,6 @@ export default function EventDetails() {
       );
       if (res.data.success) {
         setComments(res.data.data);
-
         // Initialize all replies as collapsed by default
         const allCollapsed = {};
         const markAsCollapsed = (comments) => {
@@ -270,16 +269,16 @@ export default function EventDetails() {
   };
 
   useEffect(() => {
-    if (!token) navigate("/login");
+    // if (!token) navigate("/login");
 
     const fetchEvent = async () => {
       try {
         setLoading(true);
         const res = await axios.get(
           `https://api.jharkhandbiharupdates.com/api/v1/events/${id}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
+          // {
+          //   headers: { Authorization: `Bearer ${token}` },
+          // }
         );
         if (res.data.success) {
           setEvent(res.data.data);
@@ -345,6 +344,13 @@ export default function EventDetails() {
   }, [topRightClosed, bottomRightClosed, topRightIndex, bottomRightIndex, ads]);
 
   const postComment = async () => {
+    // 🔥 CHECK IF USER IS LOGGED IN BEFORE POSTING COMMENT
+    if (!token) {
+      toast.warning("Please login to comment");
+      navigate("/login");
+      return;
+    }
+
     if (!commentText.trim()) return toast.error("Comment cannot be empty");
     try {
       setPosting(true);
