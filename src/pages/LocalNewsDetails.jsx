@@ -340,22 +340,37 @@ export default function LocalNewsDetails() {
   }, []);
 
   // Fetch News Details
-  useEffect(() => {
-    const fetchNews = async () => {
-      try {
-        setLoading(true);
-        const res = await axios.get(
-          `https://api.jharkhandbiharupdates.com/api/v1/state-news/details/${id}`
-        );
-        if (res.data.success) setNews(res.data.data);
-      } catch {
-        toast.error("Failed to fetch news details.");
-      } finally {
-        setLoading(false);
+  // Fetch News Details
+useEffect(() => {
+  const fetchNews = async () => {
+    try {
+      setLoading(true);
+      
+      // Token optional - for history tracking
+      const token = localStorage.getItem('accessToken');
+      const config = token ? {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      } : {};
+      
+      const res = await axios.get(
+        `https://api.jharkhandbiharupdates.com/api/v1/state-news/details/${id}`,
+        config  // Add config here
+      );
+      
+      if (res.data.success) {
+        setNews(res.data.data);
       }
-    };
-    fetchNews();
-  }, [id]);
+    } catch {
+      toast.error('Failed to fetch news details.');
+    } finally {
+      setLoading(false);
+    }
+  };
+  fetchNews();
+}, [id]);
+
 
   // Fetch Comments
   const fetchComments = async () => {
