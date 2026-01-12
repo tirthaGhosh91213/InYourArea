@@ -2,8 +2,8 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { Plus, Trash2, Eye, EyeOff, Package, Loader2, AlertTriangle, Edit, X, Settings, Camera, Store, Share2, Image as ImageIcon, MapPin, Maximize2, Truck, IndianRupee } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
-import { Helmet } from "react-helmet"; // Import Helmet
-import { AnimatePresence, motion } from "framer-motion"; // Import Framer Motion
+import { Helmet } from "react-helmet";
+import { AnimatePresence, motion } from "framer-motion";
 
 const BASE_URL = "https://api.jharkhandbiharupdates.com/api/v1";
 
@@ -18,7 +18,7 @@ export default function VendorDashboard() {
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [profileLoading, setProfileLoading] = useState(false);
   
-  // Profile Form Data (Updated with Delivery Fields)
+  // Profile Form Data
   const [profileForm, setProfileForm] = useState({
     shopName: "",
     shopDescription: "",
@@ -30,13 +30,13 @@ export default function VendorDashboard() {
   });
 
   // Image States for Upload
-  const [profileImage, setProfileImage] = useState(null); // Logo File
-  const [previewImage, setPreviewImage] = useState(null); // Logo Preview
+  const [profileImage, setProfileImage] = useState(null); 
+  const [previewImage, setPreviewImage] = useState(null); 
   
-  const [coverImage, setCoverImage] = useState(null);     // Cover File
-  const [previewCover, setPreviewCover] = useState(null); // Cover Preview
+  const [coverImage, setCoverImage] = useState(null);     
+  const [previewCover, setPreviewCover] = useState(null); 
 
-  // Loaders for Actions
+  // Loaders
   const [statusLoadingId, setStatusLoadingId] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false); 
@@ -49,7 +49,7 @@ export default function VendorDashboard() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [productToDelete, setProductToDelete] = useState(null);
 
-  // Edit Mode State (Product)
+  // Edit Mode State
   const [isEditing, setIsEditing] = useState(false);
   const [editingId, setEditingId] = useState(null);
 
@@ -65,8 +65,6 @@ export default function VendorDashboard() {
   const [imageFile, setImageFile] = useState(null);
 
   // --- API CALLS ---
-
-  // 1. Fetch Data (Products + Vendor Profile)
   const fetchData = async () => {
     try {
       setLoading(true);
@@ -127,7 +125,6 @@ export default function VendorDashboard() {
   const shopImage = vendorDetails?.shopCoverUrl || vendorDetails?.shopLogoUrl || `${window.location.origin}/banner.jpg`; 
 
   // --- PROFILE MANAGEMENT ---
-
   const openProfileModal = () => {
     if (vendorDetails) {
         setProfileForm({
@@ -135,7 +132,6 @@ export default function VendorDashboard() {
             shopDescription: vendorDetails.shopDescription || "",
             vendorPhone: vendorDetails.vendorPhone,
             shopAddress: vendorDetails.shopAddress || "",
-            // Load Delivery Settings
             deliveryType: vendorDetails.deliveryType || "FREE",
             deliveryCharge: vendorDetails.deliveryCharge || "",
             minFreeDeliveryAmount: vendorDetails.minFreeDeliveryAmount || ""
@@ -161,7 +157,6 @@ export default function VendorDashboard() {
     };
 
     try {
-        // Validation for Delivery Settings
         if (profileForm.deliveryType === 'FIXED' && !profileForm.deliveryCharge) {
             toast.error("Please enter delivery charge");
             setProfileLoading(false);
@@ -180,17 +175,14 @@ export default function VendorDashboard() {
             }
         }
 
-        // 1. Update Text Details
         await axios.put(`${BASE_URL}/vendors/me/details`, profileForm, config);
         
-        // 2. Update Logo (Only if changed)
         if (profileImage) {
             const formData = new FormData();
             formData.append("shopLogo", profileImage);
             await axios.put(`${BASE_URL}/vendors/me/logo`, formData, multiPartConfig);
         }
 
-        // 3. Update Cover Photo (Only if changed)
         if (coverImage) {
             const formData = new FormData();
             formData.append("shopCover", coverImage);
@@ -226,7 +218,6 @@ export default function VendorDashboard() {
   };
 
   // --- PRODUCT MANAGEMENT ---
-
   const handleOpenAddModal = () => {
     if (products.length >= listingQuota) {
       toast.error(`Quota Limit Reached! (${listingQuota} products max)`);
@@ -369,31 +360,21 @@ export default function VendorDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6 font-sans">
+    <div className="min-h-screen bg-gray-50 p-4 md:p-6 font-sans">
       
-      {/* --- REACT HELMET FOR SOCIAL SHARING --- */}
+      {/* --- REACT HELMET --- */}
       <Helmet>
         <title>{shopName} - Dashboard | JHARKHAND BIHAR UPDATES</title>
         <meta name="description" content={shopDesc} />
-        
-        {/* Canonical URL */}
         <link rel="canonical" href={shopUrl} />
-        
-        {/* Facebook / Open Graph */}
         <meta property="fb:app_id" content="1234567890" />
         <meta property="og:type" content="website" />
         <meta property="og:url" content={shopUrl} />
         <meta property="og:title" content={`${shopName} - Best Offers Visit This Link`} />
         <meta property="og:description" content={shopDesc} />
         <meta property="og:site_name" content="JHARKHAND BIHAR UPDATES" />
-        
-        {/* Image Meta Tags */}
         <meta property="og:image" content={shopImage} />
         <meta property="og:image:secure_url" content={shopImage} />
-        <meta property="og:image:width" content="1200" />
-        <meta property="og:image:height" content="630" />
-        
-        {/* Twitter */}
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content={`${shopName} - Best Offers`} />
         <meta name="twitter:description" content={shopDesc} />
@@ -405,19 +386,19 @@ export default function VendorDashboard() {
         {/* Header Section */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 mb-8 overflow-hidden">
             
-            {/* Cover Photo Banner (HEIGHT INCREASED & CLICKABLE) */}
+            {/* Cover Photo */}
             <div 
-                className="h-40 md:h-64 bg-gray-200 w-full relative group cursor-pointer"
+                className="h-32 md:h-64 bg-gray-200 w-full relative group cursor-pointer"
                 onClick={() => vendorDetails?.shopCoverUrl && setFullscreenImage(vendorDetails.shopCoverUrl)}
             >
                 {vendorDetails?.shopCoverUrl ? (
                     <img src={vendorDetails.shopCoverUrl} alt="Cover" className="w-full h-full object-cover" />
                 ) : (
                     <div className="w-full h-full bg-gradient-to-r from-[#006A4E] to-emerald-800 flex items-center justify-center">
-                        <Store size={64} className="text-white opacity-20" />
+                        <Store size={48} className="text-white opacity-20 md:w-16 md:h-16" />
                     </div>
                 )}
-                {/* Overlay Icon on Hover */}
+                {/* Overlay Icon */}
                 {vendorDetails?.shopCoverUrl && (
                     <div className="absolute top-4 right-4 bg-black/30 p-2 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity">
                         <Maximize2 size={20} />
@@ -425,28 +406,28 @@ export default function VendorDashboard() {
                 )}
             </div>
 
-            <div className="px-6 pb-6">
+            <div className="px-4 md:px-6 pb-6">
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 -mt-10 md:-mt-12">
                     {/* Shop Info & Logo */}
-                    <div className="flex items-end gap-4">
-                        {/* Profile Image (CLICKABLE) */}
+                    <div className="flex items-end gap-3 md:gap-4">
+                        {/* Profile Image */}
                         <div 
-                            className="w-24 h-24 md:w-32 md:h-32 rounded-full bg-white border-4 border-white shadow-md overflow-hidden flex items-center justify-center shrink-0 z-10 cursor-pointer group relative"
+                            className="w-20 h-20 md:w-32 md:h-32 rounded-full bg-white border-4 border-white shadow-md overflow-hidden flex items-center justify-center shrink-0 z-10 cursor-pointer relative"
                             onClick={() => vendorDetails?.shopLogoUrl && setFullscreenImage(vendorDetails.shopLogoUrl)}
                         >
                             {vendorDetails?.shopLogoUrl ? (
                                 <img src={vendorDetails.shopLogoUrl} alt="Logo" className="w-full h-full object-cover" />
                             ) : (
-                                <Store className="text-gray-400" size={40} />
+                                <Store className="text-gray-400" size={32} />
                             )}
                         </div>
 
-                        <div className="mb-1 md:mb-3">
-                            <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
+                        {/* FIXED: Added mt-4 for mobile spacing on name */}
+                        <div className="mb-1 md:mb-3 mt-14 md:mt-0">
+                            <h1 className="text-xl md:text-3xl font-bold text-gray-900 line-clamp-1">
                                {vendorDetails?.shopName || "My Shop"}
                             </h1>
-                            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 mt-1 text-sm text-gray-500">
-                                {/* Location: Default to "Local Vendor" if no address */}
+                            <div className="flex flex-wrap items-center gap-2 mt-1 text-xs md:text-sm text-gray-500">
                                 <span className="flex items-center gap-1">
                                     <MapPin size={14} />
                                     {vendorDetails?.shopAddress || "Local Vendor"}
@@ -458,35 +439,35 @@ export default function VendorDashboard() {
                     </div>
 
                     {/* Actions */}
-                    <div className="flex gap-3 w-full md:w-auto mb-1">
+                    <div className="flex gap-2 w-full md:w-auto mt-2 md:mt-0 md:mb-1">
                         <button 
                             onClick={handleShareShop}
-                            className="p-2.5 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-blue-600 transition-all flex items-center justify-center bg-white shadow-sm"
+                            className="p-2 md:p-2.5 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-blue-600 transition-all flex items-center justify-center bg-white shadow-sm"
                             title="Share Shop Link"
                         >
-                            <Share2 size={20} />
+                            <Share2 size={18} />
                         </button>
 
                         <button 
                             onClick={openProfileModal}
-                            className="px-4 py-2.5 rounded-lg font-medium flex items-center gap-2 border border-gray-300 text-gray-700 hover:bg-gray-50 transition-all bg-white shadow-sm flex-1 md:flex-none justify-center"
+                            className="px-3 md:px-4 py-2 md:py-2.5 rounded-lg text-sm md:text-base font-medium flex items-center gap-2 border border-gray-300 text-gray-700 hover:bg-gray-50 transition-all bg-white shadow-sm flex-1 md:flex-none justify-center"
                         >
-                            <Settings size={18} /> Edit Shop
+                            <Settings size={16} /> Edit Shop
                         </button>
 
                         <button 
                             onClick={handleOpenAddModal}
-                            className={`px-6 py-2.5 rounded-lg font-medium flex items-center gap-2 shadow-lg transition-all text-white flex-1 md:flex-none justify-center
+                            className={`px-4 md:px-6 py-2 md:py-2.5 rounded-lg text-sm md:text-base font-medium flex items-center gap-2 shadow-lg transition-all text-white flex-1 md:flex-none justify-center
                             ${products.length >= listingQuota ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}`}
                         >
-                            <Plus size={20} /> Add Product
+                            <Plus size={18} /> <span className="hidden sm:inline">Add Product</span><span className="sm:hidden">Add</span>
                         </button>
                     </div>
                 </div>
             </div>
         </div>
 
-        {/* Product Table */}
+        {/* Product List */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           {loading ? (
              <div className="p-10 text-center text-gray-500 flex justify-center items-center gap-2">
@@ -495,69 +476,122 @@ export default function VendorDashboard() {
           ) : products.length === 0 ? (
              <div className="p-10 text-center text-gray-500">You haven't added any products yet.</div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead className="bg-gray-50 border-b border-gray-200 text-xs uppercase text-gray-500 font-semibold tracking-wider">
-                  <tr>
-                    <th className="p-4">Product</th>
-                    <th className="p-4">Price</th>
-                    <th className="p-4">Discount</th>
-                    <th className="p-4">Status</th>
-                    <th className="p-4 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
+            <>
+              {/* --- MOBILE VIEW --- */}
+              <div className="md:hidden">
+                <div className="divide-y divide-gray-100">
                   {products.map((p) => (
-                    <tr key={p.id} className="hover:bg-gray-50 transition group">
-                      <td className="p-4">
-                        <div className="flex items-center gap-4">
-                          <img src={p.imageUrl} alt="" className="w-12 h-12 rounded-lg bg-gray-100 object-cover border" />
-                          <div>
-                            <div className="font-semibold text-gray-800">{p.productName}</div>
-                            <div className={`text-xs font-medium px-2 py-0.5 rounded inline-block mt-1 ${p.stockStatus === 'IN_STOCK' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                              {p.stockStatus ? p.stockStatus.replace("_", " ") : "IN STOCK"}
+                    <div key={p.id} className="p-4 flex gap-3 relative">
+                      <div className="shrink-0">
+                         <img src={p.imageUrl} alt="" className="w-20 h-20 rounded-lg bg-gray-100 object-cover border" />
+                      </div>
+                      
+                      <div className="flex-1 min-w-0">
+                        <div className="flex justify-between items-start">
+                          <h3 className="font-semibold text-gray-900 text-sm line-clamp-2 leading-snug mb-1">
+                            {p.productName}
+                          </h3>
+                        </div>
+
+                        <div className="flex items-baseline gap-2 mb-2">
+                            <span className="text-lg font-bold text-gray-900">₹{p.effectivePrice || p.originalPrice}</span>
+                            {p.hasDiscount && (
+                                <span className="text-xs text-gray-400 line-through">₹{p.originalPrice}</span>
+                            )}
+                        </div>
+
+                        <div className="flex items-center justify-between mt-2">
+                           <div className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase ${p.stockStatus === 'IN_STOCK' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                             {p.stockStatus === 'IN_STOCK' ? 'In Stock' : 'No Stock'}
+                           </div>
+
+                           <div className="flex gap-2">
+                               <button 
+                                 onClick={() => toggleStatus(p.id, p.isActive)}
+                                 disabled={statusLoadingId === p.id}
+                                 className={`p-1.5 rounded-lg border ${p.isActive ? "text-green-600 border-green-200 bg-green-50" : "text-gray-400 border-gray-200 bg-gray-50"}`}
+                               >
+                                  {statusLoadingId === p.id ? <Loader2 className="animate-spin h-4 w-4" /> : (p.isActive ? <Eye size={16} /> : <EyeOff size={16} />)}
+                               </button>
+                               <button onClick={() => handleOpenEditModal(p)} className="p-1.5 rounded-lg border border-blue-100 text-blue-600 bg-blue-50">
+                                 <Edit size={16} />
+                               </button>
+                               <button onClick={() => initiateDelete(p)} className="p-1.5 rounded-lg border border-red-100 text-red-600 bg-red-50">
+                                 <Trash2 size={16} />
+                               </button>
+                           </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* --- DESKTOP VIEW --- */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead className="bg-gray-50 border-b border-gray-200 text-xs uppercase text-gray-500 font-semibold tracking-wider">
+                    <tr>
+                      <th className="p-4">Product</th>
+                      <th className="p-4">Price</th>
+                      <th className="p-4">Discount</th>
+                      <th className="p-4">Status</th>
+                      <th className="p-4 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {products.map((p) => (
+                      <tr key={p.id} className="hover:bg-gray-50 transition group">
+                        <td className="p-4">
+                          <div className="flex items-center gap-4">
+                            <img src={p.imageUrl} alt="" className="w-12 h-12 rounded-lg bg-gray-100 object-cover border" />
+                            <div>
+                              <div className="font-semibold text-gray-800">{p.productName}</div>
+                              <div className={`text-xs font-medium px-2 py-0.5 rounded inline-block mt-1 ${p.stockStatus === 'IN_STOCK' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                                {p.stockStatus ? p.stockStatus.replace("_", " ") : "IN STOCK"}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </td>
-                      <td className="p-4 font-medium text-gray-900">₹{p.effectivePrice || p.originalPrice}</td>
-                      <td className="p-4">
-                        {p.hasDiscount ? (
-                          <div className="text-xs">
-                             <span className="line-through text-gray-400">₹{p.originalPrice}</span>
-                             <span className="block text-green-600 font-bold">On Sale</span>
-                          </div>
-                        ) : (
-                          <span className="text-gray-400 text-sm">-</span>
-                        )}
-                      </td>
-                      <td className="p-4">
-                        <button 
-                          onClick={() => toggleStatus(p.id, p.isActive)}
-                          disabled={statusLoadingId === p.id}
-                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition border 
-                            ${p.isActive ? "bg-green-50 text-green-700 border-green-200" : "bg-gray-100 text-gray-500 border-gray-200"}
-                          `}
-                        >
-                          {statusLoadingId === p.id ? <Loader2 className="animate-spin h-3.5 w-3.5" /> : (p.isActive ? <Eye size={14} /> : <EyeOff size={14} />)}
-                          {statusLoadingId === p.id ? "Wait..." : (p.isActive ? "Live" : "Hidden")}
-                        </button>
-                      </td>
-                      <td className="p-4 text-right">
-                          <div className="flex justify-end gap-2">
-                            <button onClick={() => handleOpenEditModal(p)} className="text-gray-400 hover:text-blue-600 p-2 rounded-lg transition hover:bg-blue-50">
-                              <Edit size={18} />
-                            </button>
-                            <button onClick={() => initiateDelete(p)} className="text-gray-400 hover:text-red-600 p-2 rounded-lg transition hover:bg-red-50">
-                              <Trash2 size={18} />
-                            </button>
-                          </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                        </td>
+                        <td className="p-4 font-medium text-gray-900">₹{p.effectivePrice || p.originalPrice}</td>
+                        <td className="p-4">
+                          {p.hasDiscount ? (
+                            <div className="text-xs">
+                               <span className="line-through text-gray-400">₹{p.originalPrice}</span>
+                               <span className="block text-green-600 font-bold">On Sale</span>
+                            </div>
+                          ) : (
+                            <span className="text-gray-400 text-sm">-</span>
+                          )}
+                        </td>
+                        <td className="p-4">
+                          <button 
+                            onClick={() => toggleStatus(p.id, p.isActive)}
+                            disabled={statusLoadingId === p.id}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition border 
+                              ${p.isActive ? "bg-green-50 text-green-700 border-green-200" : "bg-gray-100 text-gray-500 border-gray-200"}
+                            `}
+                          >
+                            {statusLoadingId === p.id ? <Loader2 className="animate-spin h-3.5 w-3.5" /> : (p.isActive ? <Eye size={14} /> : <EyeOff size={14} />)}
+                            {statusLoadingId === p.id ? "Wait..." : (p.isActive ? "Live" : "Hidden")}
+                          </button>
+                        </td>
+                        <td className="p-4 text-right">
+                            <div className="flex justify-end gap-2">
+                              <button onClick={() => handleOpenEditModal(p)} className="text-gray-400 hover:text-blue-600 p-2 rounded-lg transition hover:bg-blue-50">
+                                <Edit size={18} />
+                              </button>
+                              <button onClick={() => initiateDelete(p)} className="text-gray-400 hover:text-red-600 p-2 rounded-lg transition hover:bg-red-50">
+                                <Trash2 size={18} />
+                              </button>
+                            </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
         </div>
 
@@ -702,7 +736,7 @@ export default function VendorDashboard() {
 
                             <hr className="border-gray-200" />
 
-                            {/* --- DELIVERY SETTINGS (NEW SECTION) --- */}
+                            {/* --- DELIVERY SETTINGS --- */}
                             <div>
                                 <h3 className="text-md font-bold text-gray-800 flex items-center gap-2 mb-3">
                                     <Truck size={18} /> Delivery Settings
@@ -816,6 +850,41 @@ export default function VendorDashboard() {
                 </motion.div>
             )}
         </AnimatePresence>
+
+        {/* --- DELETE CONFIRMATION MODAL (FIXED) --- */}
+        {showDeleteModal && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden animate-scale-in">
+              <div className="p-6 text-center">
+                <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <AlertTriangle className="text-red-600" size={24} />
+                </div>
+                <h3 className="text-lg font-bold text-gray-900 mb-2">Delete Product?</h3>
+                <p className="text-gray-500 text-sm mb-6">
+                  Are you sure you want to delete <span className="font-bold text-gray-800">"{productToDelete?.productName}"</span>? This action cannot be undone.
+                </p>
+                
+                <div className="flex gap-3">
+                  <button 
+                    onClick={() => setShowDeleteModal(false)}
+                    disabled={isDeleting}
+                    className="flex-1 py-2.5 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    onClick={confirmDelete}
+                    disabled={isDeleting}
+                    className="flex-1 py-2.5 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 shadow-md flex justify-center items-center gap-2"
+                  >
+                    {isDeleting ? <Loader2 className="animate-spin h-4 w-4" /> : <Trash2 size={18} />}
+                    {isDeleting ? "Deleting..." : "Delete"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
       </div>
     </div>

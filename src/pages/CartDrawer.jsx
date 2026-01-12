@@ -101,7 +101,8 @@ export default function CartDrawer({ isOpen, onClose, cart, refreshCart }) {
       
       window.open(whatsappUrl, "_blank");
       onClose(); 
-      window.location.reload(); 
+      refreshCart(); // Updated: Refreshes cart state (empties it) without reloading page
+      // window.location.reload(); // REMOVED: This prevents the redirect to the landing/welcome card
       
     } catch (error) {
       console.error(error);
@@ -261,22 +262,22 @@ export default function CartDrawer({ isOpen, onClose, cart, refreshCart }) {
              )}
 
              <div className="flex justify-between text-gray-600 text-sm">
-                <span>Item Total</span>
-                <span>₹{cart.itemTotal}</span>
+               <span>Item Total</span>
+               <span>₹{cart.itemTotal}</span>
              </div>
              
              <div className="flex justify-between text-gray-600 text-sm">
-                <span>Delivery Charge</span>
-                <span className={cart.deliveryCharge > 0 ? "text-gray-800" : "text-green-600 font-bold"}>
-                   {cart.deliveryCharge > 0 ? `+ ₹${cart.deliveryCharge}` : "FREE"}
-                </span>
+               <span>Delivery Charge</span>
+               <span className={cart.deliveryCharge > 0 ? "text-gray-800" : "text-green-600 font-bold"}>
+                  {cart.deliveryCharge > 0 ? `+ ₹${cart.deliveryCharge}` : "FREE"}
+               </span>
              </div>
 
              <div className="border-t border-dashed border-gray-300 my-1"></div>
 
              <div className="flex justify-between text-xl font-bold text-gray-900">
-                <span>Total Amount</span>
-                <span>₹{cart.totalAmount}</span>
+               <span>Total Amount</span>
+               <span>₹{cart.totalAmount}</span>
              </div>
           </div>
 
