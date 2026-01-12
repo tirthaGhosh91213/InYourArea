@@ -710,7 +710,7 @@ const handleSignin = async (e) => {
     {/* Form Inputs */}
     <div className="w-full space-y-3 text-left">
       {/* Email */}
-      <div>
+      {/* <div>
         <label className="block text-sm font-semibold text-emerald-700 mb-0.5">
           Email Address
         </label>
@@ -722,7 +722,7 @@ const handleSignin = async (e) => {
           className="w-full p-3 rounded-lg border border-gray-300 bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-400 placeholder:text-gray-400 text-sm shadow-sm transition-all duration-300"
           required
         />
-      </div>
+      </div> */}
 
       {/* Token */}
       <div>
