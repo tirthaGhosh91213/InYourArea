@@ -10,11 +10,10 @@ import {
   MapPin,
   ChevronDown,
   Building2,
+  ShoppingBag,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import logo from "../assets/logo.png";
-
-
 
 const states = [
   "----------- States -----------",
@@ -22,11 +21,7 @@ const states = [
   "Jharkhand",
 ];
 
-
-
 const MERAKI_LINK = "https://www.ulmind.com";
-
-
 
 export default function Sidebar({ sidebarOpen, onClose }) {
   const navigate = useNavigate();
@@ -40,17 +35,11 @@ export default function Sidebar({ sidebarOpen, onClose }) {
     return states.find((s) => !s.startsWith("-")) || "";
   });
 
-
-
   const [dropdownOpen, setDropdownOpen] = useState(false);
-
-
 
   useEffect(() => {
     const storedRole = localStorage.getItem("role");
     if (storedRole) setRole(storedRole);
-
-
 
     const onStorageChange = (e) => {
       if (e.key === "state" && e.newValue && e.newValue !== selectedState) {
@@ -66,8 +55,6 @@ export default function Sidebar({ sidebarOpen, onClose }) {
     };
   }, [selectedState, location.pathname]);
 
-
-
   const handleStateSelect = (state) => {
     if (state.startsWith("-")) return;
     setSelectedState(state);
@@ -75,8 +62,6 @@ export default function Sidebar({ sidebarOpen, onClose }) {
     localStorage.setItem("state", state);
     window.location.replace(`/statenews/${encodeURIComponent(state)}`);
   };
-
-
 
   useEffect(() => {
     if (!selectedState.startsWith("-"))
@@ -89,14 +74,10 @@ export default function Sidebar({ sidebarOpen, onClose }) {
     }
   }, [selectedState, location.pathname, navigate]);
 
-
-
   const isActive = (path) =>
     path.startsWith("/statenews")
       ? location.pathname.startsWith("/statenews")
       : location.pathname === path;
-
-
 
   const menuItems = [
     {
@@ -108,18 +89,14 @@ export default function Sidebar({ sidebarOpen, onClose }) {
     { name: "Community", icon: Users, path: "/community" },
     { name: "Events", icon: Home, path: "/events" },
     { name: "Properties", icon: Building2, path: "/properties" },
+    { name: "Promotions", icon: ShoppingBag, path: "/promotions" }, // ✅ NEW
   ];
 
-
-
   const getPostOptions = () => {
-    if (role === "admin") return ["Local News", "Jobs", "Events", "Community", "Properties"];
-    return ["Jobs", "Events", "Community", "Properties"];
+    if (role === "admin") return ["Local News", "Jobs", "Events", "Community", "Properties", "Promotion"]; // ✅ MODIFIED
+    return ["Jobs", "Events", "Community", "Properties", "Promotion"]; // ✅ MODIFIED
   };
 
-
-
-  // ✅ MODIFIED: Added Properties case
   const handleOptionClick = (type) => {
     setShowModal(false);
     switch (type) {
@@ -138,12 +115,13 @@ export default function Sidebar({ sidebarOpen, onClose }) {
       case "Properties":
         navigate("/create/properties");
         break;
+      case "Promotion": // ✅ NEW
+        navigate("/create/promotion");
+        break;
       default:
         break;
     }
   };
-
-
 
   const handleMenuClick = (item) => {
     if (item.name === "State News") {
@@ -157,8 +135,6 @@ export default function Sidebar({ sidebarOpen, onClose }) {
     }
   };
 
-
-
   return (
     <AnimatePresence>
       {sidebarOpen && (
@@ -171,7 +147,6 @@ export default function Sidebar({ sidebarOpen, onClose }) {
         >
           <div>
             <div className="flex items-center justify-between ">
-              {/* 🔥 NEW: Clickable Logo */}
               <motion.div
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}

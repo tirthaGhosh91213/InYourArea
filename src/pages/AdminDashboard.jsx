@@ -19,8 +19,9 @@ import {
   DollarSign,
   Link as LinkIcon,
   Clock,
-   Phone,
+  Phone,
   Building,
+  Store,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
@@ -32,6 +33,7 @@ const TABS = [
   { key: "jobs", label: "Jobs" },
   { key: "community", label: "Community" },
   { key: "properties", label: "Property" },
+  { key: "promotions", label: "Promotions" },
 ];
 
 export default function AdminDashboard() {
@@ -59,7 +61,10 @@ export default function AdminDashboard() {
       let endpoint =
         category === "properties"
           ? `${BASE_API}/properties/pending`
+          : category === "promotions"
+          ? `${BASE_API}/admin/vendors/pending`
           : `${BASE_API}/${category}/pending`;
+
       const res = await axios.get(endpoint, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -91,7 +96,11 @@ export default function AdminDashboard() {
       const token = localStorage.getItem("accessToken");
       await axios.post(
         `${BASE_API}/${
-          activeTab === "properties" ? "properties" : activeTab
+          activeTab === "properties"
+            ? "properties"
+            : activeTab === "promotions"
+            ? "admin/vendors"
+            : activeTab
         }/${id}/${action}`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
@@ -197,79 +206,67 @@ export default function AdminDashboard() {
   return (
     <div className="min-h-screen w-full flex flex-col bg-gray-50 text-gray-800">
       {/* Header */}
-<header className="flex flex-col sm:flex-row sm:items-center sm:justify-between bg-white shadow-sm border-b border-gray-200 p-4 sm:p-6 gap-3 sm:gap-0">
-  <motion.button
-    onClick={() => navigate(-1)}
-    whileHover={{ scale: 1.05 }}
-    whileTap={{ scale: 0.95 }}
-    className="flex items-center text-gray-700 hover:text-green-700 transition-colors duration-200 order-2 sm:order-1"
-  >
-    <ArrowLeftCircle size={26} className="mr-2" />
-    <span className="hidden sm:inline font-semibold">Back</span>
-  </motion.button>
-  <h1 className="text-xl sm:text-2xl font-bold text-center text-green-800 order-1 sm:order-2">
-    Admin Dashboard — Pending Approvals
-  </h1>
-  <div className="flex justify-center sm:justify-end items-center gap-3 order-3 flex-wrap">
-    
+      <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between bg-white shadow-sm border-b border-gray-200 p-4 sm:p-6 gap-3 sm:gap-0">
+        <motion.button
+          onClick={() => navigate(-1)}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          className="flex items-center text-gray-700 hover:text-green-700 transition-colors duration-200 order-2 sm:order-1"
+        >
+          <ArrowLeftCircle size={26} className="mr-2" />
+          <span className="hidden sm:inline font-semibold">Back</span>
+        </motion.button>
+        <h1 className="text-xl sm:text-2xl font-bold text-center text-green-800 order-1 sm:order-2">
+          Admin Dashboard — Pending Approvals
+        </h1>
+        <div className="flex justify-center sm:justify-end items-center gap-3 order-3 flex-wrap">
+          <motion.button
+            onClick={() => navigate("/admin/properties")}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="flex items-center bg-blue-600 text-white px-4 py-2 rounded-lg px-4 py-2 rounded-lg shadow-sm font-medium transition-all duration-200"
+          >
+            <Home size={18} className="mr-2" />
+            View Properties →
+          </motion.button>
+          <motion.button
+            onClick={() => navigate("/admin/inquiries")}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="flex items-center bg-orange-200 hover:bg-orange-300 text-orange-800 px-4 py-2 rounded-lg shadow-sm font-medium transition-all duration-200"
+          >
+            <Phone size={18} className="mr-2" />
+            Property Leads
+          </motion.button>
 
+          <motion.button
+            onClick={() => navigate("/add")}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="flex items-center bg-blue-200 hover:bg-blue-300 text-blue-800 px-4 py-2 rounded-lg shadow-sm font-medium transition-all duration-200"
+          >
+            <ImageIcon size={18} className="mr-2" />
+            ADs
+          </motion.button>
 
-  
-
-    <motion.button
-      onClick={() => navigate('/admin/properties')}
-      whileHover={{ scale: 1.05 }}
-      whileTap={{ scale: 0.95 }}
-      className="flex items-center bg-blue-600 text-white px-4 py-2 rounded-lg px-4 py-2 rounded-lg shadow-sm font-medium transition-all duration-200"
-    >
-      <Home size={18} className="mr-2"  />
-      View Properties →
-    </motion.button>
-
-
-
-
-
-    {/* ✅ NEW: Leads Button */}
-    <motion.button
-      onClick={() => navigate("/admin/inquiries")}
-      whileHover={{ scale: 1.05 }}
-      whileTap={{ scale: 0.95 }}
-      className="flex items-center bg-orange-200 hover:bg-orange-300 text-orange-800 px-4 py-2 rounded-lg shadow-sm font-medium transition-all duration-200"
-    >
-      <Phone size={18} className="mr-2" />
-      Property Leads
-    </motion.button>
-
-    <motion.button
-      onClick={() => navigate("/add")}
-      whileHover={{ scale: 1.05 }}
-      whileTap={{ scale: 0.95 }}
-      className="flex items-center bg-blue-200 hover:bg-blue-300 text-blue-800 px-4 py-2 rounded-lg shadow-sm font-medium transition-all duration-200"
-    >
-      <ImageIcon size={18} className="mr-2" />
-      ADs
-    </motion.button>
-
-    <motion.button
-      onClick={() => navigate("/user-dashboard")}
-      whileHover={{ scale: 1.05 }}
-      whileTap={{ scale: 0.95 }}
-      className="flex items-center bg-green-200 hover:bg-green-300 text-green-800 px-4 py-2 rounded-lg shadow-sm font-medium transition-all duration-200"
-    >
-      <User size={18} className="mr-2" /> Profile
-    </motion.button>
-    <motion.button
-      onClick={handleLogout}
-      whileHover={{ scale: 1.05 }}
-      whileTap={{ scale: 0.95 }}
-      className="flex items-center bg-red-200 hover:bg-red-300 text-red-800 px-3 py-2 rounded-lg shadow-sm font-medium transition-all duration-200"
-    >
-      <LogOut size={18} className="mr-1" /> Logout
-    </motion.button>
-  </div>
-</header>
-
+          <motion.button
+            onClick={() => navigate("/user-dashboard")}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="flex items-center bg-green-200 hover:bg-green-300 text-green-800 px-4 py-2 rounded-lg shadow-sm font-medium transition-all duration-200"
+          >
+            <User size={18} className="mr-2" /> Profile
+          </motion.button>
+          <motion.button
+            onClick={handleLogout}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="flex items-center bg-red-200 hover:bg-red-300 text-red-800 px-3 py-2 rounded-lg shadow-sm font-medium transition-all duration-200"
+          >
+            <LogOut size={18} className="mr-1" /> Logout
+          </motion.button>
+        </div>
+      </header>
 
       {/* Tabs */}
       <div className="flex justify-center gap-3 sm:gap-6 bg-white py-3 border-b border-gray-200">
@@ -321,7 +318,7 @@ export default function AdminDashboard() {
                   >
                     <div className="flex-1 min-w-0 w-full">
                       <h3 className="text-lg font-semibold text-green-800 mb-1 break-words">
-                        {item.title}
+                        {activeTab === "promotions" ? item.shopName : item.title}
                       </h3>
                       {activeTab === "properties" ? (
                         <div className="text-sm text-gray-600 flex flex-wrap gap-3">
@@ -335,6 +332,21 @@ export default function AdminDashboard() {
                             Location: {item.city}, {item.state}
                           </span>
                         </div>
+                      ) : activeTab === "promotions" ? (
+                        <div className="text-sm text-gray-600 flex flex-wrap gap-3">
+                          <span className="flex items-center">
+                            <Phone size={14} className="mr-1" />
+                            {item.vendorPhone}
+                          </span>
+                          <span className="flex items-center">
+                            <Store size={14} className="mr-1" />
+                            {item.vendorSlug}
+                          </span>
+                          <span className="flex items-center">
+                            <Calendar size={14} className="mr-1" />
+                            {new Date(item.createdAt).toLocaleDateString()}
+                          </span>
+                        </div>
                       ) : (
                         <>
                           <p className="text-sm text-gray-600 flex flex-wrap gap-4">
@@ -346,7 +358,10 @@ export default function AdminDashboard() {
                           {(item.description || item.content) && (
                             <p className="text-sm text-gray-700 mt-2 line-clamp-2 break-words overflow-hidden">
                               {(item.description || item.content).length > 100
-                                ? `${(item.description || item.content).substring(0, 100)}...`
+                                ? `${(item.description || item.content).substring(
+                                    0,
+                                    100
+                                  )}...`
                                 : item.description || item.content}
                             </p>
                           )}
@@ -426,7 +441,9 @@ export default function AdminDashboard() {
             >
               <div className="flex justify-between items-start mb-4 gap-4">
                 <h2 className="text-xl font-semibold text-green-700 break-words flex-1 min-w-0">
-                  {selectedItem.title}
+                  {activeTab === "promotions"
+                    ? selectedItem.shopName
+                    : selectedItem.title}
                 </h2>
                 <button
                   onClick={() => {
@@ -446,10 +463,133 @@ export default function AdminDashboard() {
                 </div>
               ) : (
                 <>
+                  {/* PROMOTIONS TAB DETAILS */}
+                  {activeTab === "promotions" && (
+                    <div className="space-y-4">
+                      {selectedItem.shopLogoUrl && (
+                        <div className="mb-4 flex justify-center">
+                          <img
+                            src={selectedItem.shopLogoUrl}
+                            alt="Shop Logo"
+                            className="w-32 h-32 object-cover rounded-lg border-2 border-gray-300 cursor-pointer hover:opacity-80 transition-opacity"
+                            onClick={() =>
+                              setFullImage(selectedItem.shopLogoUrl)
+                            }
+                            loading="lazy"
+                          />
+                        </div>
+                      )}
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="flex items-start gap-2 min-w-0">
+                          <Store
+                            size={18}
+                            className="text-green-600 mt-1 flex-shrink-0"
+                          />
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs text-gray-500">Shop Name</p>
+                            <p className="font-semibold text-gray-800 break-words">
+                              {selectedItem.shopName || "N/A"}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-start gap-2 min-w-0">
+                          <Phone
+                            size={18}
+                            className="text-green-600 mt-1 flex-shrink-0"
+                          />
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs text-gray-500">
+                              WhatsApp Number
+                            </p>
+                            <p className="font-semibold text-gray-800 break-words">
+                              {selectedItem.vendorPhone || "N/A"}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-start gap-2 min-w-0">
+                          <LinkIcon
+                            size={18}
+                            className="text-green-600 mt-1 flex-shrink-0"
+                          />
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs text-gray-500">Shop Slug</p>
+                            <p className="font-semibold text-gray-800 break-words">
+                              {selectedItem.vendorSlug || "N/A"}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-start gap-2 min-w-0">
+                          <Building
+                            size={18}
+                            className="text-green-600 mt-1 flex-shrink-0"
+                          />
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs text-gray-500">
+                              Listing Quota
+                            </p>
+                            <p className="font-semibold text-gray-800 break-words">
+                              {selectedItem.listingQuota || 0} products
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {selectedItem.shopDescription && (
+                        <div className="mt-4 pt-4 border-t">
+                          <p className="text-xs text-gray-500 mb-1">
+                            Shop Description
+                          </p>
+                          <p className="text-gray-700 break-words whitespace-pre-wrap overflow-wrap-anywhere">
+                            {selectedItem.shopDescription}
+                          </p>
+                        </div>
+                      )}
+
+                      {selectedItem.email && (
+                        <div className="mt-4 pt-4 border-t">
+                          <p className="text-xs text-gray-500 mb-2">
+                            Vendor Details
+                          </p>
+                          <div className="flex items-center gap-3">
+                            <div
+                              className={`w-10 h-10 rounded-full flex-shrink-0 ${getAvatarColor(
+                                selectedItem.firstName
+                              )} flex items-center justify-center text-white font-semibold text-sm`}
+                            >
+                              {getInitials(
+                                selectedItem.firstName,
+                                selectedItem.lastName
+                              )}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="font-semibold text-gray-800 break-words">
+                                {selectedItem.firstName}{" "}
+                                {selectedItem.lastName}
+                              </p>
+                              <p className="text-xs text-gray-500 break-all">
+                                {selectedItem.email}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="mt-4 pt-4 border-t">
+                        <p className="text-xs text-gray-500">Applied At</p>
+                        <p className="text-gray-700">
+                          {new Date(selectedItem.createdAt).toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
                   {/* JOBS TAB DETAILS */}
                   {activeTab === "jobs" && (
                     <div className="space-y-4">
-                      {/* Images Section */}
                       {selectedItem.imageUrls &&
                         selectedItem.imageUrls.length > 0 && (
                           <div className="mb-4">
@@ -486,7 +626,10 @@ export default function AdminDashboard() {
                         </div>
 
                         <div className="flex items-start gap-2 min-w-0">
-                          <MapPin size={18} className="text-green-600 mt-1 flex-shrink-0" />
+                          <MapPin
+                            size={18}
+                            className="text-green-600 mt-1 flex-shrink-0"
+                          />
                           <div className="min-w-0 flex-1">
                             <p className="text-xs text-gray-500">Location</p>
                             <p className="font-semibold text-gray-800 break-words">
@@ -511,7 +654,10 @@ export default function AdminDashboard() {
                         </div>
 
                         <div className="flex items-start gap-2 min-w-0">
-                          <Clock size={18} className="text-green-600 mt-1 flex-shrink-0" />
+                          <Clock
+                            size={18}
+                            className="text-green-600 mt-1 flex-shrink-0"
+                          />
                           <div className="min-w-0 flex-1">
                             <p className="text-xs text-gray-500">
                               Application Deadline
@@ -529,7 +675,10 @@ export default function AdminDashboard() {
 
                       {selectedItem.reglink && (
                         <div className="flex items-start gap-2 mt-4 min-w-0">
-                          <LinkIcon size={18} className="text-green-600 mt-1 flex-shrink-0" />
+                          <LinkIcon
+                            size={18}
+                            className="text-green-600 mt-1 flex-shrink-0"
+                          />
                           <div className="min-w-0 flex-1">
                             <p className="text-xs text-gray-500">
                               Registration Link
@@ -596,7 +745,6 @@ export default function AdminDashboard() {
                   {/* EVENTS TAB DETAILS */}
                   {activeTab === "events" && (
                     <div className="space-y-4">
-                      {/* Images Section */}
                       {selectedItem.imageUrls &&
                         selectedItem.imageUrls.length > 0 && (
                           <div className="mb-4">
@@ -620,7 +768,10 @@ export default function AdminDashboard() {
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="flex items-start gap-2 min-w-0">
-                          <Calendar size={18} className="text-green-600 mt-1 flex-shrink-0" />
+                          <Calendar
+                            size={18}
+                            className="text-green-600 mt-1 flex-shrink-0"
+                          />
                           <div className="min-w-0 flex-1">
                             <p className="text-xs text-gray-500">Event Date</p>
                             <p className="font-semibold text-gray-800 break-words">
@@ -634,7 +785,10 @@ export default function AdminDashboard() {
                         </div>
 
                         <div className="flex items-start gap-2 min-w-0">
-                          <MapPin size={18} className="text-green-600 mt-1 flex-shrink-0" />
+                          <MapPin
+                            size={18}
+                            className="text-green-600 mt-1 flex-shrink-0"
+                          />
                           <div className="min-w-0 flex-1">
                             <p className="text-xs text-gray-500">Location</p>
                             <p className="font-semibold text-gray-800 break-words">
@@ -646,7 +800,10 @@ export default function AdminDashboard() {
 
                       {selectedItem.reglink && (
                         <div className="flex items-start gap-2 mt-4 min-w-0">
-                          <LinkIcon size={18} className="text-green-600 mt-1 flex-shrink-0" />
+                          <LinkIcon
+                            size={18}
+                            className="text-green-600 mt-1 flex-shrink-0"
+                          />
                           <div className="min-w-0 flex-1">
                             <p className="text-xs text-gray-500">
                               Registration Link
@@ -713,7 +870,6 @@ export default function AdminDashboard() {
                   {/* COMMUNITY TAB DETAILS */}
                   {activeTab === "community" && (
                     <div className="space-y-4">
-                      {/* Images Section */}
                       {selectedItem.imageUrls &&
                         selectedItem.imageUrls.length > 0 && (
                           <div className="mb-4">
@@ -736,7 +892,10 @@ export default function AdminDashboard() {
                         )}
 
                       <div className="flex items-start gap-2 min-w-0">
-                        <MapPin size={18} className="text-green-600 mt-1 flex-shrink-0" />
+                        <MapPin
+                          size={18}
+                          className="text-green-600 mt-1 flex-shrink-0"
+                        />
                         <div className="min-w-0 flex-1">
                           <p className="text-xs text-gray-500">Location</p>
                           <p className="font-semibold text-gray-800 break-words">
@@ -793,7 +952,6 @@ export default function AdminDashboard() {
                   {/* PROPERTY TAB DETAILS */}
                   {activeTab === "properties" && propertyDetails && (
                     <div className="space-y-4">
-                      {/* Images Section */}
                       {propertyDetails.imageUrls &&
                         propertyDetails.imageUrls.length > 0 && (
                           <div className="mb-4">
@@ -817,7 +975,10 @@ export default function AdminDashboard() {
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="flex items-start gap-2 min-w-0">
-                          <Home size={18} className="text-green-600 mt-1 flex-shrink-0" />
+                          <Home
+                            size={18}
+                            className="text-green-600 mt-1 flex-shrink-0"
+                          />
                           <div className="min-w-0 flex-1">
                             <p className="text-xs text-gray-500">
                               Property Type
@@ -829,7 +990,10 @@ export default function AdminDashboard() {
                         </div>
 
                         <div className="flex items-start gap-2 min-w-0">
-                          <Building size={18} className="text-green-600 mt-1 flex-shrink-0" />
+                          <Building
+                            size={18}
+                            className="text-green-600 mt-1 flex-shrink-0"
+                          />
                           <div className="min-w-0 flex-1">
                             <p className="text-xs text-gray-500">
                               Property Status
@@ -850,9 +1014,9 @@ export default function AdminDashboard() {
                             <p className="font-semibold text-gray-800 break-words">
                               ₹{" "}
                               {propertyDetails.price
-                                ? (+propertyDetails.price / 100000).toLocaleString(
-                                    "en-IN"
-                                  )
+                                ? (
+                                    +propertyDetails.price / 100000
+                                  ).toLocaleString("en-IN")
                                 : "N/A"}{" "}
                               Lakhs
                             </p>
@@ -860,7 +1024,10 @@ export default function AdminDashboard() {
                         </div>
 
                         <div className="flex items-start gap-2 min-w-0">
-                          <Home size={18} className="text-green-600 mt-1 flex-shrink-0" />
+                          <Home
+                            size={18}
+                            className="text-green-600 mt-1 flex-shrink-0"
+                          />
                           <div className="min-w-0 flex-1">
                             <p className="text-xs text-gray-500">Total Area</p>
                             <p className="font-semibold text-gray-800 break-words">
@@ -870,7 +1037,10 @@ export default function AdminDashboard() {
                         </div>
 
                         <div className="flex items-start gap-2 min-w-0">
-                          <MapPin size={18} className="text-green-600 mt-1 flex-shrink-0" />
+                          <MapPin
+                            size={18}
+                            className="text-green-600 mt-1 flex-shrink-0"
+                          />
                           <div className="min-w-0 flex-1">
                             <p className="text-xs text-gray-500">District</p>
                             <p className="font-semibold text-gray-800 break-words">
@@ -880,7 +1050,10 @@ export default function AdminDashboard() {
                         </div>
 
                         <div className="flex items-start gap-2 min-w-0">
-                          <MapPin size={18} className="text-green-600 mt-1 flex-shrink-0" />
+                          <MapPin
+                            size={18}
+                            className="text-green-600 mt-1 flex-shrink-0"
+                          />
                           <div className="min-w-0 flex-1">
                             <p className="text-xs text-gray-500">City</p>
                             <p className="font-semibold text-gray-800 break-words">
@@ -890,7 +1063,10 @@ export default function AdminDashboard() {
                         </div>
 
                         <div className="flex items-start gap-2 min-w-0">
-                          <MapPin size={18} className="text-green-600 mt-1 flex-shrink-0" />
+                          <MapPin
+                            size={18}
+                            className="text-green-600 mt-1 flex-shrink-0"
+                          />
                           <div className="min-w-0 flex-1">
                             <p className="text-xs text-gray-500">State</p>
                             <p className="font-semibold text-gray-800 break-words">
@@ -900,7 +1076,10 @@ export default function AdminDashboard() {
                         </div>
 
                         <div className="flex items-start gap-2 min-w-0 md:col-span-2">
-                          <MapPin size={18} className="text-green-600 mt-1 flex-shrink-0" />
+                          <MapPin
+                            size={18}
+                            className="text-green-600 mt-1 flex-shrink-0"
+                          />
                           <div className="min-w-0 flex-1">
                             <p className="text-xs text-gray-500">Address</p>
                             <p className="font-semibold text-gray-800 break-words">
@@ -938,7 +1117,9 @@ export default function AdminDashboard() {
                       <div className="mt-4 pt-4 border-t">
                         <p className="text-xs text-gray-500">Created At</p>
                         <p className="text-gray-700">
-                          {new Date(propertyDetails.createdAt).toLocaleString()}
+                          {new Date(
+                            propertyDetails.createdAt
+                          ).toLocaleString()}
                         </p>
                       </div>
                     </div>

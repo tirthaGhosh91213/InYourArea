@@ -9,7 +9,7 @@ import SmallAdd from "../components/SmallAdd";
 import LargeAd from "../components/LargeAd";
 import { Clock, Play, ChevronDown } from "lucide-react";
 import { MdVerified } from "react-icons/md";
-import Loader from '../components/Loader';
+import StateNewsLoader from '../components/StateNewsLoader'; // 🔥 IMPORTED
 
 // Helper: circular next index
 function getNextIndex(current, total) {
@@ -374,8 +374,9 @@ export default function LocalNews() {
           </motion.div>
 
           {loading ? (
-            <div className="flex justify-center items-center h-64">
-              <Loader />
+            // 🔥 REPLACED <Loader /> WITH <StateNewsLoader />
+            <div className="w-full flex justify-center">
+               <StateNewsLoader />
             </div>
           ) : error ? (
             <div className="text-center text-red-500 font-semibold">{error}</div>
@@ -383,7 +384,7 @@ export default function LocalNews() {
             state &&
             !state.startsWith("-") && (
               <div className="text-center text-gray-600 font-medium">
-                No state news found.
+                {/* No state news found. */}
               </div>
             )
           ) : (
