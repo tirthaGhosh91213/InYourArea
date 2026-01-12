@@ -1026,7 +1026,7 @@ const handleSignin = async (e) => {
                   <h1 className="text-2xl md:text-3xl font-bold text-emerald-700">
                     Reset Password
                   </h1>
-                  <input
+                  {/* <input
                     type="email"
                     placeholder="Email"
                     value={resetForm.email}
@@ -1035,7 +1035,7 @@ const handleSignin = async (e) => {
                     }
                     className="w-full max-w-sm p-3 border border-gray-300 rounded focus:ring-2 focus:ring-emerald-400 transition"
                     required
-                  />
+                  /> */}
                   <input
                     type="text"
                     placeholder="Reset Token"
