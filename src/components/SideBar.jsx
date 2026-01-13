@@ -94,8 +94,8 @@ export default function Sidebar({ sidebarOpen, onClose }) {
   ];
 
   const getPostOptions = () => {
-    if (role === "admin") return ["Local News", "Jobs", "Events", "Community", "Properties", "Promotion"];
-    return ["Jobs", "Events", "Community", "Properties", "Promotion"];
+    if (role === "admin") return ["Local News", "Jobs", "Events", "Community", "Properties", "Promotion"]; 
+    return ["Jobs", "Events", "Community", "Properties", "Promotion"]; 
   };
 
   const handleOptionClick = (type) => {
@@ -116,7 +116,7 @@ export default function Sidebar({ sidebarOpen, onClose }) {
       case "Properties":
         navigate("/create/properties");
         break;
-      case "Promotion":
+      case "Promotion": 
         navigate("/create/promotion");
         break;
       default:
@@ -140,57 +140,52 @@ export default function Sidebar({ sidebarOpen, onClose }) {
     <AnimatePresence>
       {sidebarOpen && (
         <>
-          {/* ✅ BACKDROP with HIGH Z-INDEX (z-[998]) */}
+          {/* --- Backdrop for Mobile (Click outside to close) --- */}
           <motion.div
-            key="backdrop"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-black/20 z-[998]"
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 lg:hidden"
           />
-          
-          {/* ✅ SIDEBAR with HIGHEST Z-INDEX (z-[999]) */}
+
           <motion.aside
-            key="sidebar"
-            // Changed initial/exit x to -320 to match the new w-80 width
-            initial={{ x: -320 }}
+            initial={{ x: -280 }}
             animate={{ x: 0 }}
-            exit={{ x: -320 }}
+            exit={{ x: -280 }}
             transition={{ type: "spring", stiffness: 100, damping: 20 }}
-            // Changed w-64 to w-80 (wider)
-            className="fixed top-0 left-0 h-screen w-80 px-8 pt-6 pb-6 bg-gradient-to-b from-white/90 via-white/80 to-white/70 backdrop-blur-lg border-r border-gray-200 shadow-lg flex flex-col z-[999] overflow-y-auto relative"
+            // Width: w-72 lg:w-80
+            // Padding: py-6 lg:py-14
+            // Z-Index: z-50 lg:z-30
+            className="fixed top-0 left-0 h-screen w-80 lg:w-80 px-8 py-6 lg:py-14 bg-gradient-to-b from-white/90 via-white/80 to-white/70 backdrop-blur-lg border-r border-gray-200 shadow-lg flex flex-col justify-between z-50 lg:z-30"
           >
-            {/* --- CLOSE BUTTON FIXED AT CORNER --- */}
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+            {/* --- Close Button positioned absolutely at the corner --- */}
+            <button
               onClick={onClose}
-              // Positioned absolutely at top right corner
-              className="absolute top-4 right-4 lg:hidden p-2 rounded-full hover:bg-gray-100 transition cursor-pointer text-gray-600 hover:text-red-500 z-50"
+              className="lg:hidden absolute top-4 right-4 p-2 text-gray-500 hover:text-red-500 hover:bg-gray-100 rounded-full transition-colors"
             >
               <X size={24} />
-            </motion.button>
+            </button>
 
             <div>
-              {/* --- LOGO SECTION CENTERED AND SMALLER --- */}
-              <div className="flex flex-col items-center justify-center w-full mb-2">
+              {/* UPDATED: Added justify-center for centering and w-full */}
+              <div className="flex items-center justify-center w-full">
                 <motion.div
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => navigate("/")}
-                  className="cursor-pointer flex justify-center"
+                  className="cursor-pointer"
                 >
                   <img
                     src={logo}
                     alt="Logo"
-                    // Changed size to w-28 (approx 7rem) to make it "thora small"
-                    className="w-28 object-contain select-none"
+                    // UPDATED: Added lg:mt-6 for extra desktop margin, removed inline marginLeft
+                    className="max-h-24 sm:max-h-28 md:max-h-28 w-auto mt-3 lg:mt-6 select-none"
                     draggable={false}
                   />
                 </motion.div>
               </div>
-
+              
               <motion.div
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -258,11 +253,11 @@ export default function Sidebar({ sidebarOpen, onClose }) {
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: index * 0.1 }}
                       className={`flex items-center gap-3 py-3 px-4 rounded-xl font-medium text-lg transition-all duration-300 cursor-pointer
-                      ${
-                        active
-                          ? "bg-red-500 text-white shadow-lg"
-                          : "text-gray-700 hover:bg-green-100 hover:text-green-700"
-                      }`}
+                    ${
+                      active
+                        ? "bg-red-500 text-white shadow-lg"
+                        : "text-gray-700 hover:bg-green-100 hover:text-green-700"
+                    }`}
                     >
                       <Icon
                         size={20}
@@ -292,7 +287,7 @@ export default function Sidebar({ sidebarOpen, onClose }) {
                 >
                   <Mail size={18} /> Email Service
                 </motion.button>
-                <div className="w-full mt-3 flex justify-center pb-4">
+                <div className="w-full mt-3 flex justify-center">
                   <p className="text-xs">
                     <span className="text-gray-600 font-semibold">Powered by </span>
                     <a
