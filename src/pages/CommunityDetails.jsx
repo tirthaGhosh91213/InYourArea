@@ -27,6 +27,7 @@ import SmallAdd from "../components/SmallAdd";
 import Loader from "../components/Loader";
 import { MdVerified } from "react-icons/md";
 import { Helmet } from 'react-helmet-async';
+import CommunityDetailsSkeleton from "../components/CommunityDetailsSkeleton";
 
 // Helper: circular index for rotating ads
 const getNextIndex = (current, total) => {
@@ -786,12 +787,9 @@ export default function CommunityDetails() {
   const topRightAd = ads.length ? ads[topRightIndex % ads.length] : null;
   const bottomRightAd = ads.length ? ads[bottomRightIndex % ads.length] : null;
 
-  if (loading || !post)
-    return (
-      <div className="flex justify-center items-center h-screen">
-        <Loader />
-      </div>
-    );
+  if (loading || !post) {
+  return <CommunityDetailsSkeleton />;
+}
 
   const isPostAuthorAdmin = post.author?.role === "ADMIN";
   const hasTitle = post.title && post.title.trim() !== "";
