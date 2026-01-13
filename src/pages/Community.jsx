@@ -12,6 +12,7 @@ import { useNavigate } from "react-router-dom";
 import { IoPersonCircleOutline } from "react-icons/io5";
 import { MdVerified } from "react-icons/md";
 import Loader from "../components/Loader";
+import CommunitySkeleton from "../components/CommunitySkeleton";
 
 
 // Helper: Get next index in circular manner
@@ -677,17 +678,15 @@ export default function Community() {
 
 
           {loading ? (
-            <div className="flex justify-center py-20">
-              <Loader />
-            </div>
-          ) : filteredPosts.length === 0 ? (
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="text-center text-gray-500 mt-10 text-lg sm:text-xl px-4"
-            >
-              No community posts yet. Start the conversation!
-            </motion.p>
+  <CommunitySkeleton />
+) : filteredPosts.length === 0 ? (
+  <motion.p
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
+    className="text-center text-gray-500 mt-10 text-lg sm:text-xl px-4"
+  >
+    No community posts yet. Start the conversation!
+  </motion.p>
           ) : (
             <>
               {/* 🔥 MOBILE: Infinite scroll */}
