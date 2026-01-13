@@ -5,6 +5,7 @@ import axios from "axios";
 import toast, { Toaster } from "react-hot-toast";
 import CartDrawer from "./CartDrawer"; 
 import { AnimatePresence, motion } from "framer-motion";
+import { Helmet } from "react-helmet";
 
 const BASE_URL = "https://api.jharkhandbiharupdates.com/api/v1";
 
@@ -217,11 +218,40 @@ export default function VendorShopPage() {
   const discountedProducts = products.filter(p => p.hasDiscount);
   const regularProducts = products.filter(p => !p.hasDiscount);
 
+  // --- HELMET SEO DATA ---
+  const pageUrl = window.location.href;
+  const pageTitle = vendor?.shopName ? `${vendor.shopName} - Shop Online` : "Vendor Shop";
+  const pageDesc = vendor?.shopDescription || "Check out best offers and products from this shop on Jharkhand Bihar Updates.";
+  const pageImage = vendor?.shopCoverUrl || vendor?.shopLogoUrl || `${window.location.origin}/banner.jpg`;
+
   if (loading) return <ShopSkeleton />;
 
   return (
     <div className="min-h-screen bg-[#F0F2F5] pb-28 font-sans">
       
+      {/* --- REACT HELMET ADDED HERE --- */}
+      <Helmet>
+        <title>{pageTitle} | JHARKHAND BIHAR UPDATES</title>
+        <meta name="description" content={pageDesc} />
+        <link rel="canonical" href={pageUrl} />
+        
+        {/* Open Graph / Facebook */}
+        <meta property="fb:app_id" content="1234567890" />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content={pageUrl} />
+        <meta property="og:title" content={`${pageTitle} - Best Offers & Menu`} />
+        <meta property="og:description" content={pageDesc} />
+        <meta property="og:site_name" content="JHARKHAND BIHAR UPDATES" />
+        <meta property="og:image" content={pageImage} />
+        <meta property="og:image:secure_url" content={pageImage} />
+        
+        {/* Twitter */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={pageTitle} />
+        <meta name="twitter:description" content={pageDesc} />
+        <meta name="twitter:image" content={pageImage} />
+      </Helmet>
+
       <Toaster position="top-center" />
 
       {/* --- 1. COVER PHOTO --- */}
