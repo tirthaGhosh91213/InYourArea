@@ -79,7 +79,6 @@ export default function Sidebar({ sidebarOpen, onClose }) {
       ? location.pathname.startsWith("/statenews")
       : location.pathname === path;
 
-  // ✅ REARRANGED ORDER
   const menuItems = [
     {
       name: "State News",
@@ -87,8 +86,8 @@ export default function Sidebar({ sidebarOpen, onClose }) {
       path: `/statenews/${encodeURIComponent(selectedState)}`,
     },
     { name: "Jobs", icon: Newspaper, path: "/jobs" },
-    { name: "Events", icon: Home, path: "/events" },     // Moved Up
-    { name: "Community", icon: Users, path: "/community" }, // Moved Down
+    { name: "Events", icon: Home, path: "/events" },
+    { name: "Community", icon: Users, path: "/community" },
     { name: "Properties", icon: Building2, path: "/properties" },
     { name: "Promotions", icon: ShoppingBag, path: "/promotions" }, 
   ];
@@ -140,49 +139,58 @@ export default function Sidebar({ sidebarOpen, onClose }) {
     <AnimatePresence>
       {sidebarOpen && (
         <>
-          {/* ✅ BACKDROP ADDED TO CLOSE SIDEBAR ON OUTSIDE CLICK */}
+          {/* ✅ BACKDROP with HIGH Z-INDEX (z-[998]) */}
           <motion.div
             key="backdrop"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-black/20 z-30"
+            className="fixed inset-0 bg-black/20 z-[998]"
           />
           
+          {/* ✅ SIDEBAR with HIGHEST Z-INDEX (z-[999]) */}
           <motion.aside
             key="sidebar"
             initial={{ x: -250 }}
             animate={{ x: 0 }}
             exit={{ x: -250 }}
             transition={{ type: "spring", stiffness: 100, damping: 20 }}
-            className="fixed top-0 left-0 h-screen w-64 px-8 py-14 bg-gradient-to-b from-white/90 via-white/80 to-white/70 backdrop-blur-lg border-r border-gray-200 shadow-lg flex flex-col justify-between z-40"
+            // Added 'overflow-y-auto' for scrolling on small phones
+            // Changed 'py-14' to 'pt-6 pb-6' to move content upper
+            className="fixed top-0 left-0 h-screen w-64 px-8 pt-6 pb-6 bg-gradient-to-b from-white/90 via-white/80 to-white/70 backdrop-blur-lg border-r border-gray-200 shadow-lg flex flex-col z-[999] overflow-y-auto relative"
           >
+            {/* --- CLOSE BUTTON FIXED AT CORNER --- */}
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={onClose}
+              // Positioned absolutely at top right corner
+              className="absolute top-4 right-4 lg:hidden p-2 rounded-full hover:bg-gray-100 transition cursor-pointer text-gray-600 hover:text-red-500 z-50"
+            >
+              <X size={24} />
+            </motion.button>
+
             <div>
-              <div className="flex items-center justify-between ">
+              {/* --- LOGO SECTION CENTERED AND SMALLER --- */}
+              <div className="flex flex-col items-center justify-center w-full mb-2">
                 <motion.div
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => navigate("/")}
-                  className="cursor-pointer"
+                  className="cursor-pointer flex justify-center"
                 >
-                  {/* <img
+                  <img
                     src={logo}
                     alt="Logo"
-                    className="max-h-22 w-auto mt-3 select-none sm:max-h-20 md:max-h-20"
-                    style={{ marginLeft: '40px', marginTop: '30px' }}
+                    // Changed size to w-28 (approx 7rem) to make it "thora small"
+                    // Removed marginLeft to center it properly
+                    className="w-28 object-contain select-none"
                     draggable={false}
-                  /> */}
+                  />
                 </motion.div>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={onClose}
-                  className="lg:hidden p-2 rounded-full hover:bg-gray-100 transition cursor-pointer"
-                >
-                  <X size={24} />
-                </motion.button>
               </div>
+
               <motion.div
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -284,7 +292,7 @@ export default function Sidebar({ sidebarOpen, onClose }) {
                 >
                   <Mail size={18} /> Email Service
                 </motion.button>
-                <div className="w-full mt-3 flex justify-center">
+                <div className="w-full mt-3 flex justify-center pb-4">
                   <p className="text-xs">
                     <span className="text-gray-600 font-semibold">Powered by </span>
                     <a
