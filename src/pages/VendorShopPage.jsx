@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { ShoppingCart, Plus, Loader2, MapPin, Star, Store, Share2, Tag, ShoppingBag, CheckCircle, Percent, X, Maximize2 } from "lucide-react"; 
+import { ShoppingCart, Plus, Loader2, MapPin, Store, Share2, Tag, ShoppingBag, CheckCircle, Percent, X, Maximize2 } from "lucide-react"; 
 import axios from "axios";
 import toast, { Toaster } from "react-hot-toast";
 import CartDrawer from "./CartDrawer"; 
@@ -8,7 +8,7 @@ import { AnimatePresence, motion } from "framer-motion";
 
 const BASE_URL = "https://api.jharkhandbiharupdates.com/api/v1";
 
-// --- SKELETON LOADER (Updated for FB Style Layout) ---
+// --- SKELETON LOADER ---
 const ShopSkeleton = () => (
   <div className="min-h-screen bg-gray-50 animate-pulse">
     {/* Cover Skeleton */}
@@ -16,7 +16,7 @@ const ShopSkeleton = () => (
     
     <div className="max-w-7xl mx-auto px-4 relative z-10 -mt-16 md:-mt-20 mb-8">
       <div className="flex flex-col md:flex-row gap-4 md:items-end">
-        {/* Profile Pic Skeleton (Left Aligned) */}
+        {/* Profile Pic Skeleton */}
         <div className="w-32 h-32 md:w-40 md:h-40 rounded-full bg-gray-300 border-4 border-white shrink-0 shadow-sm"></div>
         
         {/* Info Skeleton */}
@@ -65,7 +65,7 @@ const ProductCard = ({ product, addToCart, addingToCartId }) => {
         {/* Discount Badge */}
         {product.hasDiscount && !isOutOfStock && (
           <div className="absolute top-0 left-0 bg-gradient-to-r from-red-600 to-red-500 text-white text-[10px] px-2 py-1 font-bold rounded-br-lg shadow-sm flex items-center gap-0.5 z-10">
-             <Percent size={10} /> OFF
+              <Percent size={10} /> OFF
           </div>
         )}
       </div>
@@ -152,6 +152,9 @@ export default function VendorShopPage() {
   };
 
   useEffect(() => {
+    // Scroll to top on component mount or slug change
+    window.scrollTo(0, 0);
+
     const fetchData = async () => {
       try {
         setLoading(true);
@@ -170,7 +173,8 @@ export default function VendorShopPage() {
         setLoading(false);
       }
     };
-    fetchData();
+    
+    if (slug) fetchData();
   }, [slug]);
 
   const refreshCart = async (sessionId) => {
@@ -241,11 +245,11 @@ export default function VendorShopPage() {
           )}
       </div>
 
-      {/* --- 2. PROFILE INFO SECTION (Facebook Style) --- */}
+      {/* --- 2. PROFILE INFO SECTION --- */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 relative z-10 pb-4">
           <div className="flex flex-col md:flex-row items-start md:items-end -mt-16 md:-mt-10 gap-4 md:gap-6">
               
-              {/* Profile Image (Left Aligned) */}
+              {/* Profile Image */}
               <div 
                 className="relative group cursor-pointer shrink-0 z-20"
                 onClick={() => vendor?.shopLogoUrl && setFullscreenImage(vendor.shopLogoUrl)}
@@ -282,7 +286,7 @@ export default function VendorShopPage() {
                           </div>
                       </div>
 
-                      {/* Action Buttons (Fixed Mobile Layout) */}
+                      {/* Action Buttons */}
                       <div className="flex gap-3 mt-2 md:mt-0 w-full md:w-auto">
                           <button 
                               onClick={handleShare}
@@ -317,7 +321,7 @@ export default function VendorShopPage() {
            </div>
         )}
 
-        {/* Best Offers (Clean Headers - No BG Box) */}
+        {/* Best Offers */}
         {discountedProducts.length > 0 && (
           <div className="animate-fade-in-up">
             <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-3">
@@ -338,7 +342,7 @@ export default function VendorShopPage() {
           </div>
         )}
 
-        {/* All Products (Clean Headers - No BG Box) */}
+        {/* All Products */}
         {regularProducts.length > 0 && (
           <div className="animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
             <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-3">
