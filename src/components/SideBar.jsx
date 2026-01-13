@@ -11,6 +11,7 @@ import {
   ChevronDown,
   Building2,
   ShoppingBag,
+  Megaphone,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import logo from "../assets/logo.png";
@@ -89,7 +90,7 @@ export default function Sidebar({ sidebarOpen, onClose }) {
     { name: "Events", icon: Home, path: "/events" },
     { name: "Community", icon: Users, path: "/community" },
     { name: "Properties", icon: Building2, path: "/properties" },
-    { name: "Promotions", icon: ShoppingBag, path: "/promotions" }, 
+    { name: "Promote Your Business", icon: Megaphone, path: "/promotions" }, 
   ];
 
   const getPostOptions = () => {
@@ -152,13 +153,13 @@ export default function Sidebar({ sidebarOpen, onClose }) {
           {/* ✅ SIDEBAR with HIGHEST Z-INDEX (z-[999]) */}
           <motion.aside
             key="sidebar"
-            initial={{ x: -250 }}
+            // Changed initial/exit x to -320 to match the new w-80 width
+            initial={{ x: -320 }}
             animate={{ x: 0 }}
-            exit={{ x: -250 }}
+            exit={{ x: -320 }}
             transition={{ type: "spring", stiffness: 100, damping: 20 }}
-            // Added 'overflow-y-auto' for scrolling on small phones
-            // Changed 'py-14' to 'pt-6 pb-6' to move content upper
-            className="fixed top-0 left-0 h-screen w-64 px-8 pt-6 pb-6 bg-gradient-to-b from-white/90 via-white/80 to-white/70 backdrop-blur-lg border-r border-gray-200 shadow-lg flex flex-col z-[999] overflow-y-auto relative"
+            // Changed w-64 to w-80 (wider)
+            className="fixed top-0 left-0 h-screen w-80 px-8 pt-6 pb-6 bg-gradient-to-b from-white/90 via-white/80 to-white/70 backdrop-blur-lg border-r border-gray-200 shadow-lg flex flex-col z-[999] overflow-y-auto relative"
           >
             {/* --- CLOSE BUTTON FIXED AT CORNER --- */}
             <motion.button
@@ -184,7 +185,6 @@ export default function Sidebar({ sidebarOpen, onClose }) {
                     src={logo}
                     alt="Logo"
                     // Changed size to w-28 (approx 7rem) to make it "thora small"
-                    // Removed marginLeft to center it properly
                     className="w-28 object-contain select-none"
                     draggable={false}
                   />
