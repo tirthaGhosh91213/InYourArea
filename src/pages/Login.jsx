@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { FcGoogle } from "react-icons/fc";
+import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
 
 // Custom hook to detect media query matches
 function useMediaQuery(query) {
@@ -25,12 +26,17 @@ function LogIn() {
   const [isReset, setIsReset] = useState(false);
   const [isOtpSent, setIsOtpSent] = useState(false);
   const [isOtpVerified, setIsOtpVerified] = useState(false);
+  const [showResetPassword, setShowResetPassword] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showSigninPassword, setShowSigninPassword] = useState(false);
+  const [showSignupPassword, setShowSignupPassword] = useState(false);
 
   const navigate = useNavigate();
   const location = useLocation();
 
   // OAUTH ADDITION: Define the backend URL for Google OAuth2
-  const GOOGLE_AUTH_URL = 'https://api.jharkhandbiharupdates.com/api/v1/oauth2/authorization/google';
+  const GOOGLE_AUTH_URL =
+    "https://api.jharkhandbiharupdates.com/api/v1/oauth2/authorization/google";
 
   // Detect if screen is mobile width
   const isMobile = useMediaQuery("(max-width: 768px)");
@@ -65,11 +71,14 @@ function LogIn() {
   const handleSendOtp = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch("https://api.jharkhandbiharupdates.com/api/v1/auth/send-otp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: otpForm.email }),
-      });
+      const res = await fetch(
+        "https://api.jharkhandbiharupdates.com/api/v1/auth/send-otp",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: otpForm.email }),
+        }
+      );
       const result = await res.json();
       if (res.ok) {
         setIsOtpSent(true);
@@ -83,11 +92,14 @@ function LogIn() {
   const handleVerifyOtp = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch("https://api.jharkhandbiharupdates.com/api/v1/auth/verify-otp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(otpForm),
-      });
+      const res = await fetch(
+        "https://api.jharkhandbiharupdates.com/api/v1/auth/verify-otp",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(otpForm),
+        }
+      );
       const result = await res.json();
       if (res.ok) {
         setIsOtpVerified(true);
@@ -102,11 +114,14 @@ function LogIn() {
   const handleSignup = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch("https://api.jharkhandbiharupdates.com/api/v1/auth/signup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(signupForm),
-      });
+      const res = await fetch(
+        "https://api.jharkhandbiharupdates.com/api/v1/auth/signup",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(signupForm),
+        }
+      );
       const result = await res.json();
       if (res.ok) {
         showPopup("Signup successful!");
@@ -120,59 +135,65 @@ function LogIn() {
   };
 
   // ===== LOGIN =====
-const handleSignin = async (e) => {
-  e.preventDefault();
-  try {
-    const res = await fetch("https://api.jharkhandbiharupdates.com/api/v1/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(signinForm),
-    });
-    
-    const result = await res.json();
-    const token = result?.accessToken;
-    const role = result?.role === "ROLE_ADMIN" ? "admin" : "user";
-
-    if (res.ok && token) {
-      localStorage.setItem("accessToken", token);
-      localStorage.setItem("role", role);
-      showPopup("Login successful!");
-
-      // ✅ NEW: Sync OneSignal Player ID to backend
-      setTimeout(async () => {
-        try {
-          const subscriptionId = await window.OneSignal?.User?.PushSubscription?.id;
-          
-          if (subscriptionId) {
-            await fetch('https://api.jharkhandbiharupdates.com/api/v1/user/onesignal-id', {
-              method: 'PUT',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-              },
-              body: JSON.stringify({ playerId: subscriptionId })
-            });
-            
-            console.log("✅ OneSignal Player ID synced:", subscriptionId);
-          } else {
-            console.warn("⚠️ No OneSignal subscription ID found yet");
-          }
-        } catch (e) {
-          console.error("❌ Failed to sync OneSignal ID:", e);
+  const handleSignin = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await fetch(
+        "https://api.jharkhandbiharupdates.com/api/v1/auth/login",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(signinForm),
         }
-      }, 2000); // Wait 2 seconds for OneSignal to be ready
+      );
 
-      setTimeout(() => {
-        navigate("/community");
-      }, 500);
-    } else {
-      showPopup(result.message || "Invalid credentials", "error");
+      const result = await res.json();
+      const token = result?.accessToken;
+      const role = result?.role === "ROLE_ADMIN" ? "admin" : "user";
+
+      if (res.ok && token) {
+        localStorage.setItem("accessToken", token);
+        localStorage.setItem("role", role);
+        showPopup("Login successful!");
+
+        // ✅ NEW: Sync OneSignal Player ID to backend
+        setTimeout(async () => {
+          try {
+            const subscriptionId = await window.OneSignal?.User
+              ?.PushSubscription?.id;
+
+            if (subscriptionId) {
+              await fetch(
+                "https://api.jharkhandbiharupdates.com/api/v1/user/onesignal-id",
+                {
+                  method: "PUT",
+                  headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                  },
+                  body: JSON.stringify({ playerId: subscriptionId }),
+                }
+              );
+
+              console.log("✅ OneSignal Player ID synced:", subscriptionId);
+            } else {
+              console.warn("⚠️ No OneSignal subscription ID found yet");
+            }
+          } catch (e) {
+            console.error("❌ Failed to sync OneSignal ID:", e);
+          }
+        }, 2000); // Wait 2 seconds for OneSignal to be ready
+
+        setTimeout(() => {
+          navigate("/community");
+        }, 500);
+      } else {
+        showPopup(result.message || "Invalid credentials", "error");
+      }
+    } catch (err) {
+      showPopup(err.message, "error");
     }
-  } catch (err) {
-    showPopup(err.message, "error");
-  }
-};
-
+  };
 
   // ===== FORGOT PASSWORD =====
   const handleForgotPassword = async (e) => {
@@ -241,562 +262,645 @@ const handleSignin = async (e) => {
                 {!rightPanelActive ? (
                   <>
                     {/* ===== SIGN IN ===== */}
-<form
-  onSubmit={handleSignin}
-  className="relative w-full max-w-sm mx-auto p-5 rounded-2xl backdrop-blur-lg bg-white/85 shadow-lg border border-emerald-100 flex flex-col items-center text-center space-y-5"
->
-  {/* Header */}
-  <div className="space-y-0.5">
-    <h1 className="text-2xl font-extrabold text-emerald-700 tracking-tight">
-      Welcome Back
-    </h1>
-    <p className="text-gray-600 text-xs">Sign in to continue your journey</p>
-  </div>
+                    <form
+                      onSubmit={handleSignin}
+                      className="relative w-full max-w-sm mx-auto p-5 rounded-2xl backdrop-blur-lg bg-white/85 shadow-lg border border-emerald-100 flex flex-col items-center text-center space-y-5"
+                    >
+                      {/* Header */}
+                      <div className="space-y-0.5">
+                        <h1 className="text-2xl font-extrabold text-emerald-700 tracking-tight">
+                          Welcome Back
+                        </h1>
+                        <p className="text-gray-600 text-xs">
+                          Sign in to continue your journey
+                        </p>
+                      </div>
 
-  {/* Input Fields */}
-  <div className="w-full space-y-3 text-left">
-    {/* Email */}
-    <div>
-      <label className="block text-xs font-semibold text-emerald-700 mb-0.5">
-        Email
-      </label>
-      <input
-        type="email"
-        placeholder="Enter your email"
-        value={signinForm.email}
-        onChange={(e) =>
-          setSigninForm({ ...signinForm, email: e.target.value })
-        }
-        className="w-full p-2.5 rounded-lg border border-gray-300 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-400 text-sm placeholder:text-gray-400 transition duration-200 bg-white shadow-sm"
-        required
-      />
-    </div>
+                      {/* Input Fields */}
+                      <div className="w-full space-y-3 text-left">
+                        {/* Email */}
+                        <div>
+                          <label className="block text-xs font-semibold text-emerald-700 mb-0.5">
+                            Email
+                          </label>
+                          <input
+                            type="email"
+                            placeholder="Enter your email"
+                            value={signinForm.email}
+                            onChange={(e) =>
+                              setSigninForm({
+                                ...signinForm,
+                                email: e.target.value,
+                              })
+                            }
+                            className="w-full p-2.5 rounded-lg border border-gray-300 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-400 text-sm placeholder:text-gray-400 transition duration-200 bg-white shadow-sm"
+                            required
+                          />
+                        </div>
 
-    {/* Password */}
-    <div>
-      <label className="block text-xs font-semibold text-emerald-700 mb-0.5">
-        Password
-      </label>
-      <input
-        type="password"
-        placeholder="Enter your password"
-        value={signinForm.password}
-        onChange={(e) =>
-          setSigninForm({ ...signinForm, password: e.target.value })
-        }
-        className="w-full p-2.5 rounded-lg border border-gray-300 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-400 text-sm placeholder:text-gray-400 transition duration-200 bg-white shadow-sm"
-        required
-      />
-    </div>
-  </div>
+                        {/* Password */}
+                        <div>
+                          <label className="block text-xs font-semibold text-emerald-700 mb-0.5">
+                            Password
+                          </label>
+                          <div className="relative w-full">
+                            <input
+                              type={showSigninPassword ? "text" : "password"}
+                              placeholder="Enter your password"
+                              value={signinForm.password}
+                              onChange={(e) =>
+                                setSigninForm({
+                                  ...signinForm,
+                                  password: e.target.value,
+                                })
+                              }
+                              className="w-full p-2.5 pr-12 rounded-lg border border-gray-300 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-400 text-sm placeholder:text-gray-400 transition duration-200 bg-white shadow-sm"
+                              required
+                            />
 
-  {/* Sign In Button */}
-  <button
-    type="submit"
-    className="w-full py-2.5 rounded-lg text-white font-semibold text-sm bg-gradient-to-r from-emerald-500 to-emerald-700 hover:from-emerald-600 hover:to-emerald-800 transform hover:scale-[1.01] active:scale-95 transition duration-200 shadow-md cursor-pointer"
-  >
-    Sign In
-  </button>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setShowSigninPassword(!showSigninPassword)
+                              }
+                              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
+                            >
+                              {showSigninPassword ? (
+                                <AiOutlineEyeInvisible size={22} />
+                              ) : (
+                                <AiOutlineEye size={22} />
+                              )}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
 
-  {/* Divider */}
-  <div className="flex items-center gap-1 text-gray-500 text-xs ">
-    <span className="flex-grow h-[1px] bg-gray-300" />
-    or
-    <span className="flex-grow h-[1px] bg-gray-300" />
-  </div>
+                      {/* Sign In Button */}
+                      <button
+                        type="submit"
+                        className="w-full py-2.5 rounded-lg text-white font-semibold text-sm bg-gradient-to-r from-emerald-500 to-emerald-700 hover:from-emerald-600 hover:to-emerald-800 transform hover:scale-[1.01] active:scale-95 transition duration-200 shadow-md cursor-pointer"
+                      >
+                        Sign In
+                      </button>
 
-  {/* OAUTH ADDITION: Google Sign-In */}
-  <button
-    type="button"
-    onClick={handleGoogleLogin}
-    className="w-full flex items-center justify-center gap-2 py-2 border border-gray-300 rounded-lg hover:bg-white hover:shadow-md text-gray-700 text-sm font-medium transition-all cursor-pointer"
-  >
-    <FcGoogle size={20} /> Continue with Google
-  </button>
+                      {/* Divider */}
+                      <div className="flex items-center gap-1 text-gray-500 text-xs ">
+                        <span className="flex-grow h-[1px] bg-gray-300" />
+                        or
+                        <span className="flex-grow h-[1px] bg-gray-300" />
+                      </div>
 
-  {/* Forgot Password + Sign Up */}
-  <div className="flex flex-col items-center w-full space-y-1 text-xs font-medium mt-1.5">
-    <button
-      type="button"
-      onClick={() => setIsForgot(true)}
-      className="text-emerald-600 pb-2 hover:text-emerald-800 transition-all duration-200 underline underline-offset-2"
-    >
-      Forgot Password?
-    </button>
-    <button
-      type="button"
-      onClick={() => setRightPanelActive(true)}
-      className="relative group text-emerald-700 overflow-hidden px-1 pt-0.5 transition-all duration-200 ease-out"
-    >
-      <span className="absolute bottom-0 left-0 h-[1px] w-0 bg-gradient-to-r from-emerald-400 to-emerald-700 group-hover:w-full transition-all duration-300 ease-out"></span>
-      <span className="relative group-hover:text-emerald-800">
-        No account yet?{" "}
-        <span className="font-semibold text-emerald-600 group-hover:text-emerald-800">
-          Sign Up
-        </span>
-      </span>
-    </button>
-  </div>
-</form>
+                      {/* OAUTH ADDITION: Google Sign-In */}
+                      <button
+                        type="button"
+                        onClick={handleGoogleLogin}
+                        className="w-full flex items-center justify-center gap-2 py-2 border border-gray-300 rounded-lg hover:bg-white hover:shadow-md text-gray-700 text-sm font-medium transition-all cursor-pointer"
+                      >
+                        <FcGoogle size={20} /> Continue with Google
+                      </button>
+
+                      {/* Forgot Password + Sign Up */}
+                      <div className="flex flex-col items-center w-full space-y-1 text-xs font-medium mt-1.5">
+                        <button
+                          type="button"
+                          onClick={() => setIsForgot(true)}
+                          className="text-emerald-600 pb-2 hover:text-emerald-800 transition-all duration-200 underline underline-offset-2"
+                        >
+                          Forgot Password?
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setRightPanelActive(true)}
+                          className="relative group text-emerald-700 overflow-hidden px-1 pt-0.5 transition-all duration-200 ease-out"
+                        >
+                          <span className="absolute bottom-0 left-0 h-[1px] w-0 bg-gradient-to-r from-emerald-400 to-emerald-700 group-hover:w-full transition-all duration-300 ease-out"></span>
+                          <span className="relative group-hover:text-emerald-800">
+                            No account yet?{" "}
+                            <span className="font-semibold text-emerald-600 group-hover:text-emerald-800">
+                              Sign Up
+                            </span>
+                          </span>
+                        </button>
+                      </div>
+                    </form>
                   </>
                 ) : (
                   <>
                     {/* ===== SIGN UP / OTP ===== */}
                     {!isOtpSent ? (
-                     <>
-  <div className="w-full max-w-sm mx-auto p-6 rounded-3xl backdrop-blur-xl bg-white/80 shadow-2xl border border-emerald-100 flex flex-col items-center text-center space-y-5 animate-[fade-slide-up_0.8s_ease-in-out]">
-    {/* Heading Section */}
-    <div className="space-y-1">
-      <h1 className="text-3xl font-extrabold mb-4 text-emerald-700 tracking-tight">
-        Sign Up - Send OTP
-      </h1>
-      <p className="text-gray-600 text-sm">
-        Get your verification code to continue
-      </p>
-    </div>
+                      <>
+                        <div className="w-full max-w-sm mx-auto p-6 rounded-3xl backdrop-blur-xl bg-white/80 shadow-2xl border border-emerald-100 flex flex-col items-center text-center space-y-5 animate-[fade-slide-up_0.8s_ease-in-out]">
+                          {/* Heading Section */}
+                          <div className="space-y-1">
+                            <h1 className="text-3xl font-extrabold mb-4 text-emerald-700 tracking-tight">
+                              Sign Up - Send OTP
+                            </h1>
+                            <p className="text-gray-600 text-sm">
+                              Get your verification code to continue
+                            </p>
+                          </div>
 
-    {/* Email Input */}
-    <div className="w-full text-left space-y-1">
-      <label className="block text-sm font-semibold text-emerald-700 mb-1">
-        Email Address
-      </label>
-      <input
-        type="email"
-        placeholder="Enter your email"
-        value={otpForm.email}
-        onChange={(e) => setOtpForm({ ...otpForm, email: e.target.value })}
-        className="w-full p-3 rounded-lg border border-gray-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-400 text-sm bg-white shadow-md transition-all duration-300 placeholder:text-gray-400"
-        required
-      />
-    </div>
+                          {/* Email Input */}
+                          <div className="w-full text-left space-y-1">
+                            <label className="block text-sm font-semibold text-emerald-700 mb-1">
+                              Email Address
+                            </label>
+                            <input
+                              type="email"
+                              placeholder="Enter your email"
+                              value={otpForm.email}
+                              onChange={(e) =>
+                                setOtpForm({
+                                  ...otpForm,
+                                  email: e.target.value,
+                                })
+                              }
+                              className="w-full p-3 rounded-lg border border-gray-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-400 text-sm bg-white shadow-md transition-all duration-300 placeholder:text-gray-400"
+                              required
+                            />
+                          </div>
 
-    {/* Send OTP Button */}
-    <button
-      onClick={handleSendOtp}
-      className="w-full py-3 rounded-xl font-semibold text-white text-sm bg-gradient-to-r from-emerald-500 to-emerald-700 hover:from-emerald-600 hover:to-emerald-800 shadow-lg transform hover:scale-[1.03] active:scale-95 transition duration-300"
-    >
-      Send OTP
-    </button>
+                          {/* Send OTP Button */}
+                          <button
+                            onClick={handleSendOtp}
+                            className="w-full py-3 rounded-xl font-semibold text-white text-sm bg-gradient-to-r from-emerald-500 to-emerald-700 hover:from-emerald-600 hover:to-emerald-800 shadow-lg transform hover:scale-[1.03] active:scale-95 transition duration-300"
+                          >
+                            Send OTP
+                          </button>
 
-    {/* OAUTH ADDITION: Google Sign-In on Sign-up page */}
-    <div className="flex items-center gap-1 text-gray-500 text-xs w-full">
-        <span className="flex-grow h-[1px] bg-gray-300"></span>
-        or
-        <span className="flex-grow h-[1px] bg-gray-300"></span>
-    </div>
-    <button
-        type="button"
-        onClick={handleGoogleLogin}
-        className="w-full flex items-center justify-center gap-2 py-2 border border-gray-300 rounded-lg hover:bg-white hover:shadow-md text-gray-700 text-sm font-medium transition-all"
-    >
-        <FcGoogle size={20} />
-        Continue with Google
-    </button>
+                          {/* OAUTH ADDITION: Google Sign-In on Sign-up page */}
+                          <div className="flex items-center gap-1 text-gray-500 text-xs w-full">
+                            <span className="flex-grow h-[1px] bg-gray-300"></span>
+                            or
+                            <span className="flex-grow h-[1px] bg-gray-300"></span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={handleGoogleLogin}
+                            className="w-full flex items-center justify-center gap-2 py-2 border border-gray-300 rounded-lg hover:bg-white hover:shadow-md text-gray-700 text-sm font-medium transition-all"
+                          >
+                            <FcGoogle size={20} />
+                            Continue with Google
+                          </button>
 
-    {/* Back to Sign In Link */}
-    <button
-      type="button"
-      onClick={() => setRightPanelActive(false)}
-      className="relative group text-emerald-700 text-sm font-medium overflow-hidden px-2 py-1"
-    >
-      <span className="absolute bottom-0 left-0 h-[2px] w-0 bg-gradient-to-r from-emerald-400 to-emerald-700 group-hover:w-full transition-all duration-500 ease-out"></span>
-      <span className="relative group-hover:text-emerald-800 group-hover:scale-105 transform transition duration-300 ease-out">
-        Back to Sign In
-      </span>
-    </button>
-  </div>
+                          {/* Back to Sign In Link */}
+                          <button
+                            type="button"
+                            onClick={() => setRightPanelActive(false)}
+                            className="relative group text-emerald-700 text-sm font-medium overflow-hidden px-2 py-1"
+                          >
+                            <span className="absolute bottom-0 left-0 h-[2px] w-0 bg-gradient-to-r from-emerald-400 to-emerald-700 group-hover:w-full transition-all duration-500 ease-out"></span>
+                            <span className="relative group-hover:text-emerald-800 group-hover:scale-105 transform transition duration-300 ease-out">
+                              Back to Sign In
+                            </span>
+                          </button>
+                        </div>
 
-  {/* Custom Animation */}
-  <style jsx>{`
-    @keyframes fade-slide-up {
-      0% {
-        opacity: 0;
-        transform: translateY(25px) scale(0.96);
-      }
-      100% {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-      }
-    }
-  `}</style>
-</>
-
+                        {/* Custom Animation */}
+                        <style jsx>{`
+                          @keyframes fade-slide-up {
+                            0% {
+                              opacity: 0;
+                              transform: translateY(25px) scale(0.96);
+                            }
+                            100% {
+                              opacity: 1;
+                              transform: translateY(0) scale(1);
+                            }
+                          }
+                        `}</style>
+                      </>
                     ) : !isOtpVerified ? (
                       <>
-  <div className="w-full max-w-sm mx-auto p-6 rounded-3xl backdrop-blur-xl bg-white/80 shadow-2xl border border-emerald-100 flex flex-col items-center text-center space-y-6 animate-[fade-slide-up_0.8s_ease-in-out]">
-    {/* Header */}
-    <div className="space-y-1">
-      <h1 className="text-3xl font-extrabold text-emerald-700 drop-shadow-sm">
-        Verify OTP
-      </h1>
-      <p className="text-gray-600 text-sm">
-        Enter the 6-digit code sent to your email
-      </p>
-    </div>
+                        <div className="w-full max-w-sm mx-auto p-6 rounded-3xl backdrop-blur-xl bg-white/80 shadow-2xl border border-emerald-100 flex flex-col items-center text-center space-y-6 animate-[fade-slide-up_0.8s_ease-in-out]">
+                          {/* Header */}
+                          <div className="space-y-1">
+                            <h1 className="text-3xl font-extrabold text-emerald-700 drop-shadow-sm">
+                              Verify OTP
+                            </h1>
+                            <p className="text-gray-600 text-sm">
+                              Enter the 6-digit code sent to your email
+                            </p>
+                          </div>
 
-    {/* OTP Input Display */}
-    <div className="flex justify-center gap-3 mt-1">
-      {Array.from({ length: 6 }).map((_, index) => (
-        <input
-          key={index}
-          type="text"
-          maxLength="1"
-          value={otpForm.otp[index] || ""}
-          onChange={(e) => {
-            const value = e.target.value.replace(/\D/, ""); // Allow only digits
-            const otpArray = otpForm.otp.split("");
-            otpArray[index] = value;
-            setOtpForm({ ...otpForm, otp: otpArray.join("") });
+                          {/* OTP Input Display */}
+                          <div className="flex justify-center gap-3 mt-1">
+                            {Array.from({ length: 6 }).map((_, index) => (
+                              <input
+                                key={index}
+                                type="text"
+                                maxLength="1"
+                                value={otpForm.otp[index] || ""}
+                                onChange={(e) => {
+                                  const value = e.target.value.replace(
+                                    /\D/,
+                                    ""
+                                  ); // Allow only digits
+                                  const otpArray = otpForm.otp.split("");
+                                  otpArray[index] = value;
+                                  setOtpForm({
+                                    ...otpForm,
+                                    otp: otpArray.join(""),
+                                  });
 
-            // Move focus to next box automatically
-            if (value && e.target.nextSibling) {
-              e.target.nextSibling.focus();
-            }
-          }}
-          className="w-10 h-12 text-center text-lg font-semibold text-gray-800 bg-white border border-gray-300 rounded-lg focus:border-emerald-500 focus:ring-2 focus:ring-emerald-300 shadow-sm transition-all duration-300 backdrop-blur-sm"
-        />
-      ))}
-    </div>
+                                  // Move focus to next box automatically
+                                  if (value && e.target.nextSibling) {
+                                    e.target.nextSibling.focus();
+                                  }
+                                }}
+                                className="w-10 h-12 text-center text-lg font-semibold text-gray-800 bg-white border border-gray-300 rounded-lg focus:border-emerald-500 focus:ring-2 focus:ring-emerald-300 shadow-sm transition-all duration-300 backdrop-blur-sm"
+                              />
+                            ))}
+                          </div>
 
-    {/* Verify Button */}
-    <button
-      onClick={handleVerifyOtp}
-      className="w-full py-3 rounded-xl font-semibold text-white text-sm bg-gradient-to-r from-emerald-500 to-emerald-700 hover:from-emerald-600 hover:to-emerald-800 shadow-lg transform hover:scale-[1.03] active:scale-95 transition duration-300"
-    >
-      Verify OTP
-    </button>
+                          {/* Verify Button */}
+                          <button
+                            onClick={handleVerifyOtp}
+                            className="w-full py-3 rounded-xl font-semibold text-white text-sm bg-gradient-to-r from-emerald-500 to-emerald-700 hover:from-emerald-600 hover:to-emerald-800 shadow-lg transform hover:scale-[1.03] active:scale-95 transition duration-300"
+                          >
+                            Verify OTP
+                          </button>
 
-    {/* Helper Text */}
-    <p className="text-xs text-gray-500">
-      Didn’t receive the code?{" "}
-      <button
-        type="button"
-        onClick={handleSendOtp}
-        className="text-emerald-600 hover:text-emerald-800 font-medium transition-all"
-      >
-        Resend
-      </button>
-    </p>
+                          {/* Helper Text */}
+                          <p className="text-xs text-gray-500">
+                            Didn’t receive the code?{" "}
+                            <button
+                              type="button"
+                              onClick={handleSendOtp}
+                              className="text-emerald-600 hover:text-emerald-800 font-medium transition-all"
+                            >
+                              Resend
+                            </button>
+                          </p>
 
-    {/* Back to Signup */}
-    <button
-      type="button"
-      onClick={() => setIsOtpSent(false)}
-      className="relative group text-emerald-700 text-sm font-medium overflow-hidden px-2 py-1"
-    >
-      <span className="absolute bottom-0 left-0 h-[2px] w-0 bg-gradient-to-r from-emerald-400 to-emerald-700 group-hover:w-full transition-all duration-500 ease-out"></span>
-      <span className="relative group-hover:text-emerald-800 group-hover:scale-105 transform transition duration-300 ease-out">
-        Back to Sign Up
-      </span>
-    </button>
-  </div>
+                          {/* Back to Signup */}
+                          <button
+                            type="button"
+                            onClick={() => setIsOtpSent(false)}
+                            className="relative group text-emerald-700 text-sm font-medium overflow-hidden px-2 py-1"
+                          >
+                            <span className="absolute bottom-0 left-0 h-[2px] w-0 bg-gradient-to-r from-emerald-400 to-emerald-700 group-hover:w-full transition-all duration-500 ease-out"></span>
+                            <span className="relative group-hover:text-emerald-800 group-hover:scale-105 transform transition duration-300 ease-out">
+                              Back to Sign Up
+                            </span>
+                          </button>
+                        </div>
 
-  {/* Animation */}
-  <style jsx>{`
-    @keyframes fade-slide-up {
-      0% {
-        opacity: 0;
-        transform: translateY(25px) scale(0.96);
-      }
-      100% {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-      }
-    }
-  `}</style>
-</>
-
+                        {/* Animation */}
+                        <style jsx>{`
+                          @keyframes fade-slide-up {
+                            0% {
+                              opacity: 0;
+                              transform: translateY(25px) scale(0.96);
+                            }
+                            100% {
+                              opacity: 1;
+                              transform: translateY(0) scale(1);
+                            }
+                          }
+                        `}</style>
+                      </>
                     ) : (
-                    <>
-  <div className="w-full max-w-sm mx-auto p-6 rounded-3xl backdrop-blur-xl bg-white/85 shadow-2xl border border-emerald-100 flex flex-col items-center text-center space-y-5 animate-[fade-slide-up_0.8s_ease-in-out]">
-    {/* Heading */}
-    <div className="space-y-1">
-      <h1 className="text-3xl font-extrabold text-emerald-700 drop-shadow-sm">
-        Create Account
-      </h1>
-      <p className="text-gray-600 text-sm">
-        Fill in your details to complete registration
-      </p>
-    </div>
+                      <>
+                        <div className="w-full max-w-sm mx-auto p-6 rounded-3xl backdrop-blur-xl bg-white/85 shadow-2xl border border-emerald-100 flex flex-col items-center text-center space-y-5 animate-[fade-slide-up_0.8s_ease-in-out]">
+                          {/* Heading */}
+                          <div className="space-y-1">
+                            <h1 className="text-3xl font-extrabold text-emerald-700 drop-shadow-sm">
+                              Create Account
+                            </h1>
+                            <p className="text-gray-600 text-sm">
+                              Fill in your details to complete registration
+                            </p>
+                          </div>
 
-    {/* Input Fields */}
-    <div className="w-full space-y-3 text-left">
-      <div>
-        <label className="block text-sm font-semibold text-emerald-700 mb-0.5">
-          First Name
-        </label>
-        <input
-          type="text"
-          placeholder="First Name"
-          value={signupForm.firstName}
-          onChange={(e) =>
-            setSignupForm({ ...signupForm, firstName: e.target.value })
-          }
-          className="w-full p-3 rounded-lg border border-gray-300 bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-400 text-sm shadow-sm transition-all duration-300 placeholder:text-gray-400"
-          required
-        />
-      </div>
+                          {/* Input Fields */}
+                          <div className="w-full space-y-3 text-left">
+                            <div>
+                              <label className="block text-sm font-semibold text-emerald-700 mb-0.5">
+                                First Name
+                              </label>
+                              <input
+                                type="text"
+                                placeholder="First Name"
+                                value={signupForm.firstName}
+                                onChange={(e) =>
+                                  setSignupForm({
+                                    ...signupForm,
+                                    firstName: e.target.value,
+                                  })
+                                }
+                                className="w-full p-3 rounded-lg border border-gray-300 bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-400 text-sm shadow-sm transition-all duration-300 placeholder:text-gray-400"
+                                required
+                              />
+                            </div>
 
-      <div>
-        <label className="block text-sm font-semibold text-emerald-700 mb-0.5">
-          Last Name
-        </label>
-        <input
-          type="text"
-          placeholder="Last Name"
-          value={signupForm.lastName}
-          onChange={(e) =>
-            setSignupForm({ ...signupForm, lastName: e.target.value })
-          }
-          className="w-full p-3 rounded-lg border border-gray-300 bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-400 text-sm shadow-sm transition-all duration-300 placeholder:text-gray-400"
-          required
-        />
-      </div>
+                            <div>
+                              <label className="block text-sm font-semibold text-emerald-700 mb-0.5">
+                                Last Name
+                              </label>
+                              <input
+                                type="text"
+                                placeholder="Last Name"
+                                value={signupForm.lastName}
+                                onChange={(e) =>
+                                  setSignupForm({
+                                    ...signupForm,
+                                    lastName: e.target.value,
+                                  })
+                                }
+                                className="w-full p-3 rounded-lg border border-gray-300 bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-400 text-sm shadow-sm transition-all duration-300 placeholder:text-gray-400"
+                                required
+                              />
+                            </div>
 
-      <div>
-        <label className="block text-sm font-semibold text-emerald-700 mb-0.5">
-          Email Address
-        </label>
-        <input
-          type="email"
-          value={signupForm.email}
-          readOnly
-          className="w-full p-3 rounded-lg border border-gray-300 bg-gray-100 text-gray-500 text-sm shadow-inner cursor-not-allowed"
-        />
-      </div>
+                            <div>
+                              <label className="block text-sm font-semibold text-emerald-700 mb-0.5">
+                                Email Address
+                              </label>
+                              <input
+                                type="email"
+                                value={signupForm.email}
+                                readOnly
+                                className="w-full p-3 rounded-lg border border-gray-300 bg-gray-100 text-gray-500 text-sm shadow-inner cursor-not-allowed"
+                              />
+                            </div>
 
-      <div>
-        <label className="block text-sm font-semibold text-emerald-700 mb-0.5">
-          Password
-        </label>
-        <input
-          type="password"
-          placeholder="Password"
-          value={signupForm.password}
-          onChange={(e) =>
-            setSignupForm({ ...signupForm, password: e.target.value })
-          }
-          className="w-full p-3 rounded-lg border border-gray-300 bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-400 text-sm shadow-sm transition-all duration-300 placeholder:text-gray-400"
-          required
-        />
-      </div>
-    </div>
+                            <div>
+                              <label className="block text-sm font-semibold text-emerald-700 mb-0.5">
+                                Password
+                              </label>
+                              <div className="relative w-full">
+                                <input
+                                  type={
+                                    showSignupPassword ? "text" : "password"
+                                  }
+                                  placeholder="Password"
+                                  value={signupForm.password}
+                                  onChange={(e) =>
+                                    setSignupForm({
+                                      ...signupForm,
+                                      password: e.target.value,
+                                    })
+                                  }
+                                  className="w-full p-3 pr-12 rounded-lg border border-gray-300 bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-400 text-sm shadow-sm transition-all duration-300 placeholder:text-gray-400"
+                                  required
+                                />
 
-    {/* Sign Up Button */}
-    <button
-      onClick={handleSignup}
-      className="w-full mt-2 py-3 rounded-xl font-semibold text-white text-sm bg-gradient-to-r from-emerald-500 to-emerald-700 hover:from-emerald-600 hover:to-emerald-800 shadow-lg transform hover:scale-[1.03] active:scale-95 transition duration-300"
-    >
-      Create Account
-    </button>
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setShowSignupPassword(!showSignupPassword)
+                                  }
+                                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
+                                >
+                                  {showSignupPassword ? (
+                                    <AiOutlineEyeInvisible size={22} />
+                                  ) : (
+                                    <AiOutlineEye size={22} />
+                                  )}
+                                </button>
+                              </div>
+                            </div>
+                          </div>
 
-    {/* Back Button */}
-    <button
-      type="button"
-      onClick={() => {
-        setIsOtpSent(false);
-        setIsOtpVerified(false);
-        setRightPanelActive(false);
-      }}
-      className="relative group text-emerald-700 text-sm font-medium overflow-hidden px-2 py-1"
-    >
-      <span className="absolute bottom-0 left-0 h-[2px] w-0 bg-gradient-to-r from-emerald-400 to-emerald-700 group-hover:w-full transition-all duration-500 ease-out"></span>
-      <span className="relative group-hover:text-emerald-800 group-hover:scale-105 transform transition duration-300 ease-out">
-        Back to Sign In
-      </span>
-    </button>
-  </div>
+                          {/* Sign Up Button */}
+                          <button
+                            onClick={handleSignup}
+                            className="w-full mt-2 py-3 rounded-xl font-semibold text-white text-sm bg-gradient-to-r from-emerald-500 to-emerald-700 hover:from-emerald-600 hover:to-emerald-800 shadow-lg transform hover:scale-[1.03] active:scale-95 transition duration-300"
+                          >
+                            Create Account
+                          </button>
 
-  {/* Animation */}
-  <style jsx>{`
-    @keyframes fade-slide-up {
-      0% {
-        opacity: 0;
-        transform: translateY(25px) scale(0.97);
-      }
-      100% {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-      }
-    }
-  `}</style>
-</>
+                          {/* Back Button */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setIsOtpSent(false);
+                              setIsOtpVerified(false);
+                              setRightPanelActive(false);
+                            }}
+                            className="relative group text-emerald-700 text-sm font-medium overflow-hidden px-2 py-1"
+                          >
+                            <span className="absolute bottom-0 left-0 h-[2px] w-0 bg-gradient-to-r from-emerald-400 to-emerald-700 group-hover:w-full transition-all duration-500 ease-out"></span>
+                            <span className="relative group-hover:text-emerald-800 group-hover:scale-105 transform transition duration-300 ease-out">
+                              Back to Sign In
+                            </span>
+                          </button>
+                        </div>
 
+                        {/* Animation */}
+                        <style jsx>{`
+                          @keyframes fade-slide-up {
+                            0% {
+                              opacity: 0;
+                              transform: translateY(25px) scale(0.97);
+                            }
+                            100% {
+                              opacity: 1;
+                              transform: translateY(0) scale(1);
+                            }
+                          }
+                        `}</style>
+                      </>
                     )}
                   </>
                 )}
               </div>
             ) : isForgot ? (
               <>
-  <div className="w-full max-w-sm mx-auto p-6 rounded-3xl backdrop-blur-xl bg-white/85 shadow-2xl border border-emerald-100 flex flex-col items-center text-center space-y-6 animate-[fade-slide-up_0.8s_ease-in-out]">
-    {/* Header */}
-    <div className="space-y-1">
-      <h1 className="text-3xl font-extrabold text-emerald-700 drop-shadow-sm">
-        Forgot Password
-      </h1>
-      <p className="text-gray-600 text-sm">
-        Enter your registered email to receive a reset link
-      </p>
-    </div>
+                <div className="w-full max-w-sm mx-auto p-6 rounded-3xl backdrop-blur-xl bg-white/85 shadow-2xl border border-emerald-100 flex flex-col items-center text-center space-y-6 animate-[fade-slide-up_0.8s_ease-in-out]">
+                  {/* Header */}
+                  <div className="space-y-1">
+                    <h1 className="text-3xl font-extrabold text-emerald-700 drop-shadow-sm">
+                      Forgot Password
+                    </h1>
+                    <p className="text-gray-600 text-sm">
+                      Enter your registered email to receive a reset link
+                    </p>
+                  </div>
 
-    {/* Email Input */}
-    <div className="w-full text-left">
-      <label className="block text-sm font-semibold text-emerald-700 mb-1">
-        Email Address
-      </label>
-      <input
-        type="email"
-        placeholder="Enter your email"
-        value={forgotForm.email}
-        onChange={(e) => setForgotForm({ ...forgotForm, email: e.target.value })}
-        className="w-full p-3 rounded-lg border border-gray-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-400 placeholder:text-gray-400 text-sm shadow-sm transition-all duration-300 bg-white"
-        required
-      />
-    </div>
+                  {/* Email Input */}
+                  <div className="w-full text-left">
+                    <label className="block text-sm font-semibold text-emerald-700 mb-1">
+                      Email Address
+                    </label>
+                    <input
+                      type="email"
+                      placeholder="Enter your email"
+                      value={forgotForm.email}
+                      onChange={(e) =>
+                        setForgotForm({ ...forgotForm, email: e.target.value })
+                      }
+                      className="w-full p-3 rounded-lg border border-gray-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-400 placeholder:text-gray-400 text-sm shadow-sm transition-all duration-300 bg-white"
+                      required
+                    />
+                  </div>
 
-    {/* Send Reset Token Button */}
-    <button
-      onClick={handleForgotPassword}
-      className="w-full py-3 rounded-xl font-semibold text-white text-sm bg-gradient-to-r from-emerald-500 to-emerald-700 hover:from-emerald-600 hover:to-emerald-800 shadow-lg transform hover:scale-[1.03] active:scale-95 transition duration-300"
-    >
-      Send Reset Token
-    </button>
+                  {/* Send Reset Token Button */}
+                  <button
+                    onClick={handleForgotPassword}
+                    className="w-full py-3 rounded-xl font-semibold text-white text-sm bg-gradient-to-r from-emerald-500 to-emerald-700 hover:from-emerald-600 hover:to-emerald-800 shadow-lg transform hover:scale-[1.03] active:scale-95 transition duration-300"
+                  >
+                    Send Reset Token
+                  </button>
 
-    {/* Helpful Tip */}
-    <p className="text-xs text-gray-500">
-      Check your email inbox or spam folder for further instructions.
-    </p>
+                  {/* Helpful Tip */}
+                  <p className="text-xs text-gray-500">
+                    Check your email inbox or spam folder for further
+                    instructions.
+                  </p>
 
-    {/* Back to Sign In */}
-    <button
-      onClick={() => setIsForgot(false)}
-      className="relative group text-emerald-700 text-sm font-medium overflow-hidden px-2 py-1"
-    >
-      <span className="absolute bottom-0 left-0 h-[2px] w-0 bg-gradient-to-r from-emerald-400 to-emerald-700 group-hover:w-full transition-all duration-500 ease-out"></span>
-      <span className="relative group-hover:text-emerald-800 group-hover:scale-105 transform transition duration-300 ease-out">
-        Back to Sign In
-      </span>
-    </button>
-  </div>
+                  {/* Back to Sign In */}
+                  <button
+                    onClick={() => setIsForgot(false)}
+                    className="relative group text-emerald-700 text-sm font-medium overflow-hidden px-2 py-1"
+                  >
+                    <span className="absolute bottom-0 left-0 h-[2px] w-0 bg-gradient-to-r from-emerald-400 to-emerald-700 group-hover:w-full transition-all duration-500 ease-out"></span>
+                    <span className="relative group-hover:text-emerald-800 group-hover:scale-105 transform transition duration-300 ease-out">
+                      Back to Sign In
+                    </span>
+                  </button>
+                </div>
 
-  {/* Subtle Animation */}
-  <style jsx>{`
-    @keyframes fade-slide-up {
-      0% {
-        opacity: 0;
-        transform: translateY(20px) scale(0.97);
-      }
-      100% {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-      }
-    }
-  `}</style>
-</>
-
+                {/* Subtle Animation */}
+                <style jsx>{`
+                  @keyframes fade-slide-up {
+                    0% {
+                      opacity: 0;
+                      transform: translateY(20px) scale(0.97);
+                    }
+                    100% {
+                      opacity: 1;
+                      transform: translateY(0) scale(1);
+                    }
+                  }
+                `}</style>
+              </>
             ) : (
-             <>
-  <div className="w-full max-w-sm mx-auto p-6 rounded-3xl backdrop-blur-xl bg-white/85 shadow-2xl border border-emerald-100 flex flex-col items-center text-center space-y-6 animate-[fade-slide-up_0.8s_ease-in-out]">
-    {/* Header */}
-    <div className="space-y-1">
-      <h1 className="text-3xl font-extrabold text-emerald-700 drop-shadow-sm">
-        Reset Password
-      </h1>
-      <p className="text-gray-600 text-sm">
-        Enter your email, token, and new password below
-      </p>
-    </div>
+              <>
+                <div className="w-full max-w-sm mx-auto p-6 rounded-3xl backdrop-blur-xl bg-white/85 shadow-2xl border border-emerald-100 flex flex-col items-center text-center space-y-6 animate-[fade-slide-up_0.8s_ease-in-out]">
+                  {/* Header */}
+                  <div className="space-y-1">
+                    <h1 className="text-3xl font-extrabold text-emerald-700 drop-shadow-sm">
+                      Reset Password
+                    </h1>
+                    <p className="text-gray-600 text-sm">
+                      Enter your email, token, and new password below
+                    </p>
+                  </div>
 
-    {/* Form Inputs */}
-    <div className="w-full space-y-3 text-left">
-      {/* Email */}
-      {/* <div>
-        <label className="block text-sm font-semibold text-emerald-700 mb-0.5">
-          Email Address
-        </label>
-        <input
-          type="email"
-          placeholder="Your registered email"
-          value={resetForm.email}
-          onChange={(e) => setResetForm({ ...resetForm, email: e.target.value })}
-          className="w-full p-3 rounded-lg border border-gray-300 bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-400 placeholder:text-gray-400 text-sm shadow-sm transition-all duration-300"
-          required
-        />
-      </div> */}
+                  {/* Form Inputs */}
+                  <div className="w-full space-y-3 text-left">
+                    {/* Email */}
+                    <div>
+                      <label className="block text-sm font-semibold text-emerald-700 mb-0.5">
+                        Email Address
+                      </label>
+                      <input
+                        type="email"
+                        placeholder="Your registered email"
+                        value={resetForm.email}
+                        onChange={(e) =>
+                          setResetForm({ ...resetForm, email: e.target.value })
+                        }
+                        className="w-full p-3 rounded-lg border border-gray-300 bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-400 placeholder:text-gray-400 text-sm shadow-sm transition-all duration-300"
+                        required
+                      />
+                    </div>
 
-      {/* Token */}
-      <div>
-        <label className="block text-sm font-semibold text-emerald-700 mb-0.5">
-          Reset Token
-        </label>
-        <input
-          type="text"
-          placeholder="Enter reset token"
-          value={resetForm.token}
-          onChange={(e) => setResetForm({ ...resetForm, token: e.target.value })}
-          className="w-full p-3 rounded-lg border border-gray-300 bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-400 placeholder:text-gray-400 text-sm shadow-sm transition-all duration-300"
-          required
-        />
-      </div>
+                    {/* Token */}
+                    <div>
+                      <label className="block text-sm font-semibold text-emerald-700 mb-0.5">
+                        Reset Token
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Enter reset token"
+                        value={resetForm.token}
+                        onChange={(e) =>
+                          setResetForm({ ...resetForm, token: e.target.value })
+                        }
+                        className="w-full p-3 rounded-lg border border-gray-300 bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-400 placeholder:text-gray-400 text-sm shadow-sm transition-all duration-300"
+                        required
+                      />
+                    </div>
 
-      {/* New Password */}
-      <div>
-        <label className="block text-sm font-semibold text-emerald-700 mb-0.5">
-          New Password
-        </label>
-        <input
-          type="password"
-          placeholder="Enter new password"
-          value={resetForm.newPassword}
-          onChange={(e) =>
-            setResetForm({ ...resetForm, newPassword: e.target.value })
-          }
-          className="w-full p-3 rounded-lg border border-gray-300 bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-400 placeholder:text-gray-400 text-sm shadow-sm transition-all duration-300"
-          required
-        />
-      </div>
-    </div>
+                    {/* New Password */}
+                    <div>
+                      <label className="block text-sm font-semibold text-emerald-700 mb-0.5">
+                        New Password
+                      </label>
+                      <div className="relative w-full">
+                        <input
+                          type={showResetPassword ? "text" : "password"}
+                          placeholder="Enter new password"
+                          value={resetForm.newPassword}
+                          onChange={(e) =>
+                            setResetForm({
+                              ...resetForm,
+                              newPassword: e.target.value,
+                            })
+                          }
+                          className="w-full p-3 pr-12 rounded-lg border border-gray-300 bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-400 placeholder:text-gray-400 text-sm shadow-sm transition-all duration-300"
+                          required
+                        />
 
-    {/* Submit Button */}
-    <button
-      onClick={handleResetPassword}
-      className="w-full mt-2 py-3 rounded-xl font-semibold text-white text-sm bg-gradient-to-r from-emerald-500 to-emerald-700 hover:from-emerald-600 hover:to-emerald-800 shadow-lg transform hover:scale-[1.03] active:scale-95 transition duration-300"
-    >
-      Reset Password
-    </button>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setShowResetPassword(!showResetPassword)
+                          }
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
+                        >
+                          {showResetPassword ? (
+                            <AiOutlineEyeInvisible size={22} />
+                          ) : (
+                            <AiOutlineEye size={22} />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
 
-    {/* Tip */}
-    <p className="text-xs text-gray-500">
-      After resetting, you’ll be redirected to your Sign In page.
-    </p>
+                  {/* Submit Button */}
+                  <button
+                    onClick={handleResetPassword}
+                    className="w-full mt-2 py-3 rounded-xl font-semibold text-white text-sm bg-gradient-to-r from-emerald-500 to-emerald-700 hover:from-emerald-600 hover:to-emerald-800 shadow-lg transform hover:scale-[1.03] active:scale-95 transition duration-300"
+                  >
+                    Reset Password
+                  </button>
 
-    {/* Back Button */}
-    <button
-      onClick={() => setIsReset(false)}
-      className="relative group text-emerald-700 text-sm font-medium overflow-hidden px-2 py-1"
-    >
-      <span className="absolute bottom-0 left-0 h-[2px] w-0 bg-gradient-to-r from-emerald-400 to-emerald-700 group-hover:w-full transition-all duration-500 ease-out"></span>
-      <span className="relative group-hover:text-emerald-800 group-hover:scale-105 transform transition duration-300 ease-out">
-        Back to Sign In
-      </span>
-    </button>
-  </div>
+                  {/* Tip */}
+                  <p className="text-xs text-gray-500">
+                    After resetting, you’ll be redirected to your Sign In page.
+                  </p>
 
-  {/* Smooth Animation */}
-  <style jsx>{`
-    @keyframes fade-slide-up {
-      0% {
-        opacity: 0;
-        transform: translateY(20px) scale(0.97);
-      }
-      100% {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-      }
-    }
-  `}</style>
-</>
+                  {/* Back Button */}
+                  <button
+                    onClick={() => setIsReset(false)}
+                    className="relative group text-emerald-700 text-sm font-medium overflow-hidden px-2 py-1"
+                  >
+                    <span className="absolute bottom-0 left-0 h-[2px] w-0 bg-gradient-to-r from-emerald-400 to-emerald-700 group-hover:w-full transition-all duration-500 ease-out"></span>
+                    <span className="relative group-hover:text-emerald-800 group-hover:scale-105 transform transition duration-300 ease-out">
+                      Back to Sign In
+                    </span>
+                  </button>
+                </div>
 
+                {/* Smooth Animation */}
+                <style jsx>{`
+                  @keyframes fade-slide-up {
+                    0% {
+                      opacity: 0;
+                      transform: translateY(20px) scale(0.97);
+                    }
+                    100% {
+                      opacity: 1;
+                      transform: translateY(0) scale(1);
+                    }
+                  }
+                `}</style>
+              </>
             )
           ) : (
             // Desktop layout: show both panels with overlay effect
@@ -825,19 +929,36 @@ const handleSignin = async (e) => {
                       className="w-full max-w-sm p-3 border border-gray-300 rounded focus:ring-2 focus:ring-emerald-400 transition"
                       required
                     />
-                    <input
-                      type="password"
-                      placeholder="Password"
-                      value={signinForm.password}
-                      onChange={(e) =>
-                        setSigninForm({
-                          ...signinForm,
-                          password: e.target.value,
-                        })
-                      }
-                      className="w-full max-w-sm p-3 border border-gray-300 rounded focus:ring-2 focus:ring-emerald-400 transition"
-                      required
-                    />
+                    <div className="relative w-full max-w-sm">
+                      <input
+                        type={showSigninPassword ? "text" : "password"}
+                        placeholder="Password"
+                        value={signinForm.password}
+                        onChange={(e) =>
+                          setSigninForm({
+                            ...signinForm,
+                            password: e.target.value,
+                          })
+                        }
+                        className="w-full max-w-sm p-3 pr-12 border border-gray-300 rounded focus:ring-2 focus:ring-emerald-400 transition"
+                        required
+                      />
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setShowSigninPassword(!showSigninPassword)
+                        }
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
+                      >
+                        {showSigninPassword ? (
+                          <AiOutlineEyeInvisible size={22} />
+                        ) : (
+                          <AiOutlineEye size={22} />
+                        )}
+                      </button>
+                    </div>
+
                     <button className="w-full max-w-sm py-3 rounded font-semibold text-white bg-emerald-700 hover:bg-emerald-800 transition cursor-pointer">
                       Sign In
                     </button>
@@ -892,10 +1013,11 @@ const handleSignin = async (e) => {
                         <span className="flex-grow h-[1px] bg-gray-300"></span>
                       </div>
                       <button
-                          type="button"
-                          onClick={handleGoogleLogin}
-                          className="w-full max-w-sm flex items-center justify-center gap-2 py-3 rounded border border-gray-300 hover:bg-white hover:shadow-md transition cursor-pointer">
-                          <FcGoogle size={24} /> Sign up with Google
+                        type="button"
+                        onClick={handleGoogleLogin}
+                        className="w-full max-w-sm flex items-center justify-center gap-2 py-3 rounded border border-gray-300 hover:bg-white hover:shadow-md transition cursor-pointer"
+                      >
+                        <FcGoogle size={24} /> Sign up with Google
                       </button>
 
                       <button
@@ -965,19 +1087,34 @@ const handleSignin = async (e) => {
                         readOnly
                         className="w-full max-w-sm p-3 border border-gray-300 rounded bg-gray-100"
                       />
-                      <input
-                        type="password"
-                        placeholder="Password"
-                        value={signupForm.password}
-                        onChange={(e) =>
-                          setSignupForm({
-                            ...signupForm,
-                            password: e.target.value,
-                          })
-                        }
-                        className="w-full max-w-sm p-3 border border-gray-300 rounded focus:ring-2 focus:ring-emerald-400 transition"
-                        required
-                      />
+                      <div className="relative w-full max-w-sm">
+                        <input
+                          type={showPassword ? "text" : "password"}
+                          placeholder="Password"
+                          value={signupForm.password}
+                          onChange={(e) =>
+                            setSignupForm({
+                              ...signupForm,
+                              password: e.target.value,
+                            })
+                          }
+                          className="w-full max-w-sm p-3 pr-12 border border-gray-300 rounded focus:ring-2 focus:ring-emerald-400 transition"
+                          required
+                        />
+
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
+                        >
+                          {showPassword ? (
+                            <AiOutlineEyeInvisible size={22} />
+                          ) : (
+                            <AiOutlineEye size={22} />
+                          )}
+                        </button>
+                      </div>
+
                       <button
                         onClick={handleSignup}
                         className="w-full max-w-sm py-3 rounded font-semibold text-white bg-emerald-700 hover:bg-emerald-800 transition cursor-pointer"
@@ -1026,7 +1163,7 @@ const handleSignin = async (e) => {
                   <h1 className="text-2xl md:text-3xl font-bold text-emerald-700">
                     Reset Password
                   </h1>
-                  {/* <input
+                  <input
                     type="email"
                     placeholder="Email"
                     value={resetForm.email}
@@ -1035,7 +1172,7 @@ const handleSignin = async (e) => {
                     }
                     className="w-full max-w-sm p-3 border border-gray-300 rounded focus:ring-2 focus:ring-emerald-400 transition"
                     required
-                  /> */}
+                  />
                   <input
                     type="text"
                     placeholder="Reset Token"
@@ -1046,19 +1183,34 @@ const handleSignin = async (e) => {
                     className="w-full max-w-sm p-3 border border-gray-300 rounded focus:ring-2 focus:ring-emerald-400 transition"
                     required
                   />
-                  <input
-                    type="password"
-                    placeholder="New Password"
-                    value={resetForm.newPassword}
-                    onChange={(e) =>
-                      setResetForm({
-                        ...resetForm,
-                        newPassword: e.target.value,
-                      })
-                    }
-                    className="w-full max-w-sm p-3 border border-gray-300 rounded focus:ring-2 focus:ring-emerald-400 transition"
-                    required
-                  />
+                  <div className="relative w-full max-w-sm">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      placeholder="New Password"
+                      value={resetForm.newPassword}
+                      onChange={(e) =>
+                        setResetForm({
+                          ...resetForm,
+                          newPassword: e.target.value,
+                        })
+                      }
+                      className="w-full p-3 pr-12 border border-gray-300 rounded focus:ring-2 focus:ring-emerald-400 transition"
+                      required
+                    />
+
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-800"
+                    >
+                      {showPassword ? (
+                        <AiOutlineEyeInvisible size={22} />
+                      ) : (
+                        <AiOutlineEye size={22} />
+                      )}
+                    </button>
+                  </div>
+
                   <button
                     onClick={handleResetPassword}
                     className="w-full max-w-sm py-3 rounded font-semibold text-white bg-emerald-700 hover:bg-emerald-800 transition cursor-pointer"
