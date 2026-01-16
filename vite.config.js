@@ -5,6 +5,9 @@ import { copyFileSync } from 'fs'
 import path from 'path'
 
 export default defineConfig({
+  server: {
+    host: true
+  },
   plugins: [
     tailwindcss(),
     react(),

@@ -36,6 +36,11 @@ import PropertyDetails from "./pages/PropertyDetails";
 import PropertyInquiries from "./pages/PropertyInquiries";
 import AllPropertiesAdmin from './pages/AllPropertiesAdmin';
 import History from "./components/HistoryModal";
+import CreatePromotion from "./pages/CreatePromotion"
+import PromotionsPage from "./pages/PromotionsPage";
+import VendorShopPage from "./pages/VendorShopPage";
+import VendorDashboard from "./pages/VendorDashboard";
+
 
 // ✅ Home component
 function Home() {
@@ -69,6 +74,7 @@ export default function App() {
         <Route path="/statenews/:state" element={<LocalNews />} />
         <Route path="/auth/google/callback" element={<GoogleCallback />} />
 
+
         <Route path="/community" element={<Community />} />
         <Route path="/jobs" element={<Jobs />} />
         <Route path="/events" element={<Events />} />
@@ -93,7 +99,12 @@ export default function App() {
         <Route path="/add" element={<AdminAddSection />} />
         <Route path="/admin/inquiries" element={<PropertyInquiries />} />
         <Route path="/admin/properties" element={<AllPropertiesAdmin />} />
-
+        <Route path="/create/promotion" element={<CreatePromotion />} />
+        <Route path="/" element={<PromotionsPage />} />
+        <Route path="/shop/:slug" element={<VendorShopPage />} />
+        {/* Vendor Routes (Protected) */}
+        <Route path="/vendor/dashboard" element={<VendorDashboard />} />
+<Route path="/promotions" element={<PromotionsPage />} />
         <Route path="/history" element={<History />} />
         
         {/* Footer Pages */}

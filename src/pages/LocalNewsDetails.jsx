@@ -28,7 +28,7 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import { MdVerified } from "react-icons/md";
 import SmallAdd from "../components/SmallAdd";
-import Loader from '../components/Loader';
+import StateNewsDetailsLoader from '../components/StateNewsDetailsLoader';
 
 // Helper: next index in circular list
 const getNextIndex = (current, total) => {
@@ -895,12 +895,7 @@ useEffect(() => {
   const topRightAd = ads.length ? ads[topRightIndex % ads.length] : null;
   const bottomRightAd = ads.length ? ads[bottomRightIndex % ads.length] : null;
 
-  if (loading || !news)
-    return (
-      <div className="flex justify-center items-center h-screen">
-        <Loader />
-      </div>
-    );  
+  if (loading || !news) return <StateNewsDetailsLoader />; 
 
 
     const postImage = news.imageUrls?.[0] || 'https://jharkhandbiharupdates.com/banner.jpg';
