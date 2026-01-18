@@ -52,6 +52,8 @@ function LogIn() {
   const [otpForm, setOtpForm] = useState({ email: "", otp: "" });
   const [signinForm, setSigninForm] = useState({ email: "", password: "" });
   const [forgotForm, setForgotForm] = useState({ email: "" });
+
+  // ✅ resetForm still has email but it will be auto set
   const [resetForm, setResetForm] = useState({
     email: "",
     token: "",
@@ -210,6 +212,13 @@ function LogIn() {
       const result = await res.json();
       if (res.ok) {
         showPopup("Reset token sent to your email!");
+
+        // ✅ IMPORTANT: auto-fill reset email from forgotForm
+        setResetForm((prev) => ({
+          ...prev,
+          email: forgotForm.email,
+        }));
+
         setIsForgot(false);
         setIsReset(true);
       } else showPopup(result.message || "Email not found", "error");
@@ -233,8 +242,14 @@ function LogIn() {
       const result = await res.json();
       if (res.ok) {
         showPopup("Password reset successful!");
+
+        // ✅ reset states
         setIsReset(false);
         setRightPanelActive(false);
+
+        // optional: clear forms
+        setForgotForm({ email: "" });
+        setResetForm({ email: "", token: "", newPassword: "" });
       } else showPopup(result.message || "Reset failed", "error");
     } catch (err) {
       showPopup(err.message, "error");
@@ -778,6 +793,7 @@ function LogIn() {
               </>
             ) : (
               <>
+                {/* ✅ RESET PAGE (EMAIL REMOVED, AUTO FILLED) */}
                 <div className="w-full max-w-sm mx-auto p-6 rounded-3xl backdrop-blur-xl bg-white/85 shadow-2xl border border-emerald-100 flex flex-col items-center text-center space-y-6 animate-[fade-slide-up_0.8s_ease-in-out]">
                   {/* Header */}
                   <div className="space-y-1">
@@ -785,29 +801,12 @@ function LogIn() {
                       Reset Password
                     </h1>
                     <p className="text-gray-600 text-sm">
-                      Enter your email, token, and new password below
+                      Enter your token and new password below
                     </p>
                   </div>
 
                   {/* Form Inputs */}
                   <div className="w-full space-y-3 text-left">
-                    {/* Email */}
-                    <div>
-                      <label className="block text-sm font-semibold text-emerald-700 mb-0.5">
-                        Email Address
-                      </label>
-                      <input
-                        type="email"
-                        placeholder="Your registered email"
-                        value={resetForm.email}
-                        onChange={(e) =>
-                          setResetForm({ ...resetForm, email: e.target.value })
-                        }
-                        className="w-full p-3 rounded-lg border border-gray-300 bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-400 placeholder:text-gray-400 text-sm shadow-sm transition-all duration-300"
-                        required
-                      />
-                    </div>
-
                     {/* Token */}
                     <div>
                       <label className="block text-sm font-semibold text-emerald-700 mb-0.5">
@@ -1157,22 +1156,13 @@ function LogIn() {
                 </div>
               )}
 
-              {/* ===== RESET PASSWORD ===== */}
+              {/* ✅ RESET PASSWORD (EMAIL REMOVED, AUTO FILLED) */}
               {isReset && (
                 <div className="absolute top-0 left-0 w-full h-full bg-white flex flex-col items-center justify-center p-6 sm:p-4 gap-3">
                   <h1 className="text-2xl md:text-3xl font-bold text-emerald-700">
                     Reset Password
                   </h1>
-                  <input
-                    type="email"
-                    placeholder="Email"
-                    value={resetForm.email}
-                    onChange={(e) =>
-                      setResetForm({ ...resetForm, email: e.target.value })
-                    }
-                    className="w-full max-w-sm p-3 border border-gray-300 rounded focus:ring-2 focus:ring-emerald-400 transition"
-                    required
-                  />
+
                   <input
                     type="text"
                     placeholder="Reset Token"
@@ -1183,6 +1173,7 @@ function LogIn() {
                     className="w-full max-w-sm p-3 border border-gray-300 rounded focus:ring-2 focus:ring-emerald-400 transition"
                     required
                   />
+
                   <div className="relative w-full max-w-sm">
                     <input
                       type={showPassword ? "text" : "password"}
