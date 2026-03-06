@@ -187,7 +187,7 @@ function LogIn() {
         }, 2000); // Wait 2 seconds for OneSignal to be ready
 
         setTimeout(() => {
-          navigate("/community");
+          navigate("/citizen-news");
         }, 500);
       } else {
         showPopup(result.message || "Invalid credentials", "error");
@@ -904,9 +904,8 @@ function LogIn() {
           ) : (
             // Desktop layout: show both panels with overlay effect
             <div
-              className={`relative w-full max-w-4xl min-h-[600px] rounded-xl shadow-xl overflow-hidden transition-all duration-700 ${
-                rightPanelActive ? "right-panel-active" : ""
-              }`}
+              className={`relative w-full max-w-4xl min-h-[600px] rounded-xl shadow-xl overflow-hidden transition-all duration-700 ${rightPanelActive ? "right-panel-active" : ""
+                }`}
             >
               {/* ===== SIGN IN ===== */}
               {!isForgot && !isReset && !rightPanelActive && (

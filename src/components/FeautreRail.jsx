@@ -29,7 +29,7 @@ const features = [
   },
   {
     icon: "👥",
-    title: "Community",
+    title: "Citizen News",
     text: "Share, ask, belong. A place to see, support, and celebrate locals—together.",
     img: img2,
   },
@@ -54,9 +54,8 @@ function FeatureCard({ icon, title, text, img, flip, onClick }) {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.8 }}
       transition={{ duration: 0.8, ease: "easeOut" }}
-      className={`flex flex-col md:flex-row ${
-        flip ? "md:flex-row-reverse" : ""
-      } items-center gap-8 md:gap-16 rounded-3xl p-6 md:p-12 cursor-pointer
+      className={`flex flex-col md:flex-row ${flip ? "md:flex-row-reverse" : ""
+        } items-center gap-8 md:gap-16 rounded-3xl p-6 md:p-12 cursor-pointer
       bg-transparent shadow-none`}
       style={{
         marginTop: "0.5rem",
@@ -130,11 +129,11 @@ function FacebookDialog({ isOpen, onClose }) {
   if (!isOpen) return null;
 
   return (
-    <div 
+    <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
       onClick={onClose}
     >
-      <div 
+      <div
         className="relative bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
@@ -158,11 +157,11 @@ function FacebookDialog({ isOpen, onClose }) {
           </svg>
         </button>
         <div className="p-6 overflow-y-auto max-h-[90vh]">
-          <div 
-            className="fb-page" 
+          <div
+            className="fb-page"
             data-href="https://www.facebook.com/JhUpdate"
             data-tabs="timeline"
-            data-width="500" 
+            data-width="500"
             data-height="600"
             data-small-header="false"
             data-adapt-container-width="true"
@@ -189,14 +188,14 @@ export default function FeatureRailSmall() {
   useEffect(() => {
     // Load Facebook SDK
     if (!window.FB) {
-      window.fbAsyncInit = function() {
+      window.fbAsyncInit = function () {
         window.FB.init({
           xfbml: true,
           version: 'v18.0'
         });
       };
 
-      (function(d, s, id) {
+      (function (d, s, id) {
         var js, fjs = d.getElementsByTagName(s)[0];
         if (d.getElementById(id)) return;
         js = d.createElement(s);
@@ -208,8 +207,8 @@ export default function FeatureRailSmall() {
   }, []);
 
   const handleFeatureClick = (title) => {
-    if (title === "Community") {
-      navigate("/community");
+    if (title === "Citizen News") {
+      navigate("/citizen-news");
       return;
     }
     if (title === "Jobs") {
@@ -260,9 +259,9 @@ export default function FeatureRailSmall() {
       )}
 
       {/* Facebook Dialog */}
-      <FacebookDialog 
-        isOpen={showFacebookDialog} 
-        onClose={() => setShowFacebookDialog(false)} 
+      <FacebookDialog
+        isOpen={showFacebookDialog}
+        onClose={() => setShowFacebookDialog(false)}
       />
 
       {/* Header Section */}
@@ -319,15 +318,15 @@ export default function FeatureRailSmall() {
         transition={{ duration: 0.8, ease: "easeOut" }}
         className="w-full max-w-5xl mb-12 px-4"
       >
-        <div 
+        <div
           onClick={() => setShowFacebookDialog(true)}
           className="relative cursor-pointer group rounded-2xl overflow-hidden"
           style={{
             aspectRatio: '16/9',
           }}
         >
-          <img 
-            src="/jhupdateFB.png" 
+          <img
+            src="/jhupdateFB.png"
             alt="JhUpdate Facebook Page"
             className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
           />
@@ -343,17 +342,17 @@ export default function FeatureRailSmall() {
         transition={{ duration: 0.8, ease: "easeOut" }}
         className="w-full max-w-5xl mb-12 px-4"
       >
-        <a 
-          href="https://www.instagram.com/jhupdate/" 
-          target="_blank" 
+        <a
+          href="https://www.instagram.com/jhupdate/"
+          target="_blank"
           rel="noopener noreferrer"
           className="block relative group rounded-2xl overflow-hidden"
           style={{
             aspectRatio: '16/9',
           }}
         >
-          <img 
-            src="/instajhupdate.png" 
+          <img
+            src="/instajhupdate.png"
             alt="JhUpdate Instagram Page"
             className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
           />

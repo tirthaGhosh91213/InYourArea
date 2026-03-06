@@ -62,8 +62,8 @@ export default function AdminDashboard() {
         category === "properties"
           ? `${BASE_API}/properties/pending`
           : category === "promotions"
-          ? `${BASE_API}/admin/vendors/pending`
-          : `${BASE_API}/${category}/pending`;
+            ? `${BASE_API}/admin/vendors/pending`
+            : `${BASE_API}/${category}/pending`;
 
       const res = await axios.get(endpoint, {
         headers: { Authorization: `Bearer ${token}` },
@@ -95,10 +95,9 @@ export default function AdminDashboard() {
       setProcessingItems((prev) => new Set(prev).add(id));
       const token = localStorage.getItem("accessToken");
       await axios.post(
-        `${BASE_API}/${
-          activeTab === "properties"
-            ? "properties"
-            : activeTab === "promotions"
+        `${BASE_API}/${activeTab === "properties"
+          ? "properties"
+          : activeTab === "promotions"
             ? "admin/vendors"
             : activeTab
         }/${id}/${action}`,
@@ -107,8 +106,7 @@ export default function AdminDashboard() {
       );
       setItems((prev) => prev.filter((it) => it.id !== id));
       setPopupMessage(
-        `${activeTab.slice(0, -1).toUpperCase()} ${
-          action === "approve" ? "Approved ✅" : "Rejected ❌"
+        `${activeTab.slice(0, -1).toUpperCase()} ${action === "approve" ? "Approved ✅" : "Rejected ❌"
         }`
       );
       if (fromModal) {
@@ -275,11 +273,10 @@ export default function AdminDashboard() {
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
             whileTap={{ scale: 0.95 }}
-            className={`px-5 py-2 rounded-full font-semibold transition-all duration-300 shadow-sm ${
-              activeTab === tab.key
+            className={`px-5 py-2 rounded-full font-semibold transition-all duration-300 shadow-sm ${activeTab === tab.key
                 ? "bg-green-600 text-white"
                 : "bg-gray-100 hover:bg-green-100 text-gray-700"
-            }`}
+              }`}
           >
             {tab.label}
           </motion.button>
@@ -305,11 +302,10 @@ export default function AdminDashboard() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95 }}
                 transition={{ duration: 0.2 }}
-                className={`mb-4 rounded-xl p-4 sm:p-5 shadow-md border transition-all duration-300 hover:shadow-lg ${
-                  index % 2 === 0
+                className={`mb-4 rounded-xl p-4 sm:p-5 shadow-md border transition-all duration-300 hover:shadow-lg ${index % 2 === 0
                     ? "bg-green-50 hover:bg-green-100 border-green-200"
                     : "bg-gray-50 hover:bg-gray-100 border-gray-200"
-                }`}
+                  }`}
               >
                 <div className="flex flex-col gap-4">
                   <div
@@ -359,9 +355,9 @@ export default function AdminDashboard() {
                             <p className="text-sm text-gray-700 mt-2 line-clamp-2 break-words overflow-hidden">
                               {(item.description || item.content).length > 100
                                 ? `${(item.description || item.content).substring(
-                                    0,
-                                    100
-                                  )}...`
+                                  0,
+                                  100
+                                )}...`
                                 : item.description || item.content}
                             </p>
                           )}
@@ -463,7 +459,7 @@ export default function AdminDashboard() {
                 </div>
               ) : (
                 <>
-                  {/* PROMOTIONS TAB DETAILS */}
+                  {/* LOCAL MARKET TAB DETAILS */}
                   {activeTab === "promotions" && (
                     <div className="space-y-4">
                       {selectedItem.shopLogoUrl && (
@@ -665,8 +661,8 @@ export default function AdminDashboard() {
                             <p className="font-semibold text-gray-800 break-words">
                               {selectedItem.applicationDeadline
                                 ? new Date(
-                                    selectedItem.applicationDeadline
-                                  ).toLocaleDateString()
+                                  selectedItem.applicationDeadline
+                                ).toLocaleDateString()
                                 : "N/A"}
                             </p>
                           </div>
@@ -777,8 +773,8 @@ export default function AdminDashboard() {
                             <p className="font-semibold text-gray-800 break-words">
                               {selectedItem.eventDate
                                 ? new Date(
-                                    selectedItem.eventDate
-                                  ).toLocaleString()
+                                  selectedItem.eventDate
+                                ).toLocaleString()
                                 : "N/A"}
                             </p>
                           </div>
@@ -1015,8 +1011,8 @@ export default function AdminDashboard() {
                               ₹{" "}
                               {propertyDetails.price
                                 ? (
-                                    +propertyDetails.price / 100000
-                                  ).toLocaleString("en-IN")
+                                  +propertyDetails.price / 100000
+                                ).toLocaleString("en-IN")
                                 : "N/A"}{" "}
                               Lakhs
                             </p>
@@ -1238,11 +1234,10 @@ export default function AdminDashboard() {
               <p className="text-gray-600 mb-4">
                 Are you sure you want to{" "}
                 <span
-                  className={`font-semibold ${
-                    confirmAction.action === "approve"
+                  className={`font-semibold ${confirmAction.action === "approve"
                       ? "text-green-600"
                       : "text-red-500"
-                  }`}
+                    }`}
                 >
                   {confirmAction.action}
                 </span>{" "}
@@ -1259,11 +1254,10 @@ export default function AdminDashboard() {
                   }
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  className={`px-6 py-2 rounded-lg text-white font-semibold transition-all duration-200 ${
-                    confirmAction.action === "approve"
+                  className={`px-6 py-2 rounded-lg text-white font-semibold transition-all duration-200 ${confirmAction.action === "approve"
                       ? "bg-green-600 hover:bg-green-700"
                       : "bg-red-500 hover:bg-red-600"
-                  }`}
+                    }`}
                 >
                   Yes, {confirmAction.action}
                 </motion.button>

@@ -279,7 +279,7 @@ export default function NewYearModal() {
               marginBottom: isMobile ? '20px' : '30px',
               lineHeight: '1.5'
             }}>
-              Jharkhand Bihar Updates wishes you a prosperous year ahead! 🌟
+              Jharkhand Updates wishes you a prosperous year ahead! 🌟
             </p>
             
             <div style={{ 

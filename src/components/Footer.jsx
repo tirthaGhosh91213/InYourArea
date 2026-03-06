@@ -14,12 +14,12 @@ const jharkhandAreas = [
 ];
 
 const biharAreas = [
-  "Araria","Arwal","Aurangabad","Banka","Begusarai","Bhagalpur","Bhojpur","Buxar",
-  "Darbhanga","East Champaran (Motihari)","Gaya","Gopalganj","Jamui","Jehanabad",
-  "Kaimur (Bhabua)","Katihar","Khagaria","Kishanganj","Lakhisarai","Madhepura",
-  "Madhubani","Munger","Muzaffarpur","Nalanda","Nawada","Patna","Purnia","Rohtas",
-  "Saharsa","Samastipur","Saran (Chhapra)","Sheikhpura","Sheohar","Sitamarhi",
-  "Siwan","Supaul","Vaishali","West Champaran (Bettiah)",
+  "Araria", "Arwal", "Aurangabad", "Banka", "Begusarai", "Bhagalpur", "Bhojpur", "Buxar",
+  "Darbhanga", "East Champaran (Motihari)", "Gaya", "Gopalganj", "Jamui", "Jehanabad",
+  "Kaimur (Bhabua)", "Katihar", "Khagaria", "Kishanganj", "Lakhisarai", "Madhepura",
+  "Madhubani", "Munger", "Muzaffarpur", "Nalanda", "Nawada", "Patna", "Purnia", "Rohtas",
+  "Saharsa", "Samastipur", "Saran (Chhapra)", "Sheikhpura", "Sheohar", "Sitamarhi",
+  "Siwan", "Supaul", "Vaishali", "West Champaran (Bettiah)",
 ];
 
 const adminLinks = {
@@ -81,7 +81,7 @@ export default function Footer() {
         {/* Logo & Quick Links */}
         <div className="flex flex-col items-start gap-1">
           <img src={logo} alt="Local News Logo" className="h-16 mb-1 drop-shadow" draggable={false} />
-          <span className="text-green-600 text-base font-bold tracking-tight">Jharkhand & Bihar Local News</span>
+          <span className="text-green-600 text-base font-bold tracking-tight">Jharkhand Updates</span>
           <ul className="space-y-[2px] mt-3 text-sm w-fit">
             {quickLinks.map((link) => (
               <li key={link.label}>
@@ -118,10 +118,10 @@ export default function Footer() {
 
         {/* Social Media Links */}
         <div className="flex flex-col justify-start items-center lg:items-end gap-4 h-full w-full">
-          {/* Jharkhand Bihar Updates Media Links */}
+          {/* Jharkhand Updates Media Links */}
           <div className="w-full">
             <h2 className="font-semibold text-green-700 mb-2 text-base text-center lg:text-right animate-fade-in">
-              Jharkhand Bihar Updates Media Links
+              Jharkhand Updates Media Links
             </h2>
             <div className="flex justify-center lg:justify-end gap-3 mb-2 animate-pop-in">
               <a href={adminLinks.instagram} aria-label="Instagram" target="_blank" rel="noopener" className="hover:scale-110 transition"><FaInstagram size={20} /></a>
@@ -150,7 +150,7 @@ export default function Footer() {
       {/* Footer Bottom */}
       <div className="mt-8 border-t border-gray-200 pt-5 flex flex-col gap-2 md:flex-row justify-between items-center text-xs text-gray-500 px-3">
         <div>
-          Jharkhand & Bihar Local News &copy; 2025. All rights reserved.
+          Jharkhand Updates &copy; 2026. All rights reserved.
         </div>
         <div className="mt-2 md:mt-0 text-xs">
           Powered by <span
@@ -158,7 +158,7 @@ export default function Footer() {
             onClick={handleMerakiClick}
             tabIndex={0}
           >
-          ULMiND
+            ULMiND
           </span>
         </div>
       </div>

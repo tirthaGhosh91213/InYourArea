@@ -7,7 +7,7 @@ import toast from "react-hot-toast";
 export default function CreatePromotion() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  
+
   const [formData, setFormData] = useState({
     shopName: "",
     shopDescription: "",
@@ -103,7 +103,7 @@ export default function CreatePromotion() {
       }
 
       const formDataToSend = new FormData();
-      
+
       // Create vendor object
       const vendorData = {
         shopName: formData.shopName.trim(),
@@ -114,7 +114,7 @@ export default function CreatePromotion() {
 
       // Append JSON data
       formDataToSend.append("vendor", JSON.stringify(vendorData));
-      
+
       // Append Images
       if (shopLogo) {
         formDataToSend.append("shopLogo", shopLogo);
@@ -138,7 +138,7 @@ export default function CreatePromotion() {
 
       if (response.ok && data.success) {
         toast.success("Vendor registration submitted! Awaiting admin approval.");
-        navigate("/promotions");
+        navigate("/local-market");
       } else {
         toast.error(data.message || "Failed to register vendor");
       }
@@ -178,7 +178,7 @@ export default function CreatePromotion() {
           onSubmit={handleSubmit}
           className="bg-white rounded-2xl shadow-lg p-6 space-y-6"
         >
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Shop Logo Upload */}
             <div>
@@ -268,7 +268,7 @@ export default function CreatePromotion() {
           {/* Shop Address (Added Here) */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-1">
-              <MapPin size={16} className="text-gray-500" /> 
+              <MapPin size={16} className="text-gray-500" />
               Shop Location / Address <span className="text-red-500">*</span>
             </label>
             <textarea
@@ -323,11 +323,10 @@ export default function CreatePromotion() {
             disabled={loading}
             whileHover={{ scale: loading ? 1 : 1.02 }}
             whileTap={{ scale: loading ? 1 : 0.98 }}
-            className={`w-full py-3 rounded-lg font-semibold text-white transition-all ${
-              loading
+            className={`w-full py-3 rounded-lg font-semibold text-white transition-all ${loading
                 ? "bg-gray-400 cursor-not-allowed"
                 : "bg-gradient-to-r from-green-500 to-green-600 hover:shadow-lg"
-            }`}
+              }`}
           >
             {loading ? (
               <span className="flex items-center justify-center gap-2">

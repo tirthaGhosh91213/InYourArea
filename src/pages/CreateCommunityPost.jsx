@@ -66,7 +66,7 @@ export default function CreateCommunityPost() {
       const postPayload = {
         content: formData.content.trim(),
       };
-      
+
       // Add optional fields only if provided
       if (formData.title && formData.title.trim()) {
         postPayload.title = formData.title.trim();
@@ -98,7 +98,7 @@ export default function CreateCommunityPost() {
 
       if (res.data.success) {
         toast.success("Community post created successfully and pending approval!");
-        navigate("/community");
+        navigate("/citizen-news");
       }
     } catch (err) {
       console.error(err);

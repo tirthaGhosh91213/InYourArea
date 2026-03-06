@@ -918,7 +918,7 @@ const isFirstMediaVideo = postImage && (
 
 
      <Helmet>
-  <title>{news.title} - {window.location.hostname === 'jharkhandupdates.com' ? 'JHARKHAND UPDATES' : 'JHARKHAND BIHAR UPDATES'}</title>
+  <title>{news.title} - {window.location.hostname === 'jharkhandupdates.com' ? 'JHARKHAND UPDATES' : 'Jharkhand Updates'}</title>
   <meta name="description" content={postDescription} />
   
   {/* ✅ ADD: Canonical URL */}
@@ -930,7 +930,7 @@ const isFirstMediaVideo = postImage && (
   <meta property="og:url" content={window.location.href} />
   <meta property="og:title" content={news.title} />
   <meta property="og:description" content={postDescription} />
-  <meta property="og:site_name" content={window.location.hostname === 'jharkhandupdates.com' ? 'JHARKHAND UPDATES' : 'JHARKHAND BIHAR UPDATES'} />
+  <meta property="og:site_name" content={window.location.hostname === 'jharkhandupdates.com' ? 'JHARKHAND UPDATES' : 'Jharkhand Updates'} />
   
   {/* 🔥 VIDEO SUPPORT: Different meta tags for video vs image */}
   {isFirstMediaVideo ? (

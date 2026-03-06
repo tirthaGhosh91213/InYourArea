@@ -29,7 +29,7 @@ export default function Sidebar({ sidebarOpen, onClose }) {
   const location = useLocation();
   const [showModal, setShowModal] = useState(false);
   const [role, setRole] = useState(null);
-  
+
   const [selectedState, setSelectedState] = useState(() => {
     const saved = localStorage.getItem("state");
     if (saved && !saved.startsWith("-")) return saved;
@@ -88,14 +88,14 @@ export default function Sidebar({ sidebarOpen, onClose }) {
     },
     { name: "Jobs", icon: Newspaper, path: "/jobs" },
     { name: "Events", icon: Home, path: "/events" },
-    { name: "Community", icon: Users, path: "/community" },
+    { name: "Citizen News", icon: Users, path: "/citizen-news" },
     { name: "Properties", icon: Building2, path: "/properties" },
-    { name: "Promote Your Business", icon: Megaphone, path: "/promotions" }, 
+    { name: "Local Market", icon: Megaphone, path: "/local-market" },
   ];
 
   const getPostOptions = () => {
-    if (role === "admin") return ["Local News", "Jobs", "Events", "Community", "Properties", "Promotion"]; 
-    return ["Jobs", "Events", "Community", "Properties", "Promotion"]; 
+    if (role === "admin") return ["Local News", "Jobs", "Events", "Citizen News", "Properties", "Local Market"];
+    return ["Jobs", "Events", "Citizen News", "Properties", "Local Market"];
   };
 
   const handleOptionClick = (type) => {
@@ -107,7 +107,7 @@ export default function Sidebar({ sidebarOpen, onClose }) {
       case "Local News":
         navigate("/create/localnews");
         break;
-      case "Community":
+      case "Citizen News":
         navigate("/create/community");
         break;
       case "Events":
@@ -116,7 +116,7 @@ export default function Sidebar({ sidebarOpen, onClose }) {
       case "Properties":
         navigate("/create/properties");
         break;
-      case "Promotion": 
+      case "Local Market":
         navigate("/create/promotion");
         break;
       default:
@@ -185,7 +185,7 @@ export default function Sidebar({ sidebarOpen, onClose }) {
                   />
                 </motion.div>
               </div>
-              
+
               <motion.div
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -226,11 +226,10 @@ export default function Sidebar({ sidebarOpen, onClose }) {
                           key={state}
                           onClick={() => handleStateSelect(state)}
                           disabled={state.startsWith("-")}
-                          className={`w-full text-left px-6 py-3 hover:bg-green-100 text-gray-700 font-medium cursor-pointer ${
-                            selectedState === state
+                          className={`w-full text-left px-6 py-3 hover:bg-green-100 text-gray-700 font-medium cursor-pointer ${selectedState === state
                               ? "bg-green-50 text-green-700"
                               : ""
-                          }`}
+                            }`}
                         >
                           {state}
                         </button>
@@ -253,11 +252,10 @@ export default function Sidebar({ sidebarOpen, onClose }) {
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: index * 0.1 }}
                       className={`flex items-center gap-3 py-3 px-4 rounded-xl font-medium text-lg transition-all duration-300 cursor-pointer
-                    ${
-                      active
-                        ? "bg-red-500 text-white shadow-lg"
-                        : "text-gray-700 hover:bg-green-100 hover:text-green-700"
-                    }`}
+                    ${active
+                          ? "bg-red-500 text-white shadow-lg"
+                          : "text-gray-700 hover:bg-green-100 hover:text-green-700"
+                        }`}
                     >
                       <Icon
                         size={20}

@@ -13,6 +13,7 @@ import { IoPersonCircleOutline } from "react-icons/io5";
 import { MdVerified } from "react-icons/md";
 import Loader from "../components/Loader";
 import CommunitySkeleton from "../components/CommunitySkeleton";
+import ExternalNewsCard from "../components/ExternalNewsCard";
 
 
 // Helper: Get next index in circular manner
@@ -53,6 +54,13 @@ export default function Community() {
   const [showCommentInput, setShowCommentInput] = useState({});
   const [commentText, setCommentText] = useState({});
   const [loading, setLoading] = useState(true);
+
+  // External News
+  const [externalNews, setExternalNews] = useState([]);
+  const extNewsPoolRef = useRef([]);
+  const extNewsIdxRef = useRef(0);
+  const extNextGapRef = useRef(1 + Math.floor(Math.random() * 2));
+  const extGapCountRef = useRef(0);
 
 
   // 🔥 PAGINATION STATE
@@ -105,6 +113,21 @@ export default function Community() {
       }
     } catch {
       toast.error("Failed to fetch comments");
+    }
+  };
+
+  const fetchExternalNews = async () => {
+    try {
+      const res = await axios.get(`https://api.jharkhandbiharupdates.com/api/v1/external-news/top-headlines`);
+      const data = res.data?.data || res.data;
+      const rawArticles = data?.articles || [];
+      const articles = rawArticles.filter((a) => a.title && a.url);
+      extNewsPoolRef.current = articles;
+      extNewsIdxRef.current = 0;
+      extGapCountRef.current = 0;
+      extNextGapRef.current = 2 + Math.floor(Math.random() * 2);
+    } catch (e) {
+      console.log('External news fetch failed:', e?.message);
     }
   };
 
@@ -193,7 +216,7 @@ export default function Community() {
     setPosts([]);
     setCurrentPage(0);
     setHasMore(true);
-    fetchPosts(0, false);
+    fetchExternalNews().then(() => fetchPosts(0, false));
   }, [fetchPosts]);
 
 
@@ -327,6 +350,59 @@ export default function Community() {
         .includes(searchTerm.toLowerCase())
   );
 
+  // Build feed: NEWS is PRIMARY, only RECENT community posts are interleaved
+  const buildMergedFeedDesktop = (communityPosts, newsPool) => {
+    if (!newsPool || !newsPool.length) {
+      return communityPosts.map(p => ({ ...p, _type: 'community' }));
+    }
+
+    const now = Date.now();
+    const FOUR_DAYS = 4 * 24 * 60 * 60 * 1000;
+    const recentPosts = [];
+    const olderPosts = [];
+    communityPosts.forEach(p => {
+      const postTime = p.createdAt ? new Date(p.createdAt).getTime() : 0;
+      if (now - postTime <= FOUR_DAYS) {
+        recentPosts.push(p);
+      } else {
+        olderPosts.push(p);
+      }
+    });
+
+    const result = [];
+    let recentIdx = 0;
+    let newsCount = 0;
+    const insertEvery = 2 + Math.floor(Math.random() * 2); // every 2-3 news
+
+    newsPool.forEach((newsItem, idx) => {
+      result.push({
+        ...newsItem,
+        id: 'news_' + idx + '_' + (newsItem.url || Date.now()),
+        _type: 'external_news'
+      });
+      newsCount++;
+
+      if (newsCount >= insertEvery && recentIdx < recentPosts.length) {
+        result.push({ ...recentPosts[recentIdx], _type: 'community' });
+        recentIdx++;
+        newsCount = 0;
+      }
+    });
+
+    while (recentIdx < recentPosts.length) {
+      result.push({ ...recentPosts[recentIdx], _type: 'community' });
+      recentIdx++;
+    }
+
+    olderPosts.forEach(p => {
+      result.push({ ...p, _type: 'community' });
+    });
+
+    return result;
+  };
+
+  const desktopMergedFeed = buildMergedFeedDesktop(filteredPosts, extNewsPoolRef.current);
+
 
   const formatDate = (date) =>
     new Date(date).toLocaleString("en-GB", {
@@ -356,7 +432,7 @@ export default function Community() {
 
 
   const handlePostClick = (postId) => {
-    navigate(`/community/${postId}`);
+    navigate(`/citizen-news/${postId}`);
   };
 
 
@@ -367,31 +443,31 @@ export default function Community() {
   // Mobile: interleave ads after every 2 posts (single post per row)
   const buildMobileItems = () => {
     const items = [];
-    if (!filteredPosts.length) return items;
+    if (!desktopMergedFeed.length) return items;
     let adPtr = 0;
 
 
-    if (filteredPosts.length === 1) {
+    if (desktopMergedFeed.length === 1) {
       if (largeAds.length > 0) items.push({ type: "ad", adIndex: largeAdIndexes[0] ?? 0 });
-      items.push({ type: "post", post: filteredPosts[0] });
+      items.push({ type: desktopMergedFeed[0]._type === 'external_news' ? "external_news" : "post", post: desktopMergedFeed[0] });
       if (largeAds.length > 1) items.push({ type: "ad", adIndex: largeAdIndexes[1] ?? 0 });
       return items;
     }
 
 
-    if (filteredPosts.length === 2) {
-      items.push({ type: "post", post: filteredPosts[0] });
+    if (desktopMergedFeed.length === 2) {
+      items.push({ type: desktopMergedFeed[0]._type === 'external_news' ? "external_news" : "post", post: desktopMergedFeed[0] });
       if (largeAds.length > 0) items.push({ type: "ad", adIndex: largeAdIndexes[0] ?? 0 });
-      items.push({ type: "post", post: filteredPosts[1] });
+      items.push({ type: desktopMergedFeed[1]._type === 'external_news' ? "external_news" : "post", post: desktopMergedFeed[1] });
       if (largeAds.length > 1) items.push({ type: "ad", adIndex: largeAdIndexes[1] ?? 0 });
       return items;
     }
 
 
-    for (let i = 0; i < filteredPosts.length; i++) {
-      items.push({ type: "post", post: filteredPosts[i] });
+    for (let i = 0; i < desktopMergedFeed.length; i++) {
+      items.push({ type: desktopMergedFeed[i]._type === 'external_news' ? "external_news" : "post", post: desktopMergedFeed[i] });
       const isEndOfPair = (i + 1) % 2 === 0;
-      const isNotLast = i !== filteredPosts.length - 1;
+      const isNotLast = i !== desktopMergedFeed.length - 1;
       if (isEndOfPair && isNotLast && largeAds.length > 0) {
         const useIdx =
           largeAds.length === 1
@@ -426,8 +502,8 @@ export default function Community() {
     const remainingCount = postComments.length - 3;
 
 
-    const contentPreview500 = post.content.length > 500 
-      ? post.content.substring(0, 500) 
+    const contentPreview500 = post.content.length > 500
+      ? post.content.substring(0, 500)
       : post.content;
     const needsReadMore = post.content.length > 500;
 
@@ -457,9 +533,9 @@ export default function Community() {
                     {post.author.firstName} {post.author.lastName}
                   </span>
                   {isAdmin && (
-                    <MdVerified 
-                      size={16} 
-                      className="sm:w-[18px] sm:h-[18px] text-blue-500 flex-shrink-0" 
+                    <MdVerified
+                      size={16}
+                      className="sm:w-[18px] sm:h-[18px] text-blue-500 flex-shrink-0"
                     />
                   )}
                 </div>
@@ -569,7 +645,7 @@ export default function Community() {
                   </div>
                 </div>
               ))}
-              
+
               {remainingCount > 0 && (
                 <button
                   onClick={(e) => {
@@ -581,7 +657,7 @@ export default function Community() {
                   View {remainingCount} more comment{remainingCount !== 1 ? 's' : ''}
                 </button>
               )}
-              
+
               <div className="flex gap-2 mt-2">
                 <input
                   type="text"
@@ -678,15 +754,15 @@ export default function Community() {
 
 
           {loading ? (
-  <CommunitySkeleton />
-) : filteredPosts.length === 0 ? (
-  <motion.p
-    initial={{ opacity: 0 }}
-    animate={{ opacity: 1 }}
-    className="text-center text-gray-500 mt-10 text-lg sm:text-xl px-4"
-  >
-    No community posts yet. Start the conversation!
-  </motion.p>
+            <CommunitySkeleton />
+          ) : filteredPosts.length === 0 ? (
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="text-center text-gray-500 mt-10 text-lg sm:text-xl px-4"
+            >
+              No community posts yet. Start the conversation!
+            </motion.p>
           ) : (
             <>
               {/* 🔥 MOBILE: Infinite scroll */}
@@ -697,6 +773,8 @@ export default function Community() {
                       key={`m-post-${item.post.id}`}
                       post={item.post}
                     />
+                  ) : item.type === "external_news" ? (
+                    <ExternalNewsCard key={`m-ext-${item.post.id}`} item={item.post} />
                   ) : largeAds[item.adIndex] ? (
                     <div
                       key={`m-ad-${idx}`}
@@ -709,7 +787,7 @@ export default function Community() {
                     </div>
                   ) : null
                 )}
-                
+
                 {/* 🔥 INFINITE SCROLL TRIGGER */}
                 <div ref={observerTarget} className="h-10 flex items-center justify-center">
                   {loadingMore && (
@@ -728,10 +806,14 @@ export default function Community() {
               {/* 🔥 DESKTOP: Load More Button */}
               <div className="hidden md:grid md:grid-cols-3 gap-8 w-full max-w-7xl pb-10">
                 <div className="md:col-span-2 flex flex-col gap-4 min-w-0">
-                  {filteredPosts.map((post) => (
-                    <CommunityCard key={post.id} post={post} />
+                  {desktopMergedFeed.map((item) => (
+                    item._type === 'external_news' ? (
+                      <ExternalNewsCard key={item.id} item={item} />
+                    ) : (
+                      <CommunityCard key={item.id} post={item} />
+                    )
                   ))}
-                  
+
                   {/* 🔥 LOAD MORE BUTTON */}
                   {hasMore && (
                     <motion.button
@@ -754,7 +836,7 @@ export default function Community() {
                       )}
                     </motion.button>
                   )}
-                  
+
                   {!hasMore && posts.length > 0 && (
                     <div className="text-center py-6 text-gray-500 font-medium">
                       You've reached the end of posts

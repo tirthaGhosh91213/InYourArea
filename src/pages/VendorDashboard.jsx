@@ -106,7 +106,7 @@ export default function VendorDashboard() {
     const shopUrl = `${window.location.origin}/shop/${vendorDetails.vendorSlug}`;
     const shareData = {
         title: vendorDetails.shopName,
-        text: `Check out ${vendorDetails.shopName} on Jharkhand Bihar Updates!`,
+        text: `Check out ${vendorDetails.shopName} on Jharkhand Updates!`,
         url: shopUrl,
     };
 
@@ -121,7 +121,7 @@ export default function VendorDashboard() {
   // --- HELMET SEO DATA ---
   const shopUrl = vendorDetails ? `${window.location.origin}/shop/${vendorDetails.vendorSlug}` : window.location.href;
   const shopName = vendorDetails?.shopName || "Vendor Shop";
-  const shopDesc = vendorDetails?.shopDescription || `Check out ${shopName} on Jharkhand Bihar Updates! Best deals and offers available now.`;
+  const shopDesc = vendorDetails?.shopDescription || `Check out ${shopName} on Jharkhand Updates! Best deals and offers available now.`;
   const shopImage = vendorDetails?.shopCoverUrl || vendorDetails?.shopLogoUrl || `${window.location.origin}/banner.jpg`; 
 
   // --- PROFILE MANAGEMENT ---
@@ -364,7 +364,7 @@ export default function VendorDashboard() {
       
       {/* --- REACT HELMET --- */}
       <Helmet>
-        <title>{shopName} - Dashboard | JHARKHAND BIHAR UPDATES</title>
+        <title>{shopName} - Dashboard | Jharkhand Updates</title>
         <meta name="description" content={shopDesc} />
         <link rel="canonical" href={shopUrl} />
         <meta property="fb:app_id" content="1234567890" />
@@ -372,7 +372,7 @@ export default function VendorDashboard() {
         <meta property="og:url" content={shopUrl} />
         <meta property="og:title" content={`${shopName} - Best Offers Visit This Link`} />
         <meta property="og:description" content={shopDesc} />
-        <meta property="og:site_name" content="JHARKHAND BIHAR UPDATES" />
+        <meta property="og:site_name" content="Jharkhand Updates" />
         <meta property="og:image" content={shopImage} />
         <meta property="og:image:secure_url" content={shopImage} />
         <meta name="twitter:card" content="summary_large_image" />

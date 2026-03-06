@@ -784,7 +784,7 @@ export default function JobDetails() {
     <>
     {job && (
         <Helmet>
-          <title>{job.jobTitle || job.title} - JHARKHAND BIHAR UPDATES</title>
+          <title>{job.jobTitle || job.title} - Jharkhand Updates</title>
           <meta name="description" content={job.description?.substring(0, 200)} />
           
           {/* Open Graph Tags */}

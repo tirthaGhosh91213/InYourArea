@@ -178,9 +178,8 @@ export default function CommunityDetails() {
     const plainText = post.content.replace(/<[^>]*>/g, "");
     const truncatedText = plainText.substring(0, 100);
     const titlePart = post.title ? `${post.title}\n\n` : "";
-    return `${titlePart}${truncatedText}${
-      plainText.length > 100 ? "..." : ""
-    }`;
+    return `${titlePart}${truncatedText}${plainText.length > 100 ? "..." : ""
+      }`;
   };
 
   const handleShareWhatsApp = () => {
@@ -608,9 +607,9 @@ export default function CommunityDetails() {
                         : "Anonymous"}
                     </span>
                     {isCommentAuthorAdmin && (
-                      <MdVerified 
-                        size={16} 
-                        className="text-blue-500 flex-shrink-0" 
+                      <MdVerified
+                        size={16}
+                        className="text-blue-500 flex-shrink-0"
                       />
                     )}
                   </div>
@@ -719,7 +718,7 @@ export default function CommunityDetails() {
                 {/* Nested Replies */}
                 {hasReplies && !areRepliesCollapsed && (
                   <div className="mt-2 ml-0">
-                    {[...comment.replies].reverse().map((reply) => 
+                    {[...comment.replies].reverse().map((reply) =>
                       renderComment(reply, level + 1)
                     )}
                   </div>
@@ -788,8 +787,8 @@ export default function CommunityDetails() {
   const bottomRightAd = ads.length ? ads[bottomRightIndex % ads.length] : null;
 
   if (loading || !post) {
-  return <CommunityDetailsSkeleton />;
-}
+    return <CommunityDetailsSkeleton />;
+  }
 
   const isPostAuthorAdmin = post.author?.role === "ADMIN";
   const hasTitle = post.title && post.title.trim() !== "";
@@ -801,11 +800,11 @@ export default function CommunityDetails() {
       {/* Dynamic Meta Tags for Social Media */}
       {post && (
         <Helmet>
-          <title>{hasTitle ? post.title : post.content.substring(0, 60)} - {window.location.hostname === 'jharkhandupdates.com' ? 'Jharkhand Updates' : 'Jharkhand Bihar Updates'}</title>
+          <title>{hasTitle ? post.title : post.content.substring(0, 60)} - {window.location.hostname === 'jharkhandupdates.com' ? 'Jharkhand Updates' : 'Jharkhand Updates'}</title>
           <meta name="description" content={post.content.replace(/<[^>]*>/g, '').substring(0, 160)} />
-          
+
           <link rel="canonical" href={window.location.href} />
-          
+
           {/* Facebook / Open Graph */}
           <meta property="fb:app_id" content="1234567890" />
           <meta property="og:type" content="article" />
@@ -816,8 +815,8 @@ export default function CommunityDetails() {
           <meta property="og:image:secure_url" content={hasImages ? post.imageUrls[0] : `${window.location.origin}/banner.jpg`} />
           <meta property="og:image:width" content="1200" />
           <meta property="og:image:height" content="630" />
-          <meta property="og:site_name" content={window.location.hostname === 'jharkhandupdates.com' ? 'Jharkhand Updates' : 'Jharkhand Bihar Updates'} />
-          
+          <meta property="og:site_name" content={window.location.hostname === 'jharkhandupdates.com' ? 'Jharkhand Updates' : 'Jharkhand Updates'} />
+
           {/* Twitter */}
           <meta name="twitter:card" content="summary_large_image" />
           <meta name="twitter:title" content={hasTitle ? post.title : post.content.substring(0, 60)} />
@@ -924,9 +923,9 @@ export default function CommunityDetails() {
                           : "Unknown Author"}
                       </span>
                       {isPostAuthorAdmin && (
-                        <MdVerified 
-                          size={18} 
-                          className="sm:w-5 sm:h-5 text-blue-500 flex-shrink-0" 
+                        <MdVerified
+                          size={18}
+                          className="sm:w-5 sm:h-5 text-blue-500 flex-shrink-0"
                         />
                       )}
                     </div>
@@ -1086,9 +1085,8 @@ export default function CommunityDetails() {
             {/* Description */}
             <div className="relative">
               <div
-                className={`text-gray-700 whitespace-pre-line leading-relaxed text-base md:text-lg transition-all duration-500 ${
-                  isExpanded ? "" : "line-clamp-4"
-                }`}
+                className={`text-gray-700 whitespace-pre-line leading-relaxed text-base md:text-lg transition-all duration-500 ${isExpanded ? "" : "line-clamp-4"
+                  }`}
                 dangerouslySetInnerHTML={{ __html: post.content }}
               />
               <button

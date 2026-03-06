@@ -264,7 +264,7 @@ export default function PromotionsPage() {
 
       {/* Footer */}
       <div className="text-center py-8 text-gray-400 text-sm">
-        &copy; 2026 Jharkhand Bihar Updates. Connecting local buyers & sellers.
+        &copy; 2026 Jharkhand Updates. Connecting local buyers & sellers.
       </div>
     </div>
   );

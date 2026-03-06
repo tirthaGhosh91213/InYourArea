@@ -58,7 +58,7 @@ function GoogleCallback() {
 
         setTimeout(() => {
           console.log('🚀 Navigating to /Community...');
-          navigate('/community');
+          navigate('/citizen-news');
         }, 500);
       } catch (error) {
         console.error('❌ Error storing tokens:', error);

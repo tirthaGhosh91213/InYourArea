@@ -140,7 +140,7 @@ export default function VendorShopPage() {
   const handleShare = async () => {
     const shareData = {
       title: vendor?.shopName,
-      text: `Check out ${vendor?.shopName} on Jharkhand Bihar Updates!`,
+      text: `Check out ${vendor?.shopName} on Jharkhand Updates!`,
       url: window.location.href,
     };
 
@@ -221,7 +221,7 @@ export default function VendorShopPage() {
   // --- HELMET SEO DATA ---
   const pageUrl = window.location.href;
   const pageTitle = vendor?.shopName ? `${vendor.shopName} - Shop Online` : "Vendor Shop";
-  const pageDesc = vendor?.shopDescription || "Check out best offers and products from this shop on Jharkhand Bihar Updates.";
+  const pageDesc = vendor?.shopDescription || "Check out best offers and products from this shop on Jharkhand Updates.";
   const pageImage = vendor?.shopCoverUrl || vendor?.shopLogoUrl || `${window.location.origin}/banner.jpg`;
 
   if (loading) return <ShopSkeleton />;
@@ -231,7 +231,7 @@ export default function VendorShopPage() {
       
       {/* --- REACT HELMET ADDED HERE --- */}
       <Helmet>
-        <title>{pageTitle} | JHARKHAND BIHAR UPDATES</title>
+        <title>{pageTitle} | Jharkhand Updates</title>
         <meta name="description" content={pageDesc} />
         <link rel="canonical" href={pageUrl} />
         
@@ -241,7 +241,7 @@ export default function VendorShopPage() {
         <meta property="og:url" content={pageUrl} />
         <meta property="og:title" content={`${pageTitle} - Best Offers & Menu`} />
         <meta property="og:description" content={pageDesc} />
-        <meta property="og:site_name" content="JHARKHAND BIHAR UPDATES" />
+        <meta property="og:site_name" content="Jharkhand Updates" />
         <meta property="og:image" content={pageImage} />
         <meta property="og:image:secure_url" content={pageImage} />
         
