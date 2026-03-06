@@ -731,7 +731,7 @@ export default function Community() {
             className="bg-emerald-700 text-white rounded-xl p-4 sm:p-6 mb-4 sm:mb-6 shadow-lg w-full max-w-5xl md:max-w-7xl"
           >
             <h2 className="text-xl sm:text-2xl font-semibold text-center mb-3 sm:mb-4">
-              Community Posts
+              Citizen News
             </h2>
             <div className="flex justify-center">
               <div className="relative w-full sm:w-96">
