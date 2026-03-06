@@ -282,7 +282,7 @@ export default function EmailService() {
 
                 {/* Terms Text */}
                 <p className="text-xs text-gray-600 mt-6 leading-relaxed">
-                  By signing up, you agree to the Terms of Service and How we use your data. Jharkhand Bihar Updates will use your sign-up to email content, improve understanding of you . These may include adverts from us and 3rd parties based on our understanding. <span 
+                  By signing up, you agree to the Terms of Service and How we use your data. Jharkhand Updates will use your sign-up to email content, improve understanding of you . These may include adverts from us and 3rd parties based on our understanding. <span 
                     className="font-bold cursor-pointer hover:text-red-500 transition-colors underline"
                     onClick={() => setShowUnsubscribeModal(true)}
                   >

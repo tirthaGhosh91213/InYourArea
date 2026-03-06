@@ -283,7 +283,7 @@ export default function UserDashboard() {
     } else if (type === "jobs") {
       navigate(`/jobs/${id}`);
     } else if (type === "community") {
-      navigate(`/community/${id}`);
+      navigate(`/citizen-news/${id}`);
     } else if (type === "localNews") {
       navigate(`/statenews/details/${id}`);
     } else if (type === "properties") {
@@ -309,7 +309,7 @@ export default function UserDashboard() {
         url = `https://api.jharkhandbiharupdates.com/api/v1/state-news/${id}`;
       if (type === "properties")
         url = `https://api.jharkhandbiharupdates.com/api/v1/properties/${id}`;
-      
+
       await axios.delete(url, { headers });
       toast.success("Deleted successfully!");
       setDeleteConfirmOpen(false);
@@ -396,9 +396,9 @@ export default function UserDashboard() {
       await fetchContent();
       await fetchStats();
     } catch (error) {
-      const errorMessage = error.response?.data?.message || 
-                          error.response?.data?.error || 
-                          "Failed to update property status";
+      const errorMessage = error.response?.data?.message ||
+        error.response?.data?.error ||
+        "Failed to update property status";
       toast.error(errorMessage);
       console.error("Status update error:", error);
       console.error("Error response:", error.response?.data);
@@ -460,7 +460,7 @@ export default function UserDashboard() {
   const tabs = [
     { key: "events", label: "Events", icon: Calendar },
     { key: "jobs", label: "Jobs", icon: Briefcase },
-    { key: "community", label: "Community", icon: FileText },
+    { key: "community", label: "Citizen News", icon: FileText },
     { key: "properties", label: "Properties", icon: Home },
   ];
   if (role === "admin")
@@ -581,7 +581,7 @@ export default function UserDashboard() {
           { title: "State News", value: stats.totalStateNews },
           { title: "Events", value: stats.totalEvents },
           { title: "Jobs", value: stats.totalJobs },
-          { title: "Community", value: stats.totalCommunityPosts },
+          { title: "Citizen News", value: stats.totalCommunityPosts },
           { title: "Properties", value: stats.totalProperties || 0 },
           { title: "Comments", value: stats.totalComments },
           { title: "Total", value: stats.totalContent },
@@ -603,11 +603,10 @@ export default function UserDashboard() {
               key={tab.key}
               whileHover={{ scale: 1.05 }}
               onClick={() => setActiveTab(tab.key)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-full font-semibold transition ${
-                active
+              className={`flex items-center gap-2 px-4 py-2 rounded-full font-semibold transition ${active
                   ? "bg-indigo-600 text-white shadow-lg"
                   : "bg-gray-100 text-gray-700"
-              }`}
+                }`}
             >
               <TabIcon size={16} /> {tab.label}
             </motion.button>
@@ -823,11 +822,9 @@ export default function UserDashboard() {
                           onChange={(e) => setScale(parseFloat(e.target.value))}
                           className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
                           style={{
-                            background: `linear-gradient(to right, #4f46e5 0%, #4f46e5 ${
-                              ((scale - 0.5) / 2.5) * 100
-                            }%, #e5e7eb ${
-                              ((scale - 0.5) / 2.5) * 100
-                            }%, #e5e7eb 100%)`,
+                            background: `linear-gradient(to right, #4f46e5 0%, #4f46e5 ${((scale - 0.5) / 2.5) * 100
+                              }%, #e5e7eb ${((scale - 0.5) / 2.5) * 100
+                              }%, #e5e7eb 100%)`,
                           }}
                         />
                         <ZoomIn size={20} className="text-gray-600" />
@@ -846,11 +843,9 @@ export default function UserDashboard() {
                           }
                           className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
                           style={{
-                            background: `linear-gradient(to right, #4f46e5 0%, #4f46e5 ${
-                              (rotation / 360) * 100
-                            }%, #e5e7eb ${
-                              (rotation / 360) * 100
-                            }%, #e5e7eb 100%)`,
+                            background: `linear-gradient(to right, #4f46e5 0%, #4f46e5 ${(rotation / 360) * 100
+                              }%, #e5e7eb ${(rotation / 360) * 100
+                              }%, #e5e7eb 100%)`,
                           }}
                         />
                         <span className="text-sm text-gray-600 min-w-[40px]">
@@ -1062,11 +1057,10 @@ export default function UserDashboard() {
                     <>
                       {selectedProperty.propertyStatus === "FOR_SALE" && (
                         <label
-                          className={`flex items-center p-3 rounded-lg border-2 cursor-pointer transition ${
-                            newPropertyStatus === "SOLD"
+                          className={`flex items-center p-3 rounded-lg border-2 cursor-pointer transition ${newPropertyStatus === "SOLD"
                               ? "border-green-500 bg-green-50"
                               : "border-gray-200 hover:border-green-300 hover:bg-gray-50"
-                          }`}
+                            }`}
                         >
                           <input
                             type="radio"
@@ -1081,14 +1075,13 @@ export default function UserDashboard() {
                           </span>
                         </label>
                       )}
-                      
+
                       {selectedProperty.propertyStatus === "SOLD" && (
                         <label
-                          className={`flex items-center p-3 rounded-lg border-2 cursor-pointer transition ${
-                            newPropertyStatus === "FOR_SALE"
+                          className={`flex items-center p-3 rounded-lg border-2 cursor-pointer transition ${newPropertyStatus === "FOR_SALE"
                               ? "border-blue-500 bg-blue-50"
                               : "border-gray-200 hover:border-blue-300 hover:bg-gray-50"
-                          }`}
+                            }`}
                         >
                           <input
                             type="radio"
@@ -1111,11 +1104,10 @@ export default function UserDashboard() {
                     <>
                       {selectedProperty.propertyStatus === "FOR_RENT" && (
                         <label
-                          className={`flex items-center p-3 rounded-lg border-2 cursor-pointer transition ${
-                            newPropertyStatus === "RENTED"
+                          className={`flex items-center p-3 rounded-lg border-2 cursor-pointer transition ${newPropertyStatus === "RENTED"
                               ? "border-orange-500 bg-orange-50"
                               : "border-gray-200 hover:border-orange-300 hover:bg-gray-50"
-                          }`}
+                            }`}
                         >
                           <input
                             type="radio"
@@ -1130,14 +1122,13 @@ export default function UserDashboard() {
                           </span>
                         </label>
                       )}
-                      
+
                       {selectedProperty.propertyStatus === "RENTED" && (
                         <label
-                          className={`flex items-center p-3 rounded-lg border-2 cursor-pointer transition ${
-                            newPropertyStatus === "FOR_RENT"
+                          className={`flex items-center p-3 rounded-lg border-2 cursor-pointer transition ${newPropertyStatus === "FOR_RENT"
                               ? "border-purple-500 bg-purple-50"
                               : "border-gray-200 hover:border-purple-300 hover:bg-gray-50"
-                          }`}
+                            }`}
                         >
                           <input
                             type="radio"

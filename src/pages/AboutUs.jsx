@@ -416,7 +416,7 @@ export default function AboutUs() {
           whileHover={{ scale: 1.05 }}
           className="text-3xl md:text-5xl font-bold mb-6"
         >
-          Join Our <span className="text-yellow-300">Community</span>
+          Join Our <span className="text-yellow-300">Citizen News</span>
         </motion.h2>
         <motion.p
           whileHover={{ scale: 1.02 }}

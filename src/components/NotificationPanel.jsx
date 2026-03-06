@@ -165,7 +165,7 @@ export default function NotificationPanel({
           return;
         case "COMMUNITY":
         case "COMMUNITY_POST":
-          navigate(`/community/${referenceId}`);
+          navigate(`/citizen-news/${referenceId}`);
           return;
         case "LOCAL_NEWS":
         case "NEWS":
@@ -196,7 +196,7 @@ export default function NotificationPanel({
 
     // Community post approval
     if (lowerMessage.includes("community post") && lowerMessage.includes("approved")) {
-      navigate("/community");
+      navigate("/citizen-news");
       return;
     }
 
@@ -211,10 +211,10 @@ export default function NotificationPanel({
       // Try to determine post type from context
       if (referenceId) {
         // If we have referenceId but no referenceType, try community first
-        navigate(`/community/${referenceId}`);
+        navigate(`/citizen-news/${referenceId}`);
       } else {
         // Fallback to community page
-        navigate("/community");
+        navigate("/citizen-news");
       }
       return;
     }
@@ -222,9 +222,9 @@ export default function NotificationPanel({
     // Reply to comment
     if (lowerMessage.includes("replied to your comment")) {
       if (referenceId) {
-        navigate(`/community/${referenceId}`);
+        navigate(`/citizen-news/${referenceId}`);
       } else {
-        navigate("/community");
+        navigate("/citizen-news");
       }
       return;
     }
@@ -287,7 +287,7 @@ export default function NotificationPanel({
   const handleDeleteNotification = async (id, event) => {
     // ✅ MODIFIED: Stop propagation to prevent triggering click handler
     event.stopPropagation();
-    
+
     try {
       const token = localStorage.getItem("accessToken");
       if (!token) {

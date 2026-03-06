@@ -2,7 +2,7 @@ import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import HeroPage from "./components/heroPage";
 import Footer from "./components/Footer";
-import LocalNews from "./pages/LocalNews"; 
+import LocalNews from "./pages/LocalNews";
 // import NotFound from "./components/NotFound";
 // import { NotFound } from "./components/ui/ghost-404-page-1"
 import { NotFoundPage } from "./components/ui/404-page-not-found"
@@ -75,7 +75,7 @@ export default function App() {
         <Route path="/auth/google/callback" element={<GoogleCallback />} />
 
 
-        <Route path="/community" element={<Community />} />
+        <Route path="/citizen-news" element={<Community />} />
         <Route path="/jobs" element={<Jobs />} />
         <Route path="/events" element={<Events />} />
         <Route path="/emailservice" element={<EmailService />} />
@@ -87,7 +87,7 @@ export default function App() {
         <Route path="/create/community" element={<CreateCommunityPost />} />
         <Route path="/create/properties" element={<CreatePropertyPost />} />
         <Route path="/admin/:type/:id" element={<AdminItemDetail />} />
-        <Route path="/community/:id" element={<CommunityDetails />} />
+        <Route path="/citizen-news/:id" element={<CommunityDetails />} />
         <Route path="/jobs/:id" element={<JobDetails />} />
         <Route path="/events/:id" element={<EventDetails />} />
         <Route path="/statenews/details/:id" element={<LocalNewsDetails />} />
@@ -104,15 +104,15 @@ export default function App() {
         <Route path="/shop/:slug" element={<VendorShopPage />} />
         {/* Vendor Routes (Protected) */}
         <Route path="/vendor/dashboard" element={<VendorDashboard />} />
-<Route path="/promotions" element={<PromotionsPage />} />
+        <Route path="/local-market" element={<PromotionsPage />} />
         <Route path="/history" element={<History />} />
-        
+
         {/* Footer Pages */}
         <Route path="/about-us" element={<AboutUs />} />
         <Route path="/code-of-ethics" element={<CodeOfEthics />} />
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         <Route path="/terms-conditions" element={<TermsConditions />} />
-        
+
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </Router>

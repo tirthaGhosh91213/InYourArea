@@ -340,7 +340,7 @@ export default function PropertyDetails() {
     <>
     {property && (
         <Helmet>
-          <title>{property.title} - JHARKHAND BIHAR UPDATES</title>
+          <title>{property.title} - Jharkhand Updates</title>
           <meta name="description" content={property.description?.substring(0, 200)} />
           
           {/* Open Graph Tags */}

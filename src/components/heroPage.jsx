@@ -31,10 +31,10 @@ export default function InYourArea() {
 
 
   const states = [
-  "----------- States -----------",
-  "Bihar",
-  "Jharkhand",
-];
+    "----------- States -----------",
+    "Bihar",
+    "Jharkhand",
+  ];
 
 
   const [selectedState, setSelectedState] = useState("");
@@ -50,13 +50,13 @@ export default function InYourArea() {
 
 
   const onSubmit = () => {
-  if (!selectedState || selectedState.startsWith("-")) {
-    toast.error("Please select your state!", { autoClose: 1000 });
-    return;
-  }
-  localStorage.setItem("state", selectedState);
-  navigate(`/statenews/${encodeURIComponent(selectedState)}`);
-};
+    if (!selectedState || selectedState.startsWith("-")) {
+      toast.error("Please select your state!", { autoClose: 1000 });
+      return;
+    }
+    localStorage.setItem("state", selectedState);
+    navigate(`/statenews/${encodeURIComponent(selectedState)}`);
+  };
 
 
   // Fetch small ads for InYourArea
@@ -182,11 +182,11 @@ export default function InYourArea() {
         className="text-center px-4 sm:px-6 py-12 flex-1 flex flex-col justify-center"
       >
         <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 mb-4 leading-relaxed">
-          The Jharkhand & Bihar Leading{" "}
+          The Jharkhand Leading{" "}
           <Link to="/statenews/Jharkhand" className="text-green-700 hover:underline">State News</Link>,{" "}
           <Link to="/events" className="text-green-700 hover:underline">Events</Link>,{" "}
           <Link to="/jobs" className="text-green-700 hover:underline">Jobs</Link>,{" "}
-          <Link to="/community" className="text-green-700 hover:underline">Community</Link> &amp;{" "}
+          <Link to="/citizen-news" className="text-green-700 hover:underline">Citizen News</Link> &amp;{" "}
           <Link to="/properties" className="text-green-700 hover:underline">Properties</Link> Platform
         </h1>
         <p className="mt-2 text-gray-600 text-base sm:text-lg">
@@ -203,7 +203,7 @@ export default function InYourArea() {
         >
           <select
             value={selectedState}
-  onChange={(e) => setSelectedState(e.target.value)}
+            onChange={(e) => setSelectedState(e.target.value)}
             className="w-72 sm:w-80 px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-600 focus:outline-none text-gray-700 placeholder-gray-400 transition-all cursor-pointer"
           >
             <option value="">-- Select Your State --</option>

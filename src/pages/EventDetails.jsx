@@ -771,7 +771,7 @@ export default function EventDetails() {
           {event.title} - Event Details |{" "}
           {window.location.hostname === "jharkhandupdates.com"
             ? "Jharkhand Updates"
-            : "Jharkhand Bihar Updates"}
+            : "Jharkhand Updates"}
         </title>
         <meta
           name="description"
@@ -799,7 +799,7 @@ export default function EventDetails() {
           content={
             window.location.hostname === "jharkhandupdates.com"
               ? "Jharkhand Updates"
-              : "Jharkhand Bihar Updates"
+              : "Jharkhand Updates"
           }
         />
         {event.imageUrls?.[0] ? (
