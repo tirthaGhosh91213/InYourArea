@@ -97,7 +97,7 @@ export default function CreateCommunityPost() {
       );
 
       if (res.data.success) {
-        toast.success("Community post created successfully and pending approval!");
+        toast.success("Citizen News post created successfully and pending approval!");
         navigate("/citizen-news");
       }
     } catch (err) {
@@ -129,7 +129,7 @@ export default function CreateCommunityPost() {
         </button>
 
         <motion.div className="max-w-3xl mx-auto bg-white p-8 rounded-2xl shadow-lg border border-gray-100">
-          <h1 className="text-3xl font-bold text-green-600 text-center mb-6">Create Community Post</h1>
+          <h1 className="text-3xl font-bold text-green-600 text-center mb-6">Create Citizen News Post</h1>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <input
@@ -181,7 +181,7 @@ export default function CreateCommunityPost() {
               type="submit"
               className="w-full bg-gradient-to-r from-green-400 to-green-500 text-white py-3 rounded-full shadow-lg"
             >
-              {loading ? "Posting..." : "Post Community"}
+              {loading ? "Posting..." : "Post Citizen News"}
             </motion.button>
           </form>
         </motion.div>

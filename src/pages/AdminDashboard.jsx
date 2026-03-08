@@ -31,9 +31,9 @@ const BASE_API = "https://api.jharkhandbiharupdates.com/api/v1";
 const TABS = [
   { key: "events", label: "Events" },
   { key: "jobs", label: "Jobs" },
-  { key: "community", label: "Community" },
+  { key: "community", label: "Citizen News" },
   { key: "properties", label: "Property" },
-  { key: "promotions", label: "Promotions" },
+  { key: "promotions", label: "Local Market" },
 ];
 
 export default function AdminDashboard() {
@@ -105,8 +105,9 @@ export default function AdminDashboard() {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setItems((prev) => prev.filter((it) => it.id !== id));
+      const tabLabel = TABS.find((t) => t.key === activeTab)?.label || activeTab;
       setPopupMessage(
-        `${activeTab.slice(0, -1).toUpperCase()} ${action === "approve" ? "Approved ✅" : "Rejected ❌"
+        `${tabLabel.toUpperCase()} ${action === "approve" ? "Approved ✅" : "Rejected ❌"
         }`
       );
       if (fromModal) {
@@ -274,8 +275,8 @@ export default function AdminDashboard() {
             onClick={() => setActiveTab(tab.key)}
             whileTap={{ scale: 0.95 }}
             className={`px-5 py-2 rounded-full font-semibold transition-all duration-300 shadow-sm ${activeTab === tab.key
-                ? "bg-green-600 text-white"
-                : "bg-gray-100 hover:bg-green-100 text-gray-700"
+              ? "bg-green-600 text-white"
+              : "bg-gray-100 hover:bg-green-100 text-gray-700"
               }`}
           >
             {tab.label}
@@ -291,7 +292,7 @@ export default function AdminDashboard() {
           </div>
         ) : items.length === 0 ? (
           <div className="text-center py-16 text-gray-500 text-lg">
-            No pending {activeTab} posts 🎉
+            No pending {TABS.find(t => t.key === activeTab)?.label?.toLowerCase() || activeTab} posts 🎉
           </div>
         ) : (
           <AnimatePresence>
@@ -303,8 +304,8 @@ export default function AdminDashboard() {
                 exit={{ opacity: 0, scale: 0.95 }}
                 transition={{ duration: 0.2 }}
                 className={`mb-4 rounded-xl p-4 sm:p-5 shadow-md border transition-all duration-300 hover:shadow-lg ${index % 2 === 0
-                    ? "bg-green-50 hover:bg-green-100 border-green-200"
-                    : "bg-gray-50 hover:bg-gray-100 border-gray-200"
+                  ? "bg-green-50 hover:bg-green-100 border-green-200"
+                  : "bg-gray-50 hover:bg-gray-100 border-gray-200"
                   }`}
               >
                 <div className="flex flex-col gap-4">
@@ -1235,8 +1236,8 @@ export default function AdminDashboard() {
                 Are you sure you want to{" "}
                 <span
                   className={`font-semibold ${confirmAction.action === "approve"
-                      ? "text-green-600"
-                      : "text-red-500"
+                    ? "text-green-600"
+                    : "text-red-500"
                     }`}
                 >
                   {confirmAction.action}
@@ -1255,8 +1256,8 @@ export default function AdminDashboard() {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   className={`px-6 py-2 rounded-lg text-white font-semibold transition-all duration-200 ${confirmAction.action === "approve"
-                      ? "bg-green-600 hover:bg-green-700"
-                      : "bg-red-500 hover:bg-red-600"
+                    ? "bg-green-600 hover:bg-green-700"
+                    : "bg-red-500 hover:bg-red-600"
                     }`}
                 >
                   Yes, {confirmAction.action}
