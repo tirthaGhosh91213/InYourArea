@@ -5,10 +5,12 @@ import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { HeroVideoDialog } from "@/components/ui/hero-video-dialog";
 import { FaInstagram } from "react-icons/fa";
-import img1 from "../assets/locanewsPost.png";
-import img2 from "../assets/img2.png";
-import img3 from "../assets/jobPostmain.png";
-import img4 from "../assets/communityPost.png";
+import img1 from "/statenews.png";
+import img2 from "/citizen-news.png";
+import img3 from "/jobs.png";
+import img4 from "../assets/communityPost.png"; // Event image hasn't changed
+import img5 from "/property.png";
+import img6 from "/localmarket.png";
 
 const ACCENT = {
   soft: "#f6f8fa",
@@ -44,6 +46,18 @@ const features = [
     title: "Events",
     text: "The market, the meetup, the moment. All organized, simply. For you.",
     img: img4,
+  },
+  {
+    icon: "🏠",
+    title: "Properties",
+    text: "Find your dream home or a new space to rent, simply and quickly.",
+    img: img5,
+  },
+  {
+    icon: "🏪",
+    title: "Local Market",
+    text: "Support local businesses, discover great deals, and shop in your community.",
+    img: img6,
   },
 ];
 
@@ -217,6 +231,14 @@ export default function FeatureRailSmall() {
     }
     if (title === "Events") {
       navigate("/events");
+      return;
+    }
+    if (title === "Properties") {
+      navigate("/properties");
+      return;
+    }
+    if (title === "Local Market") {
+      navigate("/local-market");
       return;
     }
     if (title === "Local News") {
