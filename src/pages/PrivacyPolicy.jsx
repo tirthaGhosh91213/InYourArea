@@ -14,6 +14,8 @@ import {
   FaEnvelope,
   FaGlobe,
   FaInfoCircle,
+  FaTrashAlt,
+  FaPlug
 } from "react-icons/fa";
 import logo from "../../public/logo.png";
 
@@ -32,7 +34,7 @@ const sections = [
     icon: FaUserCheck,
     title: "1. Acceptance of Policy",
     content:
-      "By accessing, browsing, or using our Website, you agree to be bound by the terms of this Privacy Policy and consent to the collection, use, and disclosure of your information in accordance with it. If you do not agree, please discontinue use of the Website immediately.",
+      "By accessing, browsing, or using our Website or App, you agree to be bound by the terms of this Privacy Policy and consent to the collection, use, and disclosure of your information in accordance with it. If you do not agree, please discontinue the use of the Website/App immediately.",
   },
   {
     id: "definitions",
@@ -47,7 +49,7 @@ const sections = [
       {
         term: "User Information",
         definition:
-          "Any data submitted by you to the Website, including but not limited to Personal Information, social media profile details, or other content provided for identification or verification.",
+          "Any data submitted by you to the Website/App, including but not limited to Personal Information, social media profile details, uploaded media, or other content provided for identification or verification.",
       },
     ],
   },
@@ -58,37 +60,43 @@ const sections = [
     subsections: [
       {
         subtitle: "3.1 Information Provided by You",
-        text: "Name, email address, phone number, and any other details you voluntarily submit through forms, uploads, or communication with us. Content you publish, upload, or submit to our Website.",
+        text: "Name, email address, phone number, and any other details you voluntarily submit through forms, account registration, or communication with us. Content you publish, upload, or submit to our App/Website.",
       },
       {
-        subtitle: "3.2 Information Collected Automatically",
-        text: "IP address, browser type, operating system, and internet service provider details; Pages visited, time and date of visit, and duration of your session; Other technical and navigational data for analytics and security purposes.",
+        subtitle: "3.2 App-Specific Permissions & Device Data",
+        text: "To provide specific features within the Jharkhand Updates App, we may request the following permissions. You can enable or disable these at any time through your device settings:\n• Location Access: If granted, we use your location strictly to provide hyper-local weather updates. If denied, default standard updates will be shown.\n• Storage / Camera / Gallery Access: Required only if you choose to upload and post images or content to our platform.\n• Push Notifications: If allowed, we send timely alerts, news updates, and match scores directly to your device.",
       },
       {
-        subtitle: "3.3 Third-Party Data",
-        text: "We may receive information about you from publicly available sources or third-party service providers (e.g., Google Analytics, Google AdSense, Hotjar).",
+        subtitle: "3.3 Information Collected Automatically",
+        text: "IP address, device ID, browser type, operating system, and internet service provider details; Pages visited, time and date of visit, and duration of your session; Other technical and navigational data for analytics and security purposes.",
       },
     ],
   },
   {
-    id: "cookies",
-    icon: FaCookie,
-    title: "4. Use of Cookies",
-    content:
-      "We use cookies and similar technologies to enhance your browsing experience, store user preferences, and analyse traffic patterns. You can control or disable cookies through your browser settings; however, some features of the Website may not function properly without them.",
+    id: "third-party",
+    icon: FaPlug,
+    title: "4. Third-Party Services & Integrations",
+    content: "To enhance the functionality of our App and Website, we integrate with secure third-party service providers. These providers may process data strictly to deliver their respective services:",
+    list: [
+      "Notifications: Firebase and OneSignal (for delivering push notifications).",
+      "News & Information APIs: Open-Meteo (Weather forecasts), CricketData.org (Cricket scores), API-Football (Football updates), and GNews.io (Citizen news feeds).",
+      "Media Storage: Cloudinary (for secure hosting of images you upload).",
+      "Artificial Intelligence: OpenRouter API (for AI-driven content generation and features).",
+      "Database Infrastructure: Secure deployment using PostgreSQL and MongoDB.",
+      "Analytics & Ads: Google Analytics, Google AdSense, Hotjar."
+    ]
   },
   {
     id: "purpose",
     icon: FaUserShield,
     title: "5. Purpose of Data Collection",
     list: [
-      "Verifying your identity",
-      "Personalising Website content",
-      "Responding to queries or complaints",
-      "Delivering updates, notifications, and newsletters",
-      "Improving our Website's functionality and content",
-      "Preventing fraud, abuse, and security threats",
-      "Complying with legal obligations",
+      "Verifying your identity and managing your account.",
+      "Personalising App/Website content (like weather based on location).",
+      "Delivering updates, push notifications, and newsletters.",
+      "Improving our App's functionality, UI/UX, and content.",
+      "Preventing fraud, abuse, and security threats.",
+      "Complying with legal obligations."
     ],
     note: "We do not sell or rent your personal data to third parties.",
   },
@@ -96,11 +104,12 @@ const sections = [
     id: "sharing",
     icon: FaExchangeAlt,
     title: "6. Sharing of Information",
+    content: "We may share your data with:",
     list: [
-      "Service providers, contractors, or affiliates who assist in our operations and are bound by confidentiality obligations",
-      "Advertisers or research organisations (only in anonymised or aggregated form)",
-      "Authorities or regulators when required by law or to protect our legal rights",
-      "Successors or acquirers in case of a merger, acquisition, or sale of assets",
+      "Service providers, contractors, or affiliates who assist in our operations and are bound by confidentiality obligations.",
+      "Advertisers or research organisations (only in anonymised or aggregated form).",
+      "Authorities or regulators when required by law or to protect our legal rights.",
+      "Successors or acquirers in case of a merger, acquisition, or sale of assets."
     ],
   },
   {
@@ -108,8 +117,24 @@ const sections = [
     icon: FaLock,
     title: "7. Data Storage & Security",
     content:
-      "Your information is stored on secure servers (including cloud services such as Aruba Cloud) with appropriate physical, electronic, and managerial safeguards. While we employ industry-standard protection, no system is completely secure, and we cannot guarantee absolute security of data transmitted over the internet. We retain your data only for as long as necessary to provide services, plus an additional 30 days thereafter, after which it is permanently deleted.",
+      "Your information is stored on secure databases (PostgreSQL/MongoDB) and cloud servers (including AWS Cloud) with appropriate physical, electronic, and managerial safeguards. While we employ industry-standard protection, no system is completely secure, and we cannot guarantee the absolute security of data transmitted over the internet.",
   },
+  {
+    id: "retention",
+    icon: FaTrashAlt,
+    title: "8. Data Retention & Account Deletion (Important)",
+    content: "We retain your data only for as long as necessary to provide services.",
+    subsections: [
+      {
+        subtitle: "Content Deletion",
+        text: "Users have full control to manually delete any individual posts, images, or content they have uploaded directly within the App."
+      },
+      {
+        subtitle: "Account Deletion",
+        text: "Users cannot delete their entire account directly from within the App. To request complete account deletion and the removal of associated personal data, you must contact our support team at support@ulmind.com or support@jharkhandupdates.com. We will process your deletion request within applicable legal timeframes."
+      }
+    ]
+  }
 ];
 
 const fadeInUp = {
@@ -194,13 +219,13 @@ export default function PrivacyPolicy() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.6 }}
-            className="mt-6 text-white/90 text-sm"
+            className="mt-6 text-white/90 text-sm flex gap-4 justify-center"
           >
             <p>
               <strong>Effective Date:</strong> 14 August 2025
             </p>
             <p>
-              <strong>Last Updated:</strong> 14 August 2025
+              <strong>Last Updated:</strong> 4 April 2026
             </p>
           </motion.div>
         </div>
@@ -226,7 +251,7 @@ export default function PrivacyPolicy() {
             physical or digital signatures.
           </p>
           <p className="text-lg md:text-xl text-gray-700 leading-relaxed text-justify">
-            <strong className="text-green-700">Jharkhand Updates</strong> ("we", "us", "our") is committed to
+            <strong className="text-green-700">Jharkhand Updates</strong>, operated by ULMIND PRIVATE LIMITED ("we", "us", "our"), is committed to
             safeguarding the privacy of visitors, users, and contributors ("you" or "your") to our website{" "}
             <a
               href="https://www.jharkhandupdates.com"
@@ -236,7 +261,7 @@ export default function PrivacyPolicy() {
             >
               www.jharkhandupdates.com
             </a>{" "}
-            ("Website"). This Privacy Policy outlines how we collect, use, store, and protect your personal data, as
+            ("Website") and the <strong className="text-green-700">Jharkhand Updates mobile application ("App")</strong>. This Privacy Policy outlines how we collect, use, store, and protect your personal data, as
             well as your rights in relation to it.
           </p>
         </motion.div>
@@ -272,7 +297,7 @@ export default function PrivacyPolicy() {
                 </h2>
               </div>
 
-              {section.content && <p className="text-gray-700 leading-relaxed text-justify ml-2">{section.content}</p>}
+              {section.content && <p className="text-gray-700 leading-relaxed text-justify ml-2 mb-4">{section.content}</p>}
 
               {section.definitions && (
                 <div className="space-y-3 ml-2">
@@ -292,7 +317,11 @@ export default function PrivacyPolicy() {
                       <h3 className="font-bold text-lg mb-2" style={{ color: COLORS.accent }}>
                         {sub.subtitle}
                       </h3>
-                      <p className="text-gray-700 leading-relaxed text-justify">{sub.text}</p>
+                      {sub.text.split('\n').map((para, pIdx) => (
+                        <p key={pIdx} className="text-gray-700 leading-relaxed text-justify mt-1">
+                          {para}
+                        </p>
+                      ))}
                     </div>
                   ))}
                 </div>
@@ -324,7 +353,7 @@ export default function PrivacyPolicy() {
       <motion.section
         initial="hidden"
         whileInView="visible"
-        viewport={{ once: true, amount: 0.3 }}
+        viewport={{ once: true, amount: 0.1 }}
         variants={staggerContainer}
         className="bg-gradient-to-br from-yellow-50 to-green-50 py-16 px-6"
       >
@@ -335,10 +364,10 @@ export default function PrivacyPolicy() {
           >
             <h2 className="text-2xl font-bold mb-4 flex items-center gap-3" style={{ color: COLORS.dark }}>
               <FaGlobe style={{ color: COLORS.secondary }} />
-              8. Public Forums
+              9. Public Forums
             </h2>
             <p className="text-gray-700 leading-relaxed text-justify">
-              Any information disclosed in public forums (blogs, chat rooms, bulletin boards) on the Website becomes
+              Any information disclosed in public forums (news feeds, comments, bulletin boards) on the Website or App becomes
               public information. Exercise caution before sharing personal data in these spaces.
             </p>
           </motion.div>
@@ -348,11 +377,11 @@ export default function PrivacyPolicy() {
             className="bg-white rounded-2xl p-8 shadow-lg border-2 border-green-100"
           >
             <h2 className="text-2xl font-bold mb-4" style={{ color: COLORS.dark }}>
-              9. Changes to this Policy
+              10. Changes to this Policy
             </h2>
             <p className="text-gray-700 leading-relaxed text-justify">
               We reserve the right to amend this Privacy Policy at any time without prior notice. Updated versions will
-              be posted on this page, and continued use of the Website will constitute acceptance of the revised terms.
+              be posted on this page, and continued use of the Website/App will constitute acceptance of the revised terms.
             </p>
           </motion.div>
 
@@ -363,22 +392,30 @@ export default function PrivacyPolicy() {
           >
             <h2 className="text-2xl font-bold mb-4 flex items-center gap-3" style={{ color: COLORS.dark }}>
               <FaEnvelope style={{ color: COLORS.secondary }} />
-              10. Contact Information
+              11. Contact Information
             </h2>
             <p className="text-gray-700 leading-relaxed mb-2">
-              For questions regarding this Privacy Policy or your data, please contact:
+              For questions regarding this Privacy Policy, your data, or account deletion requests, please contact:
             </p>
-            <p className="text-green-600 font-semibold">
-              📧{" "}
-              <a href="mailto:support@jharkhandupdates.com" className="underline hover:text-green-700">
-                support@jharkhandupdates.com
-              </a>
-            </p>
+            <div className="space-y-1">
+              <p className="text-green-600 font-semibold">
+                📧{" "}
+                <a href="mailto:support@ulmind.com" className="underline hover:text-green-700">
+                  support@ulmind.com
+                </a>
+              </p>
+              <p className="text-green-600 font-semibold">
+                📧{" "}
+                <a href="mailto:support@jharkhandupdates.com" className="underline hover:text-green-700">
+                  support@jharkhandupdates.com
+                </a>
+              </p>
+            </div>
           </motion.div>
 
           <motion.div variants={fadeInUp} className="bg-white rounded-2xl p-8 shadow-lg border-2 border-green-100">
             <h2 className="text-2xl font-bold mb-4" style={{ color: COLORS.dark }}>
-              11. Email Opt-Out
+              12. Email Opt-Out
             </h2>
             <p className="text-gray-700 leading-relaxed text-justify">
               You may opt out of receiving promotional emails by writing to{" "}
@@ -394,7 +431,7 @@ export default function PrivacyPolicy() {
 
           <motion.div variants={fadeInUp} className="bg-white rounded-2xl p-8 shadow-lg border-2 border-green-100">
             <h2 className="text-2xl font-bold mb-4" style={{ color: COLORS.dark }}>
-              12. Rights of EU Residents
+              13. Rights of EU Residents
             </h2>
             <p className="text-gray-700 leading-relaxed text-justify mb-3">
               If you are a resident of the European Union, you have the rights to:
@@ -436,8 +473,8 @@ export default function PrivacyPolicy() {
         <p className="text-lg md:text-xl mb-8 max-w-4xl mx-auto leading-relaxed">
           This Privacy Policy is designed to provide transparency while meeting the requirements of the{" "}
           <strong className="text-yellow-300">Information Technology Act, 2000</strong>, the{" "}
-          <strong className="text-yellow-300">General Data Protection Regulation (GDPR)</strong> (where applicable), and
-          other relevant data protection laws.
+          <strong className="text-yellow-300">General Data Protection Regulation (GDPR)</strong> (where applicable), and{" "}
+          <strong className="text-yellow-300">Google Play Developer Policies</strong>.
         </p>
         <motion.button
           whileHover={{ scale: 1.08 }}
