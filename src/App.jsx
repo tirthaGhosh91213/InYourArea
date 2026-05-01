@@ -40,6 +40,7 @@ import CreatePromotion from "./pages/CreatePromotion"
 import PromotionsPage from "./pages/PromotionsPage";
 import VendorShopPage from "./pages/VendorShopPage";
 import VendorDashboard from "./pages/VendorDashboard";
+import SmartAppBanner from "./components/SmartAppBanner";
 
 
 // ✅ Home component
@@ -69,6 +70,7 @@ function Home() {
 export default function App() {
   return (
     <Router>
+      <SmartAppBanner />
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/statenews/:state" element={<LocalNews />} />
