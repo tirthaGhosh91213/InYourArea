@@ -10,6 +10,7 @@ import LargeAd from "../components/LargeAd";
 import { Clock, Play, ChevronDown } from "lucide-react";
 import { MdVerified } from "react-icons/md";
 import StateNewsLoader from '../components/StateNewsLoader'; // 🔥 IMPORTED
+import AppPromoBanner from '../components/AppPromoBanner'; // 📱 App Promo
 
 // Helper: circular next index
 function getNextIndex(current, total) {
@@ -358,6 +359,7 @@ export default function LocalNews() {
         </AnimatePresence>
 
         <main className="flex-1 flex flex-col gap-6 p-6 pt-24 items-center">
+          {/* TEMPORARILY COMMENTED OUT - State News Header
           <motion.div
             className="bg-emerald-700 text-white rounded-xl p-5 shadow-lg w-full max-w-6xl flex flex-col sm:flex-row items-center justify-between gap-4"
             initial={{ opacity: 0, y: -30 }}
@@ -372,6 +374,12 @@ export default function LocalNews() {
               </p>
             </div>
           </motion.div>
+          */}
+
+          {/* 📱 App Promo Banner - Mobile Only */}
+          <div className="w-full max-w-6xl lg:hidden">
+            <AppPromoBanner />
+          </div>
 
           {loading ? (
             // 🔥 REPLACED <Loader /> WITH <StateNewsLoader />
