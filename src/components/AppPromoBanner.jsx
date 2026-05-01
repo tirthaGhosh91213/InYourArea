@@ -74,7 +74,7 @@ const AppPromoBanner = () => {
         />
 
         {/* Text content */}
-        <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
           <div style={{
             display: 'flex',
             alignItems: 'center',
@@ -88,18 +88,21 @@ const AppPromoBanner = () => {
               color: '#1a1a1a',
               letterSpacing: '-0.2px',
               whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
             }}>
               Jharkhand Updates
             </h4>
             {/* Verified badge */}
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="#22c55e">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="#22c55e" style={{ flexShrink: 0 }}>
               <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
             </svg>
           </div>
           <div style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '8px',
+            gap: '6px',
+            flexWrap: 'wrap',
           }}>
             {/* Stars */}
             <div style={{ display: 'flex', gap: '1px' }}>
