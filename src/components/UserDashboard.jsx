@@ -38,8 +38,13 @@ export default function UserDashboard() {
   // State variables
   const [profile, setProfile] = useState(null);
   const [stats, setStats] = useState(null);
-  const [content, setContent] = useState(null);
   const [comments, setComments] = useState([]);
+  
+  // Pagination states
+  const [posts, setPosts] = useState([]);
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [isFetchingPosts, setIsFetchingPosts] = useState(false);
   const [activeTab, setActiveTab] = useState("events");
   const [editMode, setEditMode] = useState(false);
   const [formData, setFormData] = useState({ firstName: "", lastName: "" });
@@ -90,7 +95,6 @@ export default function UserDashboard() {
     await Promise.all([
       fetchProfile(),
       fetchStats(),
-      fetchContent(),
       fetchComments(),
     ]);
   };
@@ -124,16 +128,39 @@ export default function UserDashboard() {
     }
   };
 
-  const fetchContent = async () => {
+  useEffect(() => {
+    if (token && activeTab !== "comments") {
+      fetchPosts(0);
+    }
+  }, [activeTab, token]);
+
+  const fetchPosts = async (pageNum = 0) => {
+    if (activeTab === "comments") return;
+    
+    if (pageNum === 0) setLoading(true);
+    else setIsFetchingPosts(true);
+
     try {
+      const categoryParam = activeTab === "localNews" ? "stateNews" : activeTab;
       const res = await axios.get(
-        "https://api.jharkhandbiharupdates.com/api/v1/user/my-content",
+        `https://api.jharkhandbiharupdates.com/api/v1/user/my-posts?category=${categoryParam}&page=${pageNum}&size=10`,
         { headers }
       );
-      setContent(res.data.data);
+      
+      const newPosts = res.data.data.content || [];
+      if (pageNum === 0) {
+        setPosts(newPosts);
+      } else {
+        setPosts(prev => [...prev, ...newPosts]);
+      }
+      setHasMore(!res.data.data.last);
+      setPage(pageNum);
     } catch (error) {
-      toast.error("Failed to fetch content");
-      console.error("Content error:", error);
+      toast.error("Failed to fetch posts");
+      console.error("Posts error:", error);
+    } finally {
+      setLoading(false);
+      setIsFetchingPosts(false);
     }
   };
 
@@ -446,16 +473,7 @@ export default function UserDashboard() {
     navigate("/login");
   };
 
-  const filteredContent = (() => {
-    if (!content) return [];
-    if (activeTab === "events") return content.events;
-    if (activeTab === "jobs") return content.jobs;
-    if (activeTab === "community") return content.communityPosts;
-    if (activeTab === "comments") return comments;
-    if (activeTab === "localNews") return content.stateNews;
-    if (activeTab === "properties") return content.properties || [];
-    return [];
-  })();
+  const displayedContent = activeTab === "comments" ? comments : posts;
 
   const tabs = [
     { key: "events", label: "Events", icon: Calendar },
@@ -466,7 +484,7 @@ export default function UserDashboard() {
   if (role === "admin")
     tabs.push({ key: "localNews", label: "State News", icon: FileText });
 
-  if (!profile || !stats || !content) {
+  if (!profile || !stats) {
     return (
       <div className="flex items-center justify-center min-h-[80vh]">
         <div className="w-64">
@@ -616,10 +634,10 @@ export default function UserDashboard() {
 
       {/* Content */}
       <div className="space-y-4">
-        {filteredContent.length === 0 ? (
+        {displayedContent.length === 0 ? (
           <div className="text-center text-gray-400">No data found</div>
         ) : (
-          filteredContent.map((item) => (
+          displayedContent.map((item) => (
             <motion.div
               key={item.id}
               className="bg-white rounded-xl shadow p-4 flex flex-col md:flex-row gap-4"
@@ -734,6 +752,18 @@ export default function UserDashboard() {
               )}
             </motion.div>
           ))
+        )}
+
+        {hasMore && activeTab !== "comments" && (
+          <div className="flex justify-center mt-6">
+            <button
+              onClick={() => fetchPosts(page + 1)}
+              disabled={isFetchingPosts}
+              className="bg-indigo-50 text-indigo-600 px-6 py-2 rounded-full font-medium hover:bg-indigo-100 transition disabled:opacity-50"
+            >
+              {isFetchingPosts ? "Loading..." : "Load More"}
+            </button>
+          </div>
         )}
       </div>
 
