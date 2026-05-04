@@ -634,8 +634,12 @@ export default function UserDashboard() {
 
       {/* Content */}
       <div className="space-y-4">
-        {displayedContent.length === 0 ? (
-          <div className="text-center text-gray-400">No data found</div>
+        {loading ? (
+          <div className="flex justify-center py-8">
+            <Loader />
+          </div>
+        ) : displayedContent.length === 0 ? (
+          <div className="text-center text-gray-400 py-8">No data found</div>
         ) : (
           displayedContent.map((item) => (
             <motion.div
